@@ -126,6 +126,7 @@ export interface ZeebConfig {
   directorSeparator: string;
   genreSeparator: string;
   starSeparator: string;
+  savedPartSeparator: string;
 
   // Options
   renameFolder: boolean;

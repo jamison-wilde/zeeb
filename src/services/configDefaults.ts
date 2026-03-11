@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: ZeebConfig = {
   directorSeparator: ', ',
   genreSeparator: ', ',
   starSeparator: ', ',
+  savedPartSeparator: '.',
 
   // Options
   renameFolder: false,

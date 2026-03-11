@@ -88,7 +88,10 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
         ? config.formatAka
         : config.formatStandard;
     const ext = currentFile.isDvdFolder ? '' : `.${currentFile.extension}`;
-    const saved = currentFile.extension;
+    const keepParts = searchParts
+      .filter((p) => p.state === 'keep' || p.state === 'keepAlways')
+      .map((p) => p.text);
+    const saved = keepParts.join(config.savedPartSeparator ?? ' ');
     const formatted = interpolateFormat(format, metadata, {
       saved,
       directorSeparator: config.directorSeparator,
@@ -99,7 +102,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
       titleSpaceChar: config.titleSpaceChar,
     });
     setPreviewFilename(formatted + ext);
-  }, [metadata, currentFile, config, setPreviewFilename]);
+  }, [metadata, currentFile, config, searchParts, setPreviewFilename]);
 
   // Auto-select a search result whose year matches the year detected in the filename
   useEffect(() => {
@@ -133,20 +136,26 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
       }
     };
 
-    const handleLoadEnd = () => {
-      // Update URL bar
+    const injectExtraction = () => {
+      if (navigationMode.current === 'search') {
+        const script = generateSearchExtractionScript();
+        webview.executeJavaScript(script).catch(() => {/* ignore */});
+      } else if (navigationMode.current === 'title') {
+        const script = generateTitleExtractionScript(config.extractionPatterns);
+        webview.executeJavaScript(script).catch(() => {/* ignore */});
+      }
+    };
+
+    const handleDomReady = () => {
       try {
         const url = webview.getURL();
         setUrlInput(url);
       } catch { /* ignore */ }
+      injectExtraction();
+    };
 
-      if (navigationMode.current === 'search') {
-        const script = generateSearchExtractionScript();
-        webview.executeJavaScript(script);
-      } else if (navigationMode.current === 'title') {
-        const script = generateTitleExtractionScript(config.extractionPatterns);
-        webview.executeJavaScript(script);
-      }
+    const handleDidFinishLoad = () => {
+      injectExtraction();
     };
 
     const handleNavigate = (_event: any) => {
@@ -157,13 +166,15 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     };
 
     webview.addEventListener('ipc-message', handleMessage);
-    webview.addEventListener('dom-ready', handleLoadEnd);
+    webview.addEventListener('dom-ready', handleDomReady);
+    webview.addEventListener('did-finish-load', handleDidFinishLoad);
     webview.addEventListener('did-navigate', handleNavigate);
     webview.addEventListener('did-navigate-in-page', handleNavigate);
 
     return () => {
       webview.removeEventListener('ipc-message', handleMessage);
-      webview.removeEventListener('dom-ready', handleLoadEnd);
+      webview.removeEventListener('dom-ready', handleDomReady);
+      webview.removeEventListener('did-finish-load', handleDidFinishLoad);
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('did-navigate-in-page', handleNavigate);
     };
