@@ -82,6 +82,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
 
   // Auto-trigger search when parts are set from a new file
   useEffect(() => {
+    console.log(`[zeeb:${instanceId}] autoSearch effect: flag=${autoSearchRef.current} parts=${searchParts.length} webview=${!!webviewEl} ready=${webviewReady}`);
     if (!autoSearchRef.current || searchParts.length === 0 || !webviewEl || !webviewReady) return;
     autoSearchRef.current = false;
     const query = searchParts
@@ -90,6 +91,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       .join(' ');
     if (!query.trim()) return;
     const url = buildSearchUrl(query, config.urlImdbSearch);
+    console.log(`[zeeb:${instanceId}] AUTO-SEARCH loadURL query="${query}"`);
     navigationMode.current = 'search';
     webviewEl.loadURL(url);
   }, [searchParts, webviewEl, webviewReady, config.urlImdbSearch]);
@@ -150,7 +152,12 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     const startPolling = () => {
       stopPolling();
       const mode = navigationMode.current;
-      if (mode === 'idle') return;
+      const pollStart = Date.now();
+      console.log(`[zeeb:${instanceId}] startPolling mode=${mode} at ${new Date().toISOString()}`);
+      if (mode === 'idle') {
+        console.log(`[zeeb:${instanceId}] skipping poll — mode is idle`);
+        return;
+      }
 
       const script = mode === 'search'
         ? generateSearchExtractionScript()
@@ -161,28 +168,42 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
 
       pollRef.current = setInterval(() => {
         attempts++;
+        const t0 = Date.now();
         webview.executeJavaScript(script)
           .then((result: string | null) => {
+            const elapsed = Date.now() - t0;
+            const total = Date.now() - pollStart;
+            console.log(`[zeeb:${instanceId}] poll #${attempts} mode=${mode} execMs=${elapsed} totalMs=${total} hasResult=${result !== null}`);
             if (!result) return; // not ready yet, keep polling
 
             stopPolling();
+            console.log(`[zeeb:${instanceId}] GOT RESULT after ${total}ms (${attempts} attempts)`);
             const searchResults = parseSearchResults(result);
             if (searchResults.length > 0) {
+              console.log(`[zeeb:${instanceId}] parsed ${searchResults.length} search results`);
               setMovieMatches(searchResults);
               return;
             }
             const titleData = parseTitleData(result);
             if (titleData) {
+              console.log(`[zeeb:${instanceId}] parsed title data: ${titleData.title}`);
               setMetadata(titleData);
             }
           })
-          .catch(() => {/* page not ready for JS yet, keep polling */});
+          .catch((err: any) => {
+            const elapsed = Date.now() - t0;
+            console.log(`[zeeb:${instanceId}] poll #${attempts} CATCH execMs=${elapsed} err=${err?.message || err}`);
+          });
 
-        if (attempts >= maxAttempts) stopPolling();
+        if (attempts >= maxAttempts) {
+          console.log(`[zeeb:${instanceId}] max attempts reached, stopping poll`);
+          stopPolling();
+        }
       }, 250);
     };
 
     const handleDomReady = () => {
+      console.log(`[zeeb:${instanceId}] dom-ready`);
       setWebviewReady(true);
       try {
         const url = webview.getURL();
@@ -191,10 +212,12 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     };
 
     const handleNavigate = (_event: any) => {
+      let url = '';
       try {
-        const url = webview.getURL();
+        url = webview.getURL();
         setUrlInput(url);
       } catch { /* ignore */ }
+      console.log(`[zeeb:${instanceId}] did-navigate url=${url} navMode=${navigationMode.current}`);
       // Start polling as soon as navigation begins
       startPolling();
     };
@@ -257,12 +280,14 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       .join(' ');
     if (!query.trim()) return;
     const url = buildSearchUrl(query, config.urlImdbSearch);
+    console.log(`[zeeb:${instanceId}] MANUAL-SEARCH loadURL query="${query}"`);
     navigationMode.current = 'search';
     webviewEl?.loadURL(url);
   }, [searchParts, webviewEl, config.urlImdbSearch]);
 
   const handleMovieSelect = useCallback(
     (tt: string) => {
+      console.log(`[zeeb:${instanceId}] MOVIE-SELECT tt=${tt}`);
       setSelectedTt(tt);
       const url = buildTitleUrl(tt, config.urlImdbTT);
       navigationMode.current = 'title';
