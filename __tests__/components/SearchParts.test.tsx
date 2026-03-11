@@ -1,6 +1,7 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { SearchParts } from '../../src/components/SearchParts';
+import { render, fireEvent, screen } from '@testing-library/react';
+import { SearchParts } from '../../src/renderer/components/SearchParts';
 import type { SearchPart } from '../../src/types';
 
 const parts: SearchPart[] = [
@@ -11,20 +12,20 @@ const parts: SearchPart[] = [
 
 describe('SearchParts', () => {
   it('renders all parts', () => {
-    const { getByText } = render(
-      <SearchParts parts={parts} onPartStateChange={jest.fn()} onPartTextChange={jest.fn()} onSearch={jest.fn()} />
+    render(
+      <SearchParts parts={parts} onPartStateChange={vi.fn()} onPartTextChange={vi.fn()} onSearch={vi.fn()} />
     );
-    expect(getByText('The')).toBeTruthy();
-    expect(getByText('Matrix')).toBeTruthy();
-    expect(getByText('BluRay')).toBeTruthy();
+    expect(screen.getByText('The')).toBeDefined();
+    expect(screen.getByText('Matrix')).toBeDefined();
+    expect(screen.getByText('BluRay')).toBeDefined();
   });
 
   it('calls onSearch when search button pressed', () => {
-    const onSearch = jest.fn();
-    const { getByTestId } = render(
-      <SearchParts parts={parts} onPartStateChange={jest.fn()} onPartTextChange={jest.fn()} onSearch={onSearch} />
+    const onSearch = vi.fn();
+    render(
+      <SearchParts parts={parts} onPartStateChange={vi.fn()} onPartTextChange={vi.fn()} onSearch={onSearch} />
     );
-    fireEvent.press(getByTestId('search-button'));
+    fireEvent.click(screen.getByTestId('search-button'));
     expect(onSearch).toHaveBeenCalled();
   });
 });

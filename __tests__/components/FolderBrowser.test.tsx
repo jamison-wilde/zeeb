@@ -1,23 +1,24 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { FolderBrowser } from '../../src/components/FolderBrowser';
+import { render, fireEvent, screen } from '@testing-library/react';
+import { FolderBrowser } from '../../src/renderer/components/FolderBrowser';
 
 describe('FolderBrowser', () => {
   it('renders folder path input', () => {
-    const { getByTestId } = render(<FolderBrowser onFolderSelected={jest.fn()} recentFolders={[]} />);
-    expect(getByTestId('folder-path-input')).toBeTruthy();
+    render(<FolderBrowser onFolderSelected={vi.fn()} recentFolders={[]} />);
+    expect(screen.getByTestId('folder-path-input')).toBeDefined();
   });
 
   it('renders recursion mode selector', () => {
-    const { getByTestId } = render(<FolderBrowser onFolderSelected={jest.fn()} recentFolders={[]} />);
-    expect(getByTestId('recursion-mode')).toBeTruthy();
+    render(<FolderBrowser onFolderSelected={vi.fn()} recentFolders={[]} />);
+    expect(screen.getByTestId('recursion-mode')).toBeDefined();
   });
 
   it('calls onFolderSelected when list movies pressed', () => {
-    const onSelect = jest.fn();
-    const { getByTestId } = render(<FolderBrowser onFolderSelected={onSelect} recentFolders={[]} />);
-    fireEvent.changeText(getByTestId('folder-path-input'), '/movies');
-    fireEvent.press(getByTestId('list-movies-button'));
+    const onSelect = vi.fn();
+    render(<FolderBrowser onFolderSelected={onSelect} recentFolders={[]} />);
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: '/movies' } });
+    fireEvent.click(screen.getByTestId('list-movies-button'));
     expect(onSelect).toHaveBeenCalledWith('/movies', expect.any(String));
   });
 });

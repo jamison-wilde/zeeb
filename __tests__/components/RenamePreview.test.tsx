@@ -1,30 +1,31 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { RenamePreview } from '../../src/components/RenamePreview';
+import { render, fireEvent, screen } from '@testing-library/react';
+import { RenamePreview } from '../../src/renderer/components/RenamePreview';
 
 describe('RenamePreview', () => {
   it('displays formatted filename preview', () => {
-    const { getByText } = render(
-      <RenamePreview originalName="Movie.mkv" previewName="New Movie (2024).mkv" onRename={jest.fn()} onSkip={jest.fn()} />
+    render(
+      <RenamePreview originalName="Movie.mkv" previewName="New Movie (2024).mkv" onRename={vi.fn()} onSkip={vi.fn()} />
     );
-    expect(getByText('New Movie (2024).mkv')).toBeTruthy();
+    expect(screen.getByText('New Movie (2024).mkv')).toBeDefined();
   });
 
   it('calls onRename when rename button pressed', () => {
-    const onRename = jest.fn();
-    const { getByTestId } = render(
-      <RenamePreview originalName="Movie.mkv" previewName="New.mkv" onRename={onRename} onSkip={jest.fn()} />
+    const onRename = vi.fn();
+    render(
+      <RenamePreview originalName="Movie.mkv" previewName="New.mkv" onRename={onRename} onSkip={vi.fn()} />
     );
-    fireEvent.press(getByTestId('rename-button'));
+    fireEvent.click(screen.getByTestId('rename-button'));
     expect(onRename).toHaveBeenCalled();
   });
 
   it('calls onSkip when skip button pressed', () => {
-    const onSkip = jest.fn();
-    const { getByTestId } = render(
-      <RenamePreview originalName="Movie.mkv" previewName="New.mkv" onRename={jest.fn()} onSkip={onSkip} />
+    const onSkip = vi.fn();
+    render(
+      <RenamePreview originalName="Movie.mkv" previewName="New.mkv" onRename={vi.fn()} onSkip={onSkip} />
     );
-    fireEvent.press(getByTestId('skip-button'));
+    fireEvent.click(screen.getByTestId('skip-button'));
     expect(onSkip).toHaveBeenCalled();
   });
 });

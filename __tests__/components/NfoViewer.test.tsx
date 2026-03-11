@@ -1,10 +1,11 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render } from '@testing-library/react-native';
-import { NfoViewer } from '../../src/components/NfoViewer';
+import { render, screen } from '@testing-library/react';
+import { NfoViewer } from '../../src/renderer/components/NfoViewer';
 
 describe('NfoViewer', () => {
   it('renders NFO content', () => {
-    const { getByText } = render(<NfoViewer visible={true} content="╔═══╗" onClose={jest.fn()} />);
-    expect(getByText('╔═══╗')).toBeTruthy();
+    render(<NfoViewer visible={true} content="╔═══╗" onClose={vi.fn()} />);
+    expect(screen.getByText('╔═══╗')).toBeDefined();
   });
 });

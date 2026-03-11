@@ -1,6 +1,7 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { FileList } from '../../src/components/FileList';
+import { render, fireEvent, screen } from '@testing-library/react';
+import { FileList } from '../../src/renderer/components/FileList';
 import type { MovieFile } from '../../src/types';
 
 const files: MovieFile[] = [
@@ -10,15 +11,15 @@ const files: MovieFile[] = [
 
 describe('FileList', () => {
   it('renders all files', () => {
-    const { getByText } = render(<FileList files={files} selectedIndex={0} onSelect={jest.fn()} />);
-    expect(getByText('Movie1.mkv')).toBeTruthy();
-    expect(getByText('Movie2.mkv')).toBeTruthy();
+    render(<FileList files={files} selectedIndex={0} onSelect={vi.fn()} />);
+    expect(screen.getByText('Movie1.mkv')).toBeDefined();
+    expect(screen.getByText('Movie2.mkv')).toBeDefined();
   });
 
   it('calls onSelect when file tapped', () => {
-    const onSelect = jest.fn();
-    const { getByText } = render(<FileList files={files} selectedIndex={0} onSelect={onSelect} />);
-    fireEvent.press(getByText('Movie2.mkv'));
+    const onSelect = vi.fn();
+    render(<FileList files={files} selectedIndex={0} onSelect={onSelect} />);
+    fireEvent.click(screen.getByText('Movie2.mkv'));
     expect(onSelect).toHaveBeenCalledWith(1);
   });
 });

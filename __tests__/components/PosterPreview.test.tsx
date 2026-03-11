@@ -1,15 +1,16 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { PosterPreview } from '../../src/components/PosterPreview';
+import { render, screen } from '@testing-library/react';
+import { PosterPreview } from '../../src/renderer/components/PosterPreview';
 
 describe('PosterPreview', () => {
   it('renders poster image when URL provided', () => {
-    const { getByTestId } = render(<PosterPreview posterUrl="https://image.tmdb.org/t/p/w500/abc.jpg" onSelect={jest.fn()} />);
-    expect(getByTestId('poster-image')).toBeTruthy();
+    render(<PosterPreview posterUrl="https://image.tmdb.org/t/p/w500/abc.jpg" onSelect={vi.fn()} />);
+    expect(screen.getByTestId('poster-image')).toBeDefined();
   });
 
   it('shows placeholder when no URL', () => {
-    const { getByTestId } = render(<PosterPreview posterUrl={null} onSelect={jest.fn()} />);
-    expect(getByTestId('poster-placeholder')).toBeTruthy();
+    render(<PosterPreview posterUrl={null} onSelect={vi.fn()} />);
+    expect(screen.getByTestId('poster-placeholder')).toBeDefined();
   });
 });

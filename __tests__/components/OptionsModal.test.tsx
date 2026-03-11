@@ -1,19 +1,26 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { OptionsModal } from '../../src/components/OptionsModal';
+import { render, fireEvent, screen } from '@testing-library/react';
+import { OptionsModal } from '../../src/renderer/components/OptionsModal';
+import { createMockFsAdapter } from '../../src/adapters/fs';
+import { initConfigStore } from '../../src/stores/configStore';
 
-jest.mock('react-native-fs', () => ({ DocumentDirectoryPath: '/mock' }));
+const mockFs = createMockFsAdapter();
 
 describe('OptionsModal', () => {
+  beforeEach(() => {
+    initConfigStore(mockFs);
+  });
+
   it('renders format string inputs', () => {
-    const { getByTestId } = render(<OptionsModal visible={true} onClose={jest.fn()} />);
-    expect(getByTestId('format-standard-input')).toBeTruthy();
+    render(<OptionsModal visible={true} onClose={vi.fn()} />);
+    expect(screen.getByTestId('format-standard-input')).toBeDefined();
   });
 
   it('calls onClose when close button pressed', () => {
-    const onClose = jest.fn();
-    const { getByTestId } = render(<OptionsModal visible={true} onClose={onClose} />);
-    fireEvent.press(getByTestId('close-options'));
+    const onClose = vi.fn();
+    render(<OptionsModal visible={true} onClose={onClose} />);
+    fireEvent.click(screen.getByTestId('close-options'));
     expect(onClose).toHaveBeenCalled();
   });
 });

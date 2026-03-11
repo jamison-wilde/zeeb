@@ -1,12 +1,13 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { searchPosters, buildPosterUrl } from '../../src/services/tmdbService';
 
-global.fetch = jest.fn() as jest.Mock;
+global.fetch = vi.fn() as ReturnType<typeof vi.fn>;
 
 describe('tmdbService', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('searches TMDB for movie posters by IMDB id', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
         movie_results: [{
@@ -27,7 +28,7 @@ describe('tmdbService', () => {
   });
 
   it('returns empty array on API error', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 404 });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, status: 404 });
     const results = await searchPosters('tt9999999', 'https://api.themoviedb.org/3/', 'fake-key');
     expect(results).toEqual([]);
   });

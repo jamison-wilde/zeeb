@@ -1,29 +1,30 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import App from '../../src/App';
+import { render, fireEvent, screen } from '@testing-library/react';
+import App from '../../src/renderer/App';
+import { createMockFsAdapter } from '../../src/adapters/fs';
+import { initConfigStore } from '../../src/stores/configStore';
 
-jest.mock('react-native-webview', () => ({ WebView: 'WebView' }));
-jest.mock('react-native-fs', () => ({
-  DocumentDirectoryPath: '/mock',
-  exists: jest.fn(),
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-}));
+const mockFs = createMockFsAdapter();
 
 describe('Dual Renamer integration', () => {
+  beforeEach(() => {
+    initConfigStore(mockFs);
+  });
+
   it('renders two Renamer instances in process view', () => {
-    const { getByTestId } = render(<App />);
-    fireEvent.press(getByTestId('start-processing'));
-    expect(getByTestId('renamer-0')).toBeTruthy();
-    expect(getByTestId('renamer-1')).toBeTruthy();
+    render(<App fs={mockFs} />);
+    fireEvent.click(screen.getByTestId('start-processing'));
+    expect(screen.getByTestId('renamer-0')).toBeDefined();
+    expect(screen.getByTestId('renamer-1')).toBeDefined();
   });
 
   it('only shows the active renamer as visible', () => {
-    const { getByTestId } = render(<App />);
-    fireEvent.press(getByTestId('start-processing'));
+    render(<App fs={mockFs} />);
+    fireEvent.click(screen.getByTestId('start-processing'));
     // Renamer-0 is active by default, renamer-1 is hidden
     // Both testID wrappers exist, but only one Renamer has visible=true
-    expect(getByTestId('renamer-0')).toBeTruthy();
-    expect(getByTestId('renamer-1')).toBeTruthy();
+    expect(screen.getByTestId('renamer-0')).toBeDefined();
+    expect(screen.getByTestId('renamer-1')).toBeDefined();
   });
 });

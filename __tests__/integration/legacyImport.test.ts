@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { parseLegacyXml, detectCustomizations, migrateLegacyConfig } from '../../src/services/legacyImporter';
 
 describe('Legacy import flow', () => {
