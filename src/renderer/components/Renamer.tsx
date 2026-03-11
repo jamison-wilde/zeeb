@@ -134,35 +134,52 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     }
   }, [movieMatches]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     if (!webviewEl) return;
     const webview = webviewEl;
 
-    const handleResult = (message: string) => {
-      if (!message) return;
-      const results = parseSearchResults(message);
-      if (results.length > 0) {
-        setMovieMatches(results);
-        return;
-      }
-      const titleData = parseTitleData(message);
-      if (titleData) {
-        setMetadata(titleData);
+    const stopPolling = () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
       }
     };
 
-    const injectExtraction = () => {
-      if (navigationMode.current === 'search') {
-        const script = generateSearchExtractionScript();
+    const startPolling = () => {
+      stopPolling();
+      const mode = navigationMode.current;
+      if (mode === 'idle') return;
+
+      const script = mode === 'search'
+        ? generateSearchExtractionScript()
+        : generateTitleExtractionScript(config.extractionPatterns);
+
+      let attempts = 0;
+      const maxAttempts = 60; // 60 × 250ms = 15s max
+
+      pollRef.current = setInterval(() => {
+        attempts++;
         webview.executeJavaScript(script)
-          .then((result: string) => handleResult(result))
-          .catch(() => {/* ignore */});
-      } else if (navigationMode.current === 'title') {
-        const script = generateTitleExtractionScript(config.extractionPatterns);
-        webview.executeJavaScript(script)
-          .then((result: string) => handleResult(result))
-          .catch(() => {/* ignore */});
-      }
+          .then((result: string | null) => {
+            if (!result) return; // not ready yet, keep polling
+
+            stopPolling();
+            const searchResults = parseSearchResults(result);
+            if (searchResults.length > 0) {
+              setMovieMatches(searchResults);
+              return;
+            }
+            const titleData = parseTitleData(result);
+            if (titleData) {
+              setMetadata(titleData);
+            }
+          })
+          .catch(() => {/* page not ready for JS yet, keep polling */});
+
+        if (attempts >= maxAttempts) stopPolling();
+      }, 250);
     };
 
     const handleDomReady = () => {
@@ -171,11 +188,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
         const url = webview.getURL();
         setUrlInput(url);
       } catch { /* ignore */ }
-      injectExtraction();
-    };
-
-    const handleDidFinishLoad = () => {
-      injectExtraction();
     };
 
     const handleNavigate = (_event: any) => {
@@ -183,16 +195,17 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
         const url = webview.getURL();
         setUrlInput(url);
       } catch { /* ignore */ }
+      // Start polling as soon as navigation begins
+      startPolling();
     };
 
     webview.addEventListener('dom-ready', handleDomReady);
-    webview.addEventListener('did-finish-load', handleDidFinishLoad);
     webview.addEventListener('did-navigate', handleNavigate);
     webview.addEventListener('did-navigate-in-page', handleNavigate);
 
     return () => {
+      stopPolling();
       webview.removeEventListener('dom-ready', handleDomReady);
-      webview.removeEventListener('did-finish-load', handleDidFinishLoad);
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('did-navigate-in-page', handleNavigate);
     };
