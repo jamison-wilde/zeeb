@@ -24,6 +24,10 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showUndo, setShowUndo] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
 
+  // Each renamer gets its own file index; they interleave (0,2,4... and 1,3,5...)
+  const [fileIndex0, setFileIndex0] = useState(0);
+  const [fileIndex1, setFileIndex1] = useState(1);
+
   const fileStoreRef = useRef(createFileStore());
   const undoStoreRef = useRef(createUndoStore(fs));
 
@@ -63,13 +67,24 @@ function App({ fs }: AppProps): React.JSX.Element {
         recursionMode as 'none' | 'subfolders' | 'full',
       );
       setFiles(results);
+      setFileIndex0(0);
+      setFileIndex1(1);
+      setActiveRenamer(0);
       setView('process');
     },
     [fs, config.movieExtensions, setFiles],
   );
 
-  const swapRenamer = useCallback(() => {
-    setActiveRenamer((prev) => (prev === 0 ? 1 : 0) as 0 | 1);
+  const handleComplete0 = useCallback(() => {
+    // Renamer 0 done — advance its index by 2, flip to renamer 1
+    setFileIndex0((prev) => prev + 2);
+    setActiveRenamer(1);
+  }, []);
+
+  const handleComplete1 = useCallback(() => {
+    // Renamer 1 done — advance its index by 2, flip to renamer 0
+    setFileIndex1((prev) => prev + 2);
+    setActiveRenamer(0);
   }, []);
 
   const handleOptionsClose = useCallback(() => {
@@ -113,20 +128,22 @@ function App({ fs }: AppProps): React.JSX.Element {
             <Renamer
               instanceId={0}
               visible={activeRenamer === 0}
+              fileIndex={fileIndex0}
               files={files}
               fs={fs}
               undoStore={undoStoreRef.current}
-              onComplete={swapRenamer}
+              onComplete={handleComplete0}
             />
           </div>
           <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 1 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={1}
               visible={activeRenamer === 1}
+              fileIndex={fileIndex1}
               files={files}
               fs={fs}
               undoStore={undoStoreRef.current}
-              onComplete={swapRenamer}
+              onComplete={handleComplete1}
             />
           </div>
         </div>

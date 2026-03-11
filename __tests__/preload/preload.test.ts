@@ -40,11 +40,9 @@ describe('webview preload', () => {
     vi.resetModules();
   });
 
-  it('exposes sendToHost API', async () => {
+  it('exposes sendToHost API on window', async () => {
     await import('../../src/preload/webview');
-    const { contextBridge: cb } = await import('electron');
-    const exposeMock = cb.exposeInMainWorld as ReturnType<typeof vi.fn>;
-    const keys = exposeMock.mock.calls.map((c: unknown[]) => c[0]);
-    expect(keys).toContain('zeebIpc');
+    expect((window as any).zeebIpc).toBeDefined();
+    expect((window as any).zeebIpc.sendToHost).toBeDefined();
   });
 });

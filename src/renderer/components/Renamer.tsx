@@ -25,6 +25,7 @@ import { createLogger } from '../../services/logger';
 interface RenamerProps {
   instanceId: number;
   visible: boolean;
+  fileIndex: number;
   files?: MovieFile[];
   fs: FsAdapter;
   undoStore?: StoreApi<{
@@ -35,19 +36,17 @@ interface RenamerProps {
   onComplete?: () => void;
 }
 
-export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
+export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const webviewRef = useRef<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [selectedTt, setSelectedTt] = useState('');
 
-  const currentIndex = useStore(storeRef.current, (s) => s.currentIndex);
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
   const movieMatches = useStore(storeRef.current, (s) => s.movieMatches);
   const metadata = useStore(storeRef.current, (s) => s.metadata);
   const previewFilename = useStore(storeRef.current, (s) => s.previewFilename);
-  const setCurrentIndex = useStore(storeRef.current, (s) => s.setCurrentIndex);
   const setSearchParts = useStore(storeRef.current, (s) => s.setSearchParts);
   const updatePartState = useStore(storeRef.current, (s) => s.updatePartState);
   const updatePartText = useStore(storeRef.current, (s) => s.updatePartText);
@@ -60,13 +59,15 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const saveConfig = useConfigStore((s) => s.save);
 
-  const currentFile = useMemo(() => files[currentIndex] ?? null, [files, currentIndex]);
+  const currentFile = useMemo(() => files[fileIndex] ?? null, [files, fileIndex]);
 
   const navigationMode = useRef<'search' | 'title' | 'idle'>('idle');
 
   useEffect(() => {
     window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
   }, []);
+
+  const autoSearchRef = useRef(false);
 
   useEffect(() => {
     if (!currentFile) return;
@@ -75,7 +76,22 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     setMovieMatches([]);
     setMetadata(null);
     setPreviewFilename('');
+    autoSearchRef.current = true;
   }, [currentFile, config.removeTerms, config.keepTerms, setSearchParts, setMovieMatches, setMetadata, setPreviewFilename]);
+
+  // Auto-trigger search when parts are set from a new file
+  useEffect(() => {
+    if (!autoSearchRef.current || searchParts.length === 0) return;
+    autoSearchRef.current = false;
+    const query = searchParts
+      .filter((p) => p.state === 'search')
+      .map((p) => p.text)
+      .join(' ');
+    if (!query.trim() || !webviewRef.current) return;
+    const url = buildSearchUrl(query, config.urlImdbSearch);
+    navigationMode.current = 'search';
+    webviewRef.current.loadURL(url);
+  }, [searchParts, config.urlImdbSearch]);
 
   useEffect(() => {
     if (!metadata || !currentFile) {
@@ -181,11 +197,11 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   }, [webviewPreloadPath, config.extractionPatterns, setMovieMatches, setMetadata]);
 
   const handleFileSelect = useCallback(
-    (index: number) => {
-      reset();
-      setCurrentIndex(index);
+    (_index: number) => {
+      // File selection is managed by parent via fileIndex prop
+      // Manual selection from file list is ignored in dual-renamer mode
     },
-    [reset, setCurrentIndex],
+    [],
   );
 
   const handlePartStateChange = useCallback(
@@ -263,13 +279,9 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   );
 
   const advance = useCallback(() => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < files.length) {
-      reset();
-      setCurrentIndex(nextIndex);
-    }
+    reset();
     onComplete?.();
-  }, [currentIndex, files.length, reset, setCurrentIndex, onComplete]);
+  }, [reset, onComplete]);
 
   const handleRename = useCallback(async () => {
     if (!currentFile || !previewFilename) return;
@@ -308,8 +320,6 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     advance();
   }, [advance]);
 
-  if (!visible) return null;
-
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* Top area: left panel + right panel */}
@@ -320,7 +330,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
           <div className="flex-1 overflow-y-auto min-h-0">
             <FileList
               files={files}
-              selectedIndex={currentIndex}
+              selectedIndex={fileIndex}
               onSelect={handleFileSelect}
             />
           </div>

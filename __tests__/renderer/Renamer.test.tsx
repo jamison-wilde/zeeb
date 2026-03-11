@@ -33,16 +33,16 @@ describe('Renamer', () => {
     });
   });
 
-  it('renders nothing when not visible', () => {
+  it('always renders content (visibility controlled by parent CSS)', () => {
     const { container } = render(
-      <Renamer instanceId={0} visible={false} files={[testFile]} fs={mockFs} />,
+      <Renamer instanceId={0} visible={false} fileIndex={0} files={[testFile]} fs={mockFs} />,
     );
-    expect(container.firstChild).toBeNull();
+    expect(container.firstChild).not.toBeNull();
   });
 
   it('renders file list and search parts when visible', () => {
     render(
-      <Renamer instanceId={0} visible={true} files={[testFile]} fs={mockFs} />,
+      <Renamer instanceId={0} visible={true} fileIndex={0} files={[testFile]} fs={mockFs} />,
     );
     expect(screen.getByTestId('file-list')).toBeDefined();
   });
