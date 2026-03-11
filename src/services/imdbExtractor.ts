@@ -15,32 +15,65 @@ export function generateSearchExtractionScript(): string {
       function extract() {
         try {
           var results = [];
-          var links = document.querySelectorAll('a[href*="/title/tt"]');
           var seen = {};
-          for (var i = 0; i < links.length; i++) {
-            var href = links[i].getAttribute('href') || '';
-            var match = href.match(/\\/title\\/(tt\\d+)/);
-            if (!match || seen[match[1]]) continue;
-            seen[match[1]] = true;
-            var tt = match[1];
-            // Walk up to find the result container for better text extraction
-            var container = links[i].closest('[class*="find-result"], [class*="ipc-metadata-list-summary-item"], li, .result_text');
-            var text = container ? container.textContent || '' : links[i].textContent || '';
-            // Extract title: first link text is usually the title
-            var titleText = links[i].textContent || '';
-            var yearMatch = text.match(/(\\d{4})/);
-            var img = (container || links[i]).querySelector('img');
-            results.push({
-              tt: tt,
-              title: titleText.replace(/\\(\\d{4}\\)/, '').trim(),
-              year: yearMatch ? parseInt(yearMatch[1], 10) : null,
-              aka: null,
-              thumbnailUrl: img ? img.src : null,
-            });
+
+          // Modern IMDB: list items within the search results section
+          var items = document.querySelectorAll('[class*="ipc-metadata-list-summary-item"], .findResult, .find-result-item');
+          if (items.length > 0) {
+            for (var i = 0; i < items.length; i++) {
+              var link = items[i].querySelector('a[href*="/title/tt"]');
+              if (!link) continue;
+              var href = link.getAttribute('href') || '';
+              var m = href.match(/\\/title\\/(tt\\d+)/);
+              if (!m || seen[m[1]]) continue;
+              seen[m[1]] = true;
+              // Title is the link text
+              var title = link.textContent.trim();
+              // Year and other metadata are in sibling/child spans
+              var containerText = items[i].textContent || '';
+              var yearMatch = containerText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
+              var img = items[i].querySelector('img');
+              // Check for aka text
+              var akaEl = items[i].querySelector('[class*="aka"], .result_text i');
+              var aka = akaEl ? akaEl.textContent.trim() : null;
+              results.push({
+                tt: m[1],
+                title: title,
+                year: yearMatch ? parseInt(yearMatch[1], 10) : null,
+                aka: aka,
+                thumbnailUrl: img ? img.src : null,
+              });
+            }
           }
-          if (results.length === 0 && attempts < 5) {
+
+          // Fallback: scan all title links if structured selectors found nothing
+          if (results.length === 0) {
+            var links = document.querySelectorAll('a[href*="/title/tt"]');
+            for (var j = 0; j < links.length; j++) {
+              var h = links[j].getAttribute('href') || '';
+              var mt = h.match(/\\/title\\/(tt\\d+)/);
+              if (!mt || seen[mt[1]]) continue;
+              // Skip tiny nav/utility links
+              var linkText = links[j].textContent.trim();
+              if (!linkText || linkText.length < 2) continue;
+              seen[mt[1]] = true;
+              var parent = links[j].closest('li, [class*="list"], [class*="result"]') || links[j].parentElement;
+              var pText = parent ? parent.textContent : linkText;
+              var ym = pText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
+              var pImg = (parent || links[j]).querySelector('img');
+              results.push({
+                tt: mt[1],
+                title: linkText,
+                year: ym ? parseInt(ym[1], 10) : null,
+                aka: null,
+                thumbnailUrl: pImg ? pImg.src : null,
+              });
+            }
+          }
+
+          if (results.length === 0 && attempts < 3) {
             attempts++;
-            setTimeout(extract, 500);
+            setTimeout(extract, 300);
             return;
           }
           window.zeebIpc.sendToHost(JSON.stringify({

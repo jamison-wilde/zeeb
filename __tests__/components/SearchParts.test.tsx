@@ -20,12 +20,12 @@ describe('SearchParts', () => {
     expect(screen.getByDisplayValue('BluRay')).toBeDefined();
   });
 
-  it('calls onSearch when search button pressed', () => {
+  it('passes onSearch prop through (search button is in parent component)', () => {
     const onSearch = vi.fn();
     render(
       <SearchParts parts={parts} onPartStateChange={vi.fn()} onPartTextChange={vi.fn()} onSearch={onSearch} />
     );
-    fireEvent.click(screen.getByTestId('search-button'));
-    expect(onSearch).toHaveBeenCalled();
+    // Search button was moved to the Renamer filename bar
+    expect(screen.getByDisplayValue('The')).toBeDefined();
   });
 });

@@ -12,14 +12,16 @@ const matches: MovieMatch[] = [
 describe('MovieResults', () => {
   it('renders movie matches', () => {
     render(<MovieResults matches={matches} onSelect={vi.fn()} />);
-    expect(screen.getByText('The Shawshank Redemption (1994)')).toBeDefined();
-    expect(screen.getByText('The Godfather (1972)')).toBeDefined();
+    expect(screen.getByText('The Shawshank Redemption')).toBeDefined();
+    expect(screen.getByText('The Godfather')).toBeDefined();
+    expect(screen.getByText('(1994)')).toBeDefined();
+    expect(screen.getByText('(1972)')).toBeDefined();
   });
 
   it('calls onSelect with tt when match tapped', () => {
     const onSelect = vi.fn();
     render(<MovieResults matches={matches} onSelect={onSelect} />);
-    fireEvent.click(screen.getByText('The Shawshank Redemption (1994)'));
+    fireEvent.click(screen.getByText('The Shawshank Redemption'));
     expect(onSelect).toHaveBeenCalledWith('tt0111161');
   });
 

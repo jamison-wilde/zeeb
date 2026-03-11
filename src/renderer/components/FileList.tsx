@@ -13,14 +13,14 @@ export function FileList({ files, selectedIndex, onSelect }: FileListProps): Rea
       {files.map((file, index) => (
         <button
           key={file.id}
-          className={`w-full text-left px-3 py-2.5 border-b border-gray-200 flex items-center ${
+          className={`w-full text-left px-2 py-1.5 border-b border-gray-200 flex items-center ${
             index === selectedIndex ? 'bg-blue-100' : 'hover:bg-gray-50'
           }`}
           onClick={() => onSelect(index)}
         >
-          <span className="flex-1 text-xs">{file.name}</span>
+          <span className="flex-1 text-xs truncate">{file.name}</span>
           {file.hasNfo && (
-            <span className="text-xs text-blue-500 font-bold ml-2">NFO</span>
+            <span className="text-[10px] text-blue-500 font-bold ml-1 shrink-0">NFO</span>
           )}
         </button>
       ))}

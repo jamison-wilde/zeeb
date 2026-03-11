@@ -39,7 +39,6 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const storeRef = useRef(createRenamerStore());
   const webviewRef = useRef<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
-  const [webviewUrl, setWebviewUrl] = useState('');
   const [urlInput, setUrlInput] = useState('');
 
   const currentIndex = useStore(storeRef.current, (s) => s.currentIndex);
@@ -134,9 +133,11 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     };
 
     const handleLoadEnd = () => {
-      const url = webview.getURL();
-      setWebviewUrl(url);
-      setUrlInput(url);
+      // Update URL bar
+      try {
+        const url = webview.getURL();
+        setUrlInput(url);
+      } catch { /* ignore */ }
 
       if (navigationMode.current === 'search') {
         const script = generateSearchExtractionScript();
@@ -147,12 +148,23 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
       }
     };
 
+    const handleNavigate = (_event: any) => {
+      try {
+        const url = webview.getURL();
+        setUrlInput(url);
+      } catch { /* ignore */ }
+    };
+
     webview.addEventListener('ipc-message', handleMessage);
     webview.addEventListener('did-finish-load', handleLoadEnd);
+    webview.addEventListener('did-navigate', handleNavigate);
+    webview.addEventListener('did-navigate-in-page', handleNavigate);
 
     return () => {
       webview.removeEventListener('ipc-message', handleMessage);
       webview.removeEventListener('did-finish-load', handleLoadEnd);
+      webview.removeEventListener('did-navigate', handleNavigate);
+      webview.removeEventListener('did-navigate-in-page', handleNavigate);
     };
   }, [webviewPreloadPath, config.extractionPatterns, setMovieMatches, setMetadata]);
 
@@ -230,6 +242,13 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     }
   }, [urlInput]);
 
+  const handlePreviewChange = useCallback(
+    (name: string) => {
+      setPreviewFilename(name);
+    },
+    [setPreviewFilename],
+  );
+
   const advance = useCallback(() => {
     const nextIndex = currentIndex + 1;
     if (nextIndex < files.length) {
@@ -283,7 +302,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
       {/* Top area: left panel + right panel */}
       <div className="flex-1 flex flex-row min-h-0">
         {/* Left panel: file list + search results */}
-        <div className="w-[420px] flex flex-col border-r border-gray-300">
+        <div className="w-[420px] flex flex-col border-r border-gray-300 shrink-0">
           <div className="flex-1 overflow-y-auto min-h-0">
             <FileList
               files={files}
@@ -302,26 +321,24 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
           </div>
         </div>
 
-        {/* Right panel: URL bar + webview + poster area */}
+        {/* Right panel: URL bar + webview */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* URL bar */}
-          <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 border-b border-gray-300">
+          <div className="flex items-center gap-1 px-1 py-0.5 bg-gray-100 border-b border-gray-300">
             <button
-              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+              className="px-1.5 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 rounded"
               onClick={handleBack}
               title="Back"
             >
               ←
             </button>
             <input
-              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white"
+              className="flex-1 px-2 py-0.5 text-xs border border-gray-300 rounded bg-white"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               onKeyDown={handleUrlSubmit}
               placeholder="URL"
             />
           </div>
-          {/* Webview */}
           <div className="flex-1 min-h-0">
             {webviewPreloadPath && (
               <webview
@@ -336,11 +353,21 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
         </div>
       </div>
 
-      {/* Bottom area: search parts + rename preview (full width) */}
+      {/* Bottom area: filename info + search parts + rename (full width) */}
       <div className="border-t border-gray-300">
         {currentFile && (
-          <div className="px-2 py-1 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
-            Filename: {currentFile.name} &nbsp; FileSize: {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : '—'}
+          <div className="flex items-center px-2 py-0.5 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
+            <span className="flex-1 truncate">
+              Filename: {currentFile.name}
+              {currentFile.size > 0 && <span className="ml-3">Size: {Math.round(currentFile.size / 1024 / 1024)}MB</span>}
+            </span>
+            <button
+              data-testid="search-button"
+              className="px-3 py-0.5 bg-blue-500 text-white text-xs font-bold rounded hover:bg-blue-600 shrink-0 ml-2"
+              onClick={handleSearch}
+            >
+              Search
+            </button>
           </div>
         )}
         <div data-testid="search-parts">
@@ -354,6 +381,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
         <RenamePreview
           originalName={currentFile?.name ?? ''}
           previewName={previewFilename}
+          onPreviewChange={handlePreviewChange}
           onRename={handleRename}
           onSkip={handleSkip}
         />

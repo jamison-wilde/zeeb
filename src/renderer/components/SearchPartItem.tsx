@@ -29,16 +29,12 @@ interface ActionButton {
   title: string;
 }
 
-// Grid layout (2 cols, 3 rows):
-// Row 1: [? search]   [− remove]
-// Row 2: [+ keep]     [× removeAlways]
-// Row 3: [★ keepAlways] [empty]
 const ACTION_BUTTONS: (ActionButton | null)[] = [
-  { label: '?', state: 'search', title: 'Search (include in query)' },
-  { label: '−', state: 'remove', title: 'Remove (exclude this time)' },
-  { label: '+', state: 'keep', title: 'Keep (append to filename)' },
-  { label: '×', state: 'removeAlways', title: 'Remove Always (save permanently)' },
-  { label: '★', state: 'keepAlways', title: 'Keep Always (save permanently)' },
+  { label: '?', state: 'search', title: 'Search' },
+  { label: '−', state: 'remove', title: 'Remove' },
+  { label: '+', state: 'keep', title: 'Keep' },
+  { label: '×', state: 'removeAlways', title: 'Remove Always' },
+  { label: '★', state: 'keepAlways', title: 'Keep Always' },
   null,
 ];
 
@@ -53,16 +49,15 @@ const ACTIVE_BUTTON_COLORS: Record<SearchPartState, string> = {
 export function SearchPartItem({ part, onStateChange, onTextChange }: SearchPartItemProps): React.JSX.Element {
   return (
     <div
-      className={`inline-flex flex-col mr-1 mb-1 border rounded text-sm ${CONTAINER_COLORS[part.state]}`}
-      style={{ minWidth: '48px' }}
+      className={`inline-flex flex-col mr-0.5 mb-0.5 border rounded ${CONTAINER_COLORS[part.state]}`}
     >
       <input
-        className={`px-1 pt-1 pb-0 w-full text-center text-xs font-medium bg-transparent border-none outline-none ${INPUT_COLORS[part.state]}`}
+        className={`px-1 pt-0.5 pb-0 text-center text-xs font-semibold bg-transparent border-none outline-none whitespace-nowrap ${INPUT_COLORS[part.state]}`}
         value={part.text}
         onChange={(e) => onTextChange(part.id, e.target.value)}
-        style={{ width: `${Math.max(part.text.length + 1, 3)}ch` }}
+        style={{ width: `${Math.max(part.text.length + 1, 2)}ch`, minWidth: '24px' }}
       />
-      <div className="grid grid-cols-2 gap-0.5 px-1 pb-1 pt-0.5">
+      <div className="grid grid-cols-2 gap-px px-0.5 pb-0.5">
         {ACTION_BUTTONS.map((btn, i) =>
           btn === null ? (
             <span key={`empty-${i}`} />
@@ -70,10 +65,10 @@ export function SearchPartItem({ part, onStateChange, onTextChange }: SearchPart
             <button
               key={btn.state}
               title={btn.title}
-              className={`w-6 h-6 flex items-center justify-center rounded text-sm leading-none transition-colors
+              className={`w-5 h-4 flex items-center justify-center rounded text-xs font-bold leading-none
                 ${part.state === btn.state
                   ? ACTIVE_BUTTON_COLORS[btn.state]
-                  : 'hover:bg-black/10 text-current opacity-60 hover:opacity-100'
+                  : 'hover:bg-black/10 text-current opacity-50 hover:opacity-100'
                 }`}
               onClick={() => onStateChange(part.id, btn.state)}
             >
