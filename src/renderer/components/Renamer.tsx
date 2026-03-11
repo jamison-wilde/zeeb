@@ -373,6 +373,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
                 data-testid="imdb-webview"
                 src="about:blank"
                 preload={webviewPreloadPath}
+                webpreferences="contextIsolation=no"
                 style={{ width: '100%', height: '100%' }}
               />
             )}
