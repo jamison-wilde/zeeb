@@ -40,6 +40,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const webviewRef = useRef<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
+  const [selectedTt, setSelectedTt] = useState('');
 
   const currentIndex = useStore(storeRef.current, (s) => s.currentIndex);
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
@@ -156,13 +157,13 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     };
 
     webview.addEventListener('ipc-message', handleMessage);
-    webview.addEventListener('did-finish-load', handleLoadEnd);
+    webview.addEventListener('dom-ready', handleLoadEnd);
     webview.addEventListener('did-navigate', handleNavigate);
     webview.addEventListener('did-navigate-in-page', handleNavigate);
 
     return () => {
       webview.removeEventListener('ipc-message', handleMessage);
-      webview.removeEventListener('did-finish-load', handleLoadEnd);
+      webview.removeEventListener('dom-ready', handleLoadEnd);
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('did-navigate-in-page', handleNavigate);
     };
@@ -220,6 +221,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
 
   const handleMovieSelect = useCallback(
     (tt: string) => {
+      setSelectedTt(tt);
       const url = buildTitleUrl(tt, config.urlImdbTT);
       navigationMode.current = 'title';
       webviewRef.current?.loadURL(url);
@@ -303,6 +305,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
       <div className="flex-1 flex flex-row min-h-0">
         {/* Left panel: file list + search results */}
         <div className="w-[420px] flex flex-col border-r border-gray-300 shrink-0">
+          <div className="px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600 border-b border-gray-300 shrink-0">Movie Files</div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <FileList
               files={files}
@@ -310,14 +313,15 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
               onSelect={handleFileSelect}
             />
           </div>
-          <div className="border-t border-gray-300">
-            <div className="px-2 py-1 bg-gray-100 text-xs font-bold text-gray-600">Search Results</div>
-            <div data-testid="movie-results" className="overflow-y-auto max-h-48">
-              <MovieResults
-                matches={movieMatches}
-                onSelect={handleMovieSelect}
-              />
-            </div>
+          <div className="border-t border-gray-300 shrink-0">
+            <div className="px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600">Search Results</div>
+          </div>
+          <div data-testid="movie-results" className="overflow-y-auto min-h-[80px] max-h-48">
+            <MovieResults
+              matches={movieMatches}
+              onSelect={handleMovieSelect}
+              selectedTt={selectedTt}
+            />
           </div>
         </div>
 

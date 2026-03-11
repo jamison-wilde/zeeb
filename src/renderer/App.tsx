@@ -86,8 +86,8 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex flex-row p-2 bg-gray-100 gap-3">
-        {view === 'folderBrowser' && (
+      {view === 'folderBrowser' && (
+        <div className="flex flex-row p-2 bg-gray-100 gap-3">
           <button
             data-testid="start-processing"
             className="px-3 py-2 hover:bg-gray-200 rounded"
@@ -95,8 +95,8 @@ function App({ fs }: AppProps): React.JSX.Element {
           >
             Start Processing
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {view === 'folderBrowser' && (
         <div data-testid="folder-browser" className="flex-1">
@@ -108,8 +108,8 @@ function App({ fs }: AppProps): React.JSX.Element {
       )}
 
       {view === 'process' && (
-        <div data-testid="renamer-view" className="flex-1 flex flex-col">
-          <div data-testid="renamer-0">
+        <div data-testid="renamer-view" className="flex-1 flex flex-col min-h-0">
+          <div data-testid="renamer-0" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 0 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={0}
               visible={activeRenamer === 0}
@@ -119,7 +119,7 @@ function App({ fs }: AppProps): React.JSX.Element {
               onComplete={swapRenamer}
             />
           </div>
-          <div data-testid="renamer-1">
+          <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 1 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={1}
               visible={activeRenamer === 1}

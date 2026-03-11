@@ -12,41 +12,46 @@ export function generateSearchExtractionScript(): string {
   return `
     (function() {
       var attempts = 0;
+      var maxAttempts = 20;
+      var interval = 150;
+
       function extract() {
         try {
           var results = [];
           var seen = {};
 
-          // Find all links to title pages
           var allLinks = document.querySelectorAll('a[href*="/title/tt"]');
           for (var i = 0; i < allLinks.length; i++) {
             var href = allLinks[i].getAttribute('href') || '';
             var m = href.match(/\\/title\\/(tt\\d+)/);
             if (!m || seen[m[1]]) continue;
 
-            // Skip links that are just images, icons, or tiny UI elements
             var linkText = allLinks[i].textContent.trim();
             if (!linkText || linkText.length < 2) continue;
-            // Skip links whose text is just a tt number
             if (/^tt\\d+$/.test(linkText)) continue;
 
             seen[m[1]] = true;
 
-            // Find the closest result container (walk up the DOM)
+            // Walk up to find the result row container
             var container = allLinks[i].closest('li, [class*="list-summary"], [class*="find-result"]');
             if (!container) container = allLinks[i].parentElement;
 
-            // Extract year: look for a standalone 4-digit year in the container
-            // that is NOT part of the title link text (to avoid "2001" in "2001: A Space Odyssey")
+            // Extract year: remove the title text from container text,
+            // then look for a 4-digit year in what remains.
+            // This avoids confusing "2001" (title) with "1968" (year).
             var year = null;
             if (container) {
-              // Get text outside the title link
-              var clone = container.cloneNode(true);
-              var titleLink = clone.querySelector('a[href*="/title/' + m[1] + '"]');
-              if (titleLink) titleLink.textContent = '';
-              var nonTitleText = clone.textContent || '';
-              var yearMatch = nonTitleText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
-              if (yearMatch) year = parseInt(yearMatch[1], 10);
+              var fullText = container.textContent || '';
+              var metaText = fullText.replace(linkText, '');
+              // Look for year in parentheses first: (1968)
+              var parenYear = metaText.match(/\\(((?:19|20)\\d{2})\\)/);
+              if (parenYear) {
+                year = parseInt(parenYear[1], 10);
+              } else {
+                // Fallback: standalone year
+                var plainYear = metaText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
+                if (plainYear) year = parseInt(plainYear[1], 10);
+              }
             }
 
             var img = (container || allLinks[i]).querySelector('img');
@@ -64,9 +69,9 @@ export function generateSearchExtractionScript(): string {
             });
           }
 
-          if (results.length === 0 && attempts < 3) {
+          if (results.length === 0 && attempts < maxAttempts) {
             attempts++;
-            setTimeout(extract, 300);
+            setTimeout(extract, interval);
             return;
           }
           window.zeebIpc.sendToHost(JSON.stringify({
@@ -74,11 +79,16 @@ export function generateSearchExtractionScript(): string {
             results: results,
           }));
         } catch(e) {
-          window.zeebIpc.sendToHost(JSON.stringify({
-            type: 'searchResults',
-            results: [],
-            error: e.message,
-          }));
+          if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(extract, interval);
+          } else {
+            window.zeebIpc.sendToHost(JSON.stringify({
+              type: 'searchResults',
+              results: [],
+              error: e.message,
+            }));
+          }
         }
       }
       extract();
