@@ -69,11 +69,13 @@ export function generateSearchExtractionScript(): string {
             });
           }
 
+          console.log('[zeeb-extract] attempt=' + attempts + ' found=' + results.length + ' zeebIpc=' + (typeof window.zeebIpc));
           if (results.length === 0 && attempts < maxAttempts) {
             attempts++;
             setTimeout(extract, interval);
             return;
           }
+          console.log('[zeeb-extract] sending ' + results.length + ' results');
           window.zeebIpc.sendToHost(JSON.stringify({
             type: 'searchResults',
             results: results,

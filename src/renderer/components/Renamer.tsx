@@ -139,7 +139,9 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     const webview = webviewEl;
 
     const handleMessage = (event: any) => {
-      const message = event.args?.[0];
+      // Electron webview ipc-message: try event.args (older) and event.channel + args patterns
+      const message = event.args?.[0] ?? event.message;
+      console.log('[zeeb] ipc-message event:', { channel: event.channel, args: event.args, keys: Object.keys(event) });
       if (!message) return;
 
       const results = parseSearchResults(message);
@@ -154,12 +156,13 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     };
 
     const injectExtraction = () => {
+      console.log('[zeeb] injectExtraction mode=' + navigationMode.current);
       if (navigationMode.current === 'search') {
         const script = generateSearchExtractionScript();
-        webview.executeJavaScript(script).catch(() => {/* ignore */});
+        webview.executeJavaScript(script).catch((err: any) => { console.error('[zeeb] executeJavaScript error:', err); });
       } else if (navigationMode.current === 'title') {
         const script = generateTitleExtractionScript(config.extractionPatterns);
-        webview.executeJavaScript(script).catch(() => {/* ignore */});
+        webview.executeJavaScript(script).catch((err: any) => { console.error('[zeeb] executeJavaScript error:', err); });
       }
     };
 
