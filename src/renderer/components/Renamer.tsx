@@ -138,12 +138,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     if (!webviewEl) return;
     const webview = webviewEl;
 
-    const handleMessage = (event: any) => {
-      // Electron webview ipc-message: try event.args (older) and event.channel + args patterns
-      const message = event.args?.[0] ?? event.message;
-      console.log('[zeeb] ipc-message event:', { channel: event.channel, args: event.args, keys: Object.keys(event) });
+    const handleResult = (message: string) => {
       if (!message) return;
-
       const results = parseSearchResults(message);
       if (results.length > 0) {
         setMovieMatches(results);
@@ -156,13 +152,16 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     };
 
     const injectExtraction = () => {
-      console.log('[zeeb] injectExtraction mode=' + navigationMode.current);
       if (navigationMode.current === 'search') {
         const script = generateSearchExtractionScript();
-        webview.executeJavaScript(script).catch((err: any) => { console.error('[zeeb] executeJavaScript error:', err); });
+        webview.executeJavaScript(script)
+          .then((result: string) => handleResult(result))
+          .catch(() => {/* ignore */});
       } else if (navigationMode.current === 'title') {
         const script = generateTitleExtractionScript(config.extractionPatterns);
-        webview.executeJavaScript(script).catch((err: any) => { console.error('[zeeb] executeJavaScript error:', err); });
+        webview.executeJavaScript(script)
+          .then((result: string) => handleResult(result))
+          .catch(() => {/* ignore */});
       }
     };
 
@@ -186,14 +185,12 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       } catch { /* ignore */ }
     };
 
-    webview.addEventListener('ipc-message', handleMessage);
     webview.addEventListener('dom-ready', handleDomReady);
     webview.addEventListener('did-finish-load', handleDidFinishLoad);
     webview.addEventListener('did-navigate', handleNavigate);
     webview.addEventListener('did-navigate-in-page', handleNavigate);
 
     return () => {
-      webview.removeEventListener('ipc-message', handleMessage);
       webview.removeEventListener('dom-ready', handleDomReady);
       webview.removeEventListener('did-finish-load', handleDidFinishLoad);
       webview.removeEventListener('did-navigate', handleNavigate);
@@ -376,7 +373,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
                 data-testid="imdb-webview"
                 src="about:blank"
                 preload={webviewPreloadPath}
-                webpreferences="contextIsolation=no"
                 style={{ width: '100%', height: '100%' }}
               />
             )}
