@@ -29,12 +29,17 @@ interface ActionButton {
   title: string;
 }
 
-const ACTION_BUTTONS: ActionButton[] = [
+// Grid layout (2 cols, 3 rows):
+// Row 1: [? search]   [− remove]
+// Row 2: [+ keep]     [× removeAlways]
+// Row 3: [★ keepAlways] [empty]
+const ACTION_BUTTONS: (ActionButton | null)[] = [
   { label: '?', state: 'search', title: 'Search (include in query)' },
-  { label: '+', state: 'keep', title: 'Keep (append to filename)' },
-  { label: '★', state: 'keepAlways', title: 'Keep Always (save permanently)' },
   { label: '−', state: 'remove', title: 'Remove (exclude this time)' },
+  { label: '+', state: 'keep', title: 'Keep (append to filename)' },
   { label: '×', state: 'removeAlways', title: 'Remove Always (save permanently)' },
+  { label: '★', state: 'keepAlways', title: 'Keep Always (save permanently)' },
+  null,
 ];
 
 const ACTIVE_BUTTON_COLORS: Record<SearchPartState, string> = {
@@ -49,29 +54,33 @@ export function SearchPartItem({ part, onStateChange, onTextChange }: SearchPart
   return (
     <div
       className={`inline-flex flex-col mr-1 mb-1 border rounded text-sm ${CONTAINER_COLORS[part.state]}`}
-      style={{ minWidth: '48px' }}
+      style={{ minWidth: '56px' }}
     >
       <input
         className={`px-2 pt-1 pb-0 w-full text-center text-sm font-medium bg-transparent border-none outline-none ${INPUT_COLORS[part.state]}`}
         value={part.text}
         onChange={(e) => onTextChange(part.id, e.target.value)}
-        style={{ minWidth: '32px', width: `${Math.max(part.text.length, 3)}ch` }}
+        style={{ minWidth: '48px', width: `${Math.max(part.text.length, 3)}ch` }}
       />
-      <div className="flex justify-center gap-0.5 px-1 pb-1 pt-0.5">
-        {ACTION_BUTTONS.map(({ label, state, title }) => (
-          <button
-            key={state}
-            title={title}
-            className={`w-5 h-5 flex items-center justify-center rounded text-xs leading-none transition-colors
-              ${part.state === state
-                ? ACTIVE_BUTTON_COLORS[state]
-                : 'hover:bg-black/10 text-current opacity-60 hover:opacity-100'
-              }`}
-            onClick={() => onStateChange(part.id, state)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="grid grid-cols-2 gap-0.5 px-1 pb-1 pt-0.5">
+        {ACTION_BUTTONS.map((btn, i) =>
+          btn === null ? (
+            <span key={`empty-${i}`} />
+          ) : (
+            <button
+              key={btn.state}
+              title={btn.title}
+              className={`w-6 h-6 flex items-center justify-center rounded text-sm leading-none transition-colors
+                ${part.state === btn.state
+                  ? ACTIVE_BUTTON_COLORS[btn.state]
+                  : 'hover:bg-black/10 text-current opacity-60 hover:opacity-100'
+                }`}
+              onClick={() => onStateChange(part.id, btn.state)}
+            >
+              {btn.label}
+            </button>
+          )
+        )}
       </div>
     </div>
   );
