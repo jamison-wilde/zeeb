@@ -37,10 +37,22 @@ describe('parseFilename', () => {
     expect(texts).toContain('2024');
   });
 
-  it('detects year-like 4-digit numbers and marks as search', () => {
+  it('detects year-like 4-digit numbers and marks as remove', () => {
     const parts = parseFilename('Movie.1999.mkv', removeTerms, keepTerms);
     const year = parts.find(p => p.text === '1999');
-    expect(year?.state).toBe('search');
+    expect(year?.state).toBe('remove');
+  });
+
+  it('marks year in realistic filename as remove', () => {
+    const parts = parseFilename('Movie.Name.2023.1080p.BluRay.mkv', removeTerms, keepTerms);
+    const year = parts.find(p => p.text === '2023');
+    expect(year?.state).toBe('remove');
+  });
+
+  it('does not mark non-year 4-digit numbers as remove', () => {
+    const parts = parseFilename('Movie.1800.mkv', removeTerms, keepTerms);
+    const token = parts.find(p => p.text === '1800');
+    expect(token?.state).toBe('search');
   });
 
   it('returns empty array for empty input', () => {

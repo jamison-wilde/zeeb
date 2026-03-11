@@ -97,6 +97,19 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     setPreviewFilename(formatted + ext);
   }, [metadata, currentFile, config, setPreviewFilename]);
 
+  // Auto-select a search result whose year matches the year detected in the filename
+  useEffect(() => {
+    if (movieMatches.length === 0) return;
+    const yearPart = searchParts.find(
+      (p) => p.state === 'remove' && /^\d{4}$/.test(p.text) && parseInt(p.text, 10) > 1900,
+    );
+    if (!yearPart) return;
+    const match = movieMatches.slice(0, 8).find((m) => m.year === parseInt(yearPart.text, 10));
+    if (match) {
+      handleMovieSelect(match.tt);
+    }
+  }, [movieMatches]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const webview = webviewRef.current;
     if (!webview) return;

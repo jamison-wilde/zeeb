@@ -64,6 +64,14 @@ export function parseFilename(
       state = 'keep';
     }
 
+    // Detect 4-digit year: exclude from search, used for result matching
+    if (/^\d{4}$/.test(token)) {
+      const num = parseInt(token, 10);
+      if (num > 1900 && num <= new Date().getFullYear() + 1) {
+        state = 'remove';
+      }
+    }
+
     parts.push({
       id: String(idCounter++),
       text: token,
