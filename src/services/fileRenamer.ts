@@ -1,8 +1,8 @@
-import RNFS from 'react-native-fs';
+import type { FsAdapter } from '../adapters/fs';
 import type { UndoEntry } from '../types';
 
-export async function renameFile(src: string, dest: string): Promise<UndoEntry> {
-  await RNFS.moveFile(src, dest);
+export async function renameFile(fs: FsAdapter, src: string, dest: string): Promise<UndoEntry> {
+  await fs.rename(src, dest);
   return {
     type: 'rename',
     sourcePath: src,
@@ -11,20 +11,20 @@ export async function renameFile(src: string, dest: string): Promise<UndoEntry> 
 }
 
 export async function findSubtitles(
+  fs: FsAdapter,
   folder: string,
   baseName: string,
   extensions: string[],
 ): Promise<string[]> {
-  const items = await RNFS.readDir(folder);
+  const items = await fs.readdir(folder);
   const extSet = new Set(extensions.map(e => e.toLowerCase()));
 
   return items
     .filter(item => {
-      if (typeof item.isFile === 'function' && !item.isFile()) return false;
+      if (!item.isFile) return false;
       const name = item.name;
       if (!name.startsWith(baseName)) return false;
       const suffix = name.substring(baseName.length);
-      // suffix should be like ".srt" or ".en.srt"
       if (!suffix.startsWith('.')) return false;
       const lastDot = suffix.lastIndexOf('.');
       const ext = suffix.substring(lastDot + 1).toLowerCase();
@@ -34,6 +34,7 @@ export async function findSubtitles(
 }
 
 export async function renameSubtitles(
+  fs: FsAdapter,
   paths: string[],
   oldBase: string,
   newBase: string,
@@ -48,7 +49,7 @@ export async function renameSubtitles(
     const newFileName = fileName.replace(oldBase, newBase);
     const newPath = dir ? `${dir}/${newFileName}` : newFileName;
 
-    await RNFS.moveFile(filePath, newPath);
+    await fs.rename(filePath, newPath);
     entries.push({
       type: 'rename',
       sourcePath: filePath,
