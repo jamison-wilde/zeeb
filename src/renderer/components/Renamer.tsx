@@ -172,7 +172,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
 
   const handleSearch = useCallback(() => {
     const query = searchParts
-      .filter((p) => p.state === 'search' || p.state === 'keep' || p.state === 'keepAlways')
+      .filter((p) => p.state === 'search')
       .map((p) => p.text)
       .join(' ');
     if (!query.trim()) return;
@@ -268,13 +268,15 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
         />
       </div>
       <div className="flex-1 flex flex-col">
-        <webview
-          ref={(el: any) => { webviewRef.current = el; }}
-          data-testid="imdb-webview"
-          src="about:blank"
-          preload={webviewPreloadPath}
-          className="flex-1"
-        />
+        {webviewPreloadPath && (
+          <webview
+            ref={(el: any) => { webviewRef.current = el; }}
+            data-testid="imdb-webview"
+            src="about:blank"
+            preload={webviewPreloadPath}
+            className="flex-1"
+          />
+        )}
       </div>
     </div>
   );

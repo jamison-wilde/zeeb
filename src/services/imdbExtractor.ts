@@ -11,38 +11,51 @@ export function buildTitleUrl(tt: string, baseUrl: string): string {
 export function generateSearchExtractionScript(): string {
   return `
     (function() {
-      try {
-        var results = [];
-        var links = document.querySelectorAll('a[href*="/title/tt"]');
-        var seen = {};
-        for (var i = 0; i < links.length; i++) {
-          var href = links[i].getAttribute('href') || '';
-          var match = href.match(/\\/title\\/(tt\\d+)/);
-          if (!match || seen[match[1]]) continue;
-          seen[match[1]] = true;
-          var tt = match[1];
-          var text = links[i].textContent || '';
-          var yearMatch = text.match(/(\\d{4})/);
-          var img = links[i].querySelector('img');
-          results.push({
-            tt: tt,
-            title: text.replace(/\\(\\d{4}\\)/, '').trim(),
-            year: yearMatch ? parseInt(yearMatch[1], 10) : null,
-            aka: null,
-            thumbnailUrl: img ? img.src : null,
-          });
+      var attempts = 0;
+      function extract() {
+        try {
+          var results = [];
+          var links = document.querySelectorAll('a[href*="/title/tt"]');
+          var seen = {};
+          for (var i = 0; i < links.length; i++) {
+            var href = links[i].getAttribute('href') || '';
+            var match = href.match(/\\/title\\/(tt\\d+)/);
+            if (!match || seen[match[1]]) continue;
+            seen[match[1]] = true;
+            var tt = match[1];
+            // Walk up to find the result container for better text extraction
+            var container = links[i].closest('[class*="find-result"], [class*="ipc-metadata-list-summary-item"], li, .result_text');
+            var text = container ? container.textContent || '' : links[i].textContent || '';
+            // Extract title: first link text is usually the title
+            var titleText = links[i].textContent || '';
+            var yearMatch = text.match(/(\\d{4})/);
+            var img = (container || links[i]).querySelector('img');
+            results.push({
+              tt: tt,
+              title: titleText.replace(/\\(\\d{4}\\)/, '').trim(),
+              year: yearMatch ? parseInt(yearMatch[1], 10) : null,
+              aka: null,
+              thumbnailUrl: img ? img.src : null,
+            });
+          }
+          if (results.length === 0 && attempts < 5) {
+            attempts++;
+            setTimeout(extract, 500);
+            return;
+          }
+          window.zeebIpc.sendToHost(JSON.stringify({
+            type: 'searchResults',
+            results: results,
+          }));
+        } catch(e) {
+          window.zeebIpc.sendToHost(JSON.stringify({
+            type: 'searchResults',
+            results: [],
+            error: e.message,
+          }));
         }
-        window.zeebIpc.sendToHost(JSON.stringify({
-          type: 'searchResults',
-          results: results,
-        }));
-      } catch(e) {
-        window.zeebIpc.sendToHost(JSON.stringify({
-          type: 'searchResults',
-          results: [],
-          error: e.message,
-        }));
       }
+      extract();
     })();
   `;
 }
