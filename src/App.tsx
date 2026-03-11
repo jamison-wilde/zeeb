@@ -1,12 +1,20 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
   StyleSheet,
 } from 'react-native';
+import { useStore } from 'zustand';
 import { Renamer } from './components/Renamer';
+import { FolderBrowser } from './components/FolderBrowser';
+import { OptionsModal } from './components/OptionsModal';
+import { UndoModal } from './components/UndoModal';
+import { ReleaseNotes } from './components/ReleaseNotes';
+import { useConfigStore } from './stores/configStore';
+import { createFileStore } from './stores/fileStore';
+import { createUndoStore } from './stores/undoStore';
+import { scanDirectory } from './services/fileScanner';
 
 type ViewName = 'folderBrowser' | 'process';
 
@@ -17,9 +25,53 @@ function App(): React.JSX.Element {
   const [showUndo, setShowUndo] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
 
+  const fileStoreRef = useRef(createFileStore());
+  const undoStoreRef = useRef(createUndoStore());
+
+  const files = useStore(fileStoreRef.current, (s) => s.files);
+  const setFiles = useStore(fileStoreRef.current, (s) => s.setFiles);
+
+  const transactions = useStore(undoStoreRef.current, (s) => s.transactions);
+  const undoTransaction = useStore(undoStoreRef.current, (s) => s.undoTransaction);
+
+  const config = useConfigStore((s) => s.config);
+  const load = useConfigStore((s) => s.load);
+  const save = useConfigStore((s) => s.save);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
+
+  const handleFolderSelected = useCallback(
+    async (path: string, recursionMode: string) => {
+      const results = await scanDirectory(
+        path,
+        config.movieExtensions,
+        recursionMode as 'none' | 'subfolders' | 'full',
+      );
+      setFiles(results);
+      setView('process');
+    },
+    [config.movieExtensions, setFiles],
+  );
+
   const swapRenamer = useCallback(() => {
     setActiveRenamer((prev) => (prev === 0 ? 1 : 0) as 0 | 1);
   }, []);
+
+  const handleOptionsClose = useCallback(() => {
+    setShowOptions(false);
+    void save();
+  }, [save]);
+
+  const handleUndo = useCallback(
+    (id: string) => {
+      void undoTransaction(id);
+    },
+    [undoTransaction],
+  );
 
   return (
     <View style={styles.container}>
@@ -58,7 +110,10 @@ function App(): React.JSX.Element {
 
       {view === 'folderBrowser' && (
         <View testID="folder-browser" style={styles.content}>
-          <Text>Folder Browser</Text>
+          <FolderBrowser
+            onFolderSelected={handleFolderSelected}
+            recentFolders={recentFolders}
+          />
         </View>
       )}
 
@@ -68,6 +123,8 @@ function App(): React.JSX.Element {
             <Renamer
               instanceId={0}
               visible={activeRenamer === 0}
+              files={files}
+              undoStore={undoStoreRef.current}
               onComplete={swapRenamer}
             />
           </View>
@@ -75,38 +132,30 @@ function App(): React.JSX.Element {
             <Renamer
               instanceId={1}
               visible={activeRenamer === 1}
+              files={files}
+              undoStore={undoStoreRef.current}
               onComplete={swapRenamer}
             />
           </View>
         </View>
       )}
 
-      <Modal visible={showOptions} transparent>
-        <View testID="options-modal" style={styles.modal}>
-          <Text>Options</Text>
-          <TouchableOpacity onPress={() => setShowOptions(false)}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <OptionsModal
+        visible={showOptions}
+        onClose={handleOptionsClose}
+      />
 
-      <Modal visible={showUndo} transparent>
-        <View testID="undo-modal" style={styles.modal}>
-          <Text>Undo</Text>
-          <TouchableOpacity onPress={() => setShowUndo(false)}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <UndoModal
+        visible={showUndo}
+        onClose={() => setShowUndo(false)}
+        transactions={transactions}
+        onUndo={handleUndo}
+      />
 
-      <Modal visible={showReleaseNotes} transparent>
-        <View testID="release-notes-modal" style={styles.modal}>
-          <Text>Release Notes</Text>
-          <TouchableOpacity onPress={() => setShowReleaseNotes(false)}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <ReleaseNotes
+        visible={showReleaseNotes}
+        onClose={() => setShowReleaseNotes(false)}
+      />
     </View>
   );
 }
@@ -126,12 +175,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  modal: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
 });
 
