@@ -9,9 +9,10 @@ import { RenamePreview } from '../RenamePreview';
 interface RenamerProps {
   instanceId: number;
   visible: boolean;
+  onComplete?: () => void;
 }
 
-export function Renamer({ instanceId, visible }: RenamerProps): React.JSX.Element {
+export function Renamer({ instanceId, visible, onComplete }: RenamerProps): React.JSX.Element {
   if (!visible) {
     return <View />;
   }

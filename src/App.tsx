@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,20 @@ import {
   Modal,
   StyleSheet,
 } from 'react-native';
+import { Renamer } from './components/Renamer';
 
 type ViewName = 'folderBrowser' | 'process';
 
 function App(): React.JSX.Element {
   const [view, setView] = useState<ViewName>('folderBrowser');
+  const [activeRenamer, setActiveRenamer] = useState<0 | 1>(0);
   const [showOptions, setShowOptions] = useState(false);
   const [showUndo, setShowUndo] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+
+  const swapRenamer = useCallback(() => {
+    setActiveRenamer((prev) => (prev === 0 ? 1 : 0) as 0 | 1);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -58,7 +64,20 @@ function App(): React.JSX.Element {
 
       {view === 'process' && (
         <View testID="renamer-view" style={styles.content}>
-          <Text>Renamer View</Text>
+          <View testID="renamer-0">
+            <Renamer
+              instanceId={0}
+              visible={activeRenamer === 0}
+              onComplete={swapRenamer}
+            />
+          </View>
+          <View testID="renamer-1">
+            <Renamer
+              instanceId={1}
+              visible={activeRenamer === 1}
+              onComplete={swapRenamer}
+            />
+          </View>
         </View>
       )}
 
