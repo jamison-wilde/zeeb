@@ -8,89 +8,77 @@ export function buildTitleUrl(tt: string, baseUrl: string): string {
   return `${baseUrl}${tt}/`;
 }
 
+/** One-shot DOM scrape — returns JSON string or null if no results yet. */
 export function generateSearchExtractionScript(): string {
   return `
-    new Promise(function(resolve) {
-      var attempts = 0;
-      var maxAttempts = 20;
-      var interval = 150;
+    (function() {
+      try {
+        var results = [];
+        var seen = {};
 
-      function extract() {
-        try {
-          var results = [];
-          var seen = {};
+        var allLinks = document.querySelectorAll('a[href*="/title/tt"]');
+        for (var i = 0; i < allLinks.length; i++) {
+          var href = allLinks[i].getAttribute('href') || '';
+          var m = href.match(/\\/title\\/(tt\\d+)/);
+          if (!m || seen[m[1]]) continue;
 
-          var allLinks = document.querySelectorAll('a[href*="/title/tt"]');
-          for (var i = 0; i < allLinks.length; i++) {
-            var href = allLinks[i].getAttribute('href') || '';
-            var m = href.match(/\\/title\\/(tt\\d+)/);
-            if (!m || seen[m[1]]) continue;
+          var linkText = allLinks[i].textContent.trim();
+          if (!linkText || linkText.length < 2) continue;
+          if (/^tt\\d+$/.test(linkText)) continue;
 
-            var linkText = allLinks[i].textContent.trim();
-            if (!linkText || linkText.length < 2) continue;
-            if (/^tt\\d+$/.test(linkText)) continue;
+          seen[m[1]] = true;
 
-            seen[m[1]] = true;
+          var container = allLinks[i].closest('li, [class*="list-summary"], [class*="find-result"]');
+          if (!container) container = allLinks[i].parentElement;
 
-            var container = allLinks[i].closest('li, [class*="list-summary"], [class*="find-result"]');
-            if (!container) container = allLinks[i].parentElement;
-
-            var year = null;
-            if (container) {
-              var fullText = container.textContent || '';
-              var metaText = fullText.replace(linkText, '');
-              var parenYear = metaText.match(/\\(((?:19|20)\\d{2})\\)/);
-              if (parenYear) {
-                year = parseInt(parenYear[1], 10);
-              } else {
-                var plainYear = metaText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
-                if (plainYear) year = parseInt(plainYear[1], 10);
-              }
+          var year = null;
+          if (container) {
+            var fullText = container.textContent || '';
+            var metaText = fullText.replace(linkText, '');
+            var parenYear = metaText.match(/\\(((?:19|20)\\d{2})\\)/);
+            if (parenYear) {
+              year = parseInt(parenYear[1], 10);
+            } else {
+              var plainYear = metaText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
+              if (plainYear) year = parseInt(plainYear[1], 10);
             }
-
-            var img = (container || allLinks[i]).querySelector('img');
-            var thumbnailUrl = null;
-            if (img && img.src && !img.src.includes('nopicture')) {
-              thumbnailUrl = img.src;
-            }
-
-            results.push({
-              tt: m[1],
-              title: linkText,
-              year: year,
-              aka: null,
-              thumbnailUrl: thumbnailUrl,
-            });
           }
 
-          if (results.length === 0 && attempts < maxAttempts) {
-            attempts++;
-            setTimeout(extract, interval);
-            return;
+          var img = (container || allLinks[i]).querySelector('img');
+          var thumbnailUrl = null;
+          if (img && img.src && !img.src.includes('nopicture')) {
+            thumbnailUrl = img.src;
           }
-          resolve(JSON.stringify({ type: 'searchResults', results: results }));
-        } catch(e) {
-          if (attempts < maxAttempts) {
-            attempts++;
-            setTimeout(extract, interval);
-          } else {
-            resolve(JSON.stringify({ type: 'searchResults', results: [], error: e.message }));
-          }
+
+          results.push({
+            tt: m[1],
+            title: linkText,
+            year: year,
+            aka: null,
+            thumbnailUrl: thumbnailUrl,
+          });
         }
+
+        if (results.length === 0) return null;
+        return JSON.stringify({ type: 'searchResults', results: results });
+      } catch(e) {
+        return null;
       }
-      extract();
-    })
+    })()
   `;
 }
 
+/** One-shot JSON-LD + DOM scrape — returns JSON string or null if data not ready. */
 export function generateTitleExtractionScript(patterns: ExtractionPattern[]): string {
   const patternJson = JSON.stringify(patterns);
   return `
     (function() {
       try {
-        var data = {};
         var ldScript = document.querySelector('script[type="application/ld+json"]');
-        var ld = ldScript ? JSON.parse(ldScript.textContent || '{}') : {};
+        if (!ldScript) return null;
+
+        var data = {};
+        var ld = JSON.parse(ldScript.textContent || '{}');
         var patterns = ${patternJson};
 
         for (var i = 0; i < patterns.length; i++) {
@@ -162,7 +150,7 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
           }
         });
       } catch(e) {
-        return JSON.stringify({ type: 'titleData', data: null, error: e.message });
+        return null;
       }
     })()
   `;

@@ -20,10 +20,11 @@ describe('imdbExtractor', () => {
     expect(url).toBe('https://www.imdb.com/title/tt0111161/');
   });
 
-  it('generates JS injection script for search page', () => {
+  it('generates one-shot search extraction script', () => {
     const script = generateSearchExtractionScript();
-    expect(script).toContain('resolve(JSON.stringify');
+    expect(script).toContain('querySelectorAll');
     expect(script).toContain('searchResults');
+    expect(script).not.toContain('setTimeout');
   });
 
   it('generates JS injection script for title page', () => {
@@ -35,16 +36,15 @@ describe('imdbExtractor', () => {
     expect(script).toContain('querySelector');
   });
 
-  it('search extraction script returns results via Promise', () => {
+  it('search extraction script returns null when no results', () => {
     const script = generateSearchExtractionScript();
-    expect(script).toContain('new Promise');
-    expect(script).toContain('resolve(');
+    expect(script).toContain('return null');
     expect(script).not.toContain('sendToHost');
   });
 
-  it('title extraction script returns results directly', () => {
+  it('title extraction script returns null when no ld+json', () => {
     const script = generateTitleExtractionScript([]);
-    expect(script).toContain('return JSON.stringify');
+    expect(script).toContain('if (!ldScript) return null');
     expect(script).not.toContain('sendToHost');
   });
 
