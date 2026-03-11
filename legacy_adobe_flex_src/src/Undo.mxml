@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+								width="790" height="590" creationComplete="onComp()" backgroundColor="#555555"
+								showCloseButton="true" close="PopUpManager.removePopUp(this)"
+								borderAlpha="0.9"
+								title="Undo"
+>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			private function onComp():void {
+				PopUpManager.centerPopUp(this);
+			}
+
+			public function executeUndo(undo:Array):void {
+				var n:String;
+				var log:String = '';
+				data.config.undoList = data.config.undoList.slice(data.config.undoList.indexOf(undo), 1);
+				for each (var action:Object in undo) {
+					if(!(action is Array))
+						continue;
+					switch(action[0]) {
+						case 'rename':
+							var after:File = new File;
+							after = after.resolvePath(action[1]);
+							if(after.exists) {
+								var before:File = new File;
+								before = before.resolvePath(action[2]);
+								if(before.exists) {
+									Alert.show("Can't undo " + before.name + ". File already exists.");
+								} else {
+									try {
+										n = after.name;
+										after.moveTo(before, false);
+										log += "\nUndo Rename " + n + " to " + before.name;
+										trace('UNDO: Rename file: ' + action[1] + ' to ' + action[2]);
+									} catch(e:Error) {
+										Alert.show("Error undoing: " + e.message);
+									}
+								} 
+								
+							}
+							break;
+						case 'delete':
+							var del:File = new File;
+							del = del.resolvePath(action[1]);
+							try {
+								n = del.name;
+								del.deleteFile();
+								log += "\nUndo File Creation " + n;
+								trace('UNDO: Deleted file: ' + action[1]);
+							} catch(e:Error) {
+								Alert.show("Error undoing: " + e.message);
+							}
+							break;	
+					}
+				}
+
+				var logFile:File = File.applicationStorageDirectory;
+				logFile = logFile.resolvePath('zeeb.log');
+
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(logFile, FileMode.APPEND);
+				fileStream.writeMultiByte(log, File.systemCharset);
+				fileStream.close();	    
+
+				Alert.show("Your Zeeb rename has been undone.");
+				data.onProcess();
+			}
+			
+		]]>
+	</mx:Script>
+
+	<mx:TileList id="undo_tiles" width="100%" dataProvider="{data.undos}" fontSize="12" columnWidth="{undo_tiles.width - 20}" rowHeight="80" height="100%">
+		<mx:itemRenderer>
+			<mx:Component>
+				<mx:HBox width="{outerDocument.undo_tiles.columnWidth - 10}" verticalScrollPolicy="off" horizontalScrollPolicy="off" borderStyle="solid" borderColor="#888888">
+					<mx:Button styleName="btn" label="UNDO" click="outerDocument.executeUndo(data as Array)"/>
+					<mx:Canvas width="100%" horizontalScrollPolicy="on">
+						<mx:VBox verticalGap="0" verticalScrollPolicy="off" width="100%">
+							<mx:Repeater id="r" dataProvider="{data}">
+								<mx:Text text="{r.currentItem[0]} {r.currentItem[1]} {r.currentItem[2] ? r.currentItem[2] : ''}"/>
+							</mx:Repeater>
+						</mx:VBox>
+					</mx:Canvas>
+				</mx:HBox>
+			</mx:Component>
+		</mx:itemRenderer>
+	</mx:TileList>
+</mx:TitleWindow>

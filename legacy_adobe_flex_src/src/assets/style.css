@@ -1,0 +1,191 @@
+/* CSS file */
+
+/* Fix a bug in Flex 4+ that inverts text in popups... */
+global {
+	direction: ltr;
+	layoutDirection: ltr;
+} 		
+
+
+/* Normally I wouldn't include the full fonts without limiting the glyphs that get embedded, but it is appropriate here
+ because of foreign movies, and NFO files */
+  
+@font-face {
+	src:url("assets/LSANSUNICODE.ttf");
+	fontFamily: 'Lucida Sans Unicode';
+	advancedAntiAliasing: true;
+	/* whole range of uppercase, lowercase, symbols and punctuation, plus bullet and em-dash and smart quotes and euro */
+	/*	unicode-range: 'U+0021-U+00FF, U+2022, U+2014, U+2018, U+2019, U+201C, U+201D, U+20AC, U+2039, U+203A, U+2122';*/ 
+}
+
+
+/* Used for the NFO's */
+@font-face {
+	src:url("assets/cour.ttf");
+	fontFamily: 'Courier New';
+}
+
+global{
+	modalTransparency: 0.5;
+	modalTransparencyBlur: 0.3;
+	modalTransparencyColor: #dddddd;
+	modalTransparencyDuration: 100;
+  themeColor: #888888;
+	fontFamily: 'Lucida Sans Unicode';
+	font-weight: normal;
+	color: #000000;
+	fontSize: 15px;
+	errorColor: #CC0000;
+}
+
+.btn {
+	fontWeight: normal;
+	cornerRadius: 9;
+	fontSize: 12;
+	highlightAlphas: 0.28, 0;
+	fillAlphas: 1, 1, 1, 1;
+	fillColors: #666666, #333333, #333333, #333333;
+	color: #ffffff;
+	textRollOverColor: #cccccc;
+	textSelectedColor: #ffffff;
+	borderColor: #aab3b3;
+	themeColor: #000000;
+}
+
+Alert {
+	buttonStyleName: "alertButton";
+	titleStyleName: "alertHeader";
+	cornerRadius: 10;
+  backgroundAlpha: 1.0;
+  backgroundColor: #000000;
+  alpha: 1.0;
+	borderAlpha:1.0;
+  border-color: #000000;
+  color: #ffffff;
+	fontWeight: normal;
+}
+
+.alertButton {
+	fontSize: 12;
+	fontWeight: normal;
+}
+
+.alertHeader {
+	fontSize: 16;
+	fontWeight: normal;
+}
+
+ToolTip
+{
+	backgroundColor: #666666;
+	fontSize: 13;
+	fontFamily: 'Lucida Sans Unicode';
+	color: #FFFFFF;
+}
+
+
+TabNavigator
+{
+	lastTabStyleName: tabNavigatorLastTab;
+	borderStyle: none;
+	firstTabStyleName: tabNavigatorFirstTab;
+	fontWeight: normal;
+	fontSize: 14;
+	tabStyleName: tabNavigatorTab;
+	selectedTabTextStyleName: tabNavigatorSelectedTab;
+	color: #000000;
+}
+
+.tabNavigatorLastTab
+{
+	fontWeight: normal;
+}
+
+.tabNavigatorFirstTab
+{
+	fontWeight: normal;
+}
+
+.tabNavigatorTab
+{
+	fontWeight: normal;
+}		
+
+.tabNavigatorSelectedTab {
+	fontWeight: normal;
+	fontThickness: 200;
+}
+
+
+TitleWindow {
+	titleStyleName: panelTitleStyleName;
+	fontWeight: normal;
+}
+
+.panelTitleStyleName {
+	fontWeight: normal;
+	fontThickness: 200;
+	fontSize: 20;
+}
+
+
+VScrollBar, HScrollBar {
+	/*    downArrowUpSkin: ClassReference(null);
+	downArrowOverSkin: ClassReference(null);
+	downArrowDownSkin: ClassReference(null);
+	upArrowUpSkin: ClassReference(null);
+	upArrowOverSkin: ClassReference(null);
+	upArrowDownSkin: ClassReference(null);*/
+	
+	downArrowUpSkin: Embed(source="../assets/1x1alpha.png");
+	downArrowOverSkin: Embed(source="../assets/1x1alpha.png");
+	downArrowDownSkin: Embed(source="../assets/1x1alpha.png");
+	upArrowUpSkin: Embed(source="../assets/1x1alpha.png");
+	upArrowOverSkin: Embed(source="../assets/1x1alpha.png");
+	upArrowDownSkin: Embed(source="../assets/1x1alpha.png");
+	
+	thumbDownSkin: 
+		Embed(source="../assets/scrubber.png",
+		scaleGridLeft="2", scaleGridTop="5", 
+		scaleGridRight="11", scaleGridBottom="46" 
+		);       
+	
+	thumbUpSkin: 
+		Embed(source="../assets/scrubber.png",
+		scaleGridLeft="2", scaleGridTop="5", 
+		scaleGridRight="11", scaleGridBottom="46" 
+		);
+	
+	thumbOverSkin: 
+		Embed(source="../assets/scrubber.png",
+		scaleGridLeft="2", scaleGridTop="5", 
+		scaleGridRight="11", scaleGridBottom="46" 
+		);
+	
+	trackSkin: 
+		Embed(source="../assets/scrolltrack.png",
+		scaleGridLeft="3", scaleGridTop="15", 
+		scaleGridRight="12", scaleGridBottom="116" 
+		);
+} 
+
+ComboBox {
+	fontWeight: normal;
+	cornerRadius: 9;
+	fontSize: 12;
+	highlightAlphas: 0.28, 0;
+	fillAlphas: 1, 1, 1, 1;
+	fillColors: #666666, #333333, #333333, #333333;
+	color: #ffffff;
+	textRollOverColor: #cccccc;
+	textSelectedColor: #ffffff;
+	borderColor: #aab3b3;
+	themeColor: #000000;
+	alternatingItemColors: #000000,#000000;
+	iconColor: #FFFFFF;
+	dropdownStyleName: "myComboBoxDropDowns";
+}
+
+.myComboBoxDropDowns {
+	color: #FFFFFF;
+}

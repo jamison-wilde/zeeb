@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+								width="960" height="690" dataChange="onData()" creationComplete="onComp()" backgroundColor="#555555"
+								showCloseButton="true" close="PopUpManager.removePopUp(this)"
+								fontFamily="Lucida Sans Unicode"
+								borderAlpha="0.9" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			private function onComp():void {
+				PopUpManager.centerPopUp(this);
+			}
+			
+			private function onData():void {
+				nfo.htmlText = convertCP437toUnicode(data as String);
+			}
+			
+			private function convertCP437toUnicode(cp437:String):String {
+				
+				var uni:String = "";
+				var char:int;
+				for(var i:int = 0; i < cp437.length; i++) {
+					char = cp437.charCodeAt(i);
+//					trace(char);
+					switch(char) {
+						case 0x0a: 
+              if(i + 1 < cp437.length && cp437.charCodeAt(i + 1) == 0x0d)
+                char = 0;
+              break;
+						case 0xb0: char = 0x2591; break;
+						case 0xb1: char = 0x2592; break;
+						case 0xb2: char = 0x2593; break;
+						case 0xb3: char = 0x2502; break;
+						case 0xb4: char = 0x2524; break;
+						case 0xb5: char = 0x2561; break;
+						case 0xb6: char = 0x2562; break;
+						case 0xb7: char = 0x2556; break;
+						case 0xb8: char = 0x2555; break;
+						case 0xb9: char = 0x2563; break;
+						case 0xba: char = 0x2551; break;
+						case 0xbb: char = 0x2557; break;
+						case 0xbc: char = 0x255d; break;
+						case 0xbd: char = 0x255c; break;
+						case 0xbe: char = 0x255b; break;
+						case 0xbf: char = 0x2510; break;
+						case 0xc0: char = 0x2514; break;
+						case 0xc1: char = 0x2534; break;
+						case 0xc2: char = 0x252c; break;
+						case 0xc3: char = 0x251c; break;
+						case 0xc4: char = 0x2500; break;
+						case 0xc5: char = 0x253c; break;
+						case 0xc6: char = 0x255e; break;
+						case 0xc7: char = 0x255f; break;
+						case 0xc8: char = 0x255a; break;
+						case 0xc9: char = 0x2554; break;
+						case 0xca: char = 0x2569; break;
+						case 0xcb: char = 0x2566; break;
+						case 0xcc: char = 0x2560; break;
+						case 0xcd: char = 0x2550; break;
+						case 0xce: char = 0x256c; break;
+						case 0xcf: char = 0x2567; break;
+						case 0xd0: char = 0x2568; break;
+						case 0xd1: char = 0x2564; break;
+						case 0xd2: char = 0x2565; break;
+						case 0xd3: char = 0x2559; break;
+						case 0xd4: char = 0x2558; break;
+						case 0xd5: char = 0x2552; break;
+						case 0xd6: char = 0x2553; break;
+						case 0xd7: char = 0x256b; break;
+						case 0xd8: char = 0x256a; break;
+						case 0xd9: char = 0x2518; break;
+						case 0xda: char = 0x250c; break;
+						case 0xdb: char = 0x2588; break;
+						case 0xdc: char = 0x2584; break;
+						case 0xdd: char = 0x258c; break;
+						case 0xde: char = 0x2590; break;
+						case 0xdf: char = 0x2580; break;
+					}
+					if(char)
+						uni += String.fromCharCode(char);	
+				}
+				return uni;
+			}
+			
+		]]>
+	</mx:Script>
+
+	<mx:TextArea id="nfo" width="100%" height="{this.height - 60}" fontFamily="Courier New" paddingTop="20" paddingLeft="20" paddingRight="20" paddingBottom="20"  backgroundColor="#555555" color="#FFFFFF" fontSize="12" wordWrap="false" leading="0"/>
+</mx:TitleWindow>

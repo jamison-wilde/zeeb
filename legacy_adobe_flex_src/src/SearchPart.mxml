@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" dataChange="onData()" verticalGap="1" height="140" minWidth="48">
+
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.core.Application;
+			import mx.core.FlexGlobals;
+			import mx.utils.ObjectProxy;
+			
+			[Bindable]
+			public var showImages:Boolean = true;
+			
+			private function onData():void {
+				switch(data.state) {
+					case 'keep':
+						part.setStyle('backgroundColor', 0x33CC33);
+						break;
+					case 'remove':
+						part.setStyle('backgroundColor', 0xCC5555);
+						break;
+					default:
+						part.setStyle('backgroundColor', 0xEEEEEE);
+				} 
+			}
+			
+			private function onStateChange(st:String):void {
+				var lastState:String = data.state;
+				var permanentChange:Boolean = false;
+				
+				switch(st) {
+					case 'remove*':
+						permanentChange = true;
+						var arr:Array = (parentDocument.data.config.removeTerms as Array); 
+						if( data.state == 'remove') {
+							data.state = 'part';
+							try {
+								arr.splice(arr.indexOf(data.part), 1);						
+							} catch(e:Error) { };
+						} else {
+							data.state = 'remove';
+							arr.push((data.part as String).toLowerCase());
+						}
+						break;
+					case 'keep*':
+						permanentChange = true;
+						var arr2:Array = (parentDocument.data.config.keepTerms as Array); 
+						if(data.state == 'keep') {
+							data.state = 'part';
+							// remove the keep always term
+							for (var i:int = 0; i < arr2.length; i++) {
+								if(arr2[i][0] == data.part) {
+									try {
+										arr.splice(i, 1);						
+									} catch(e:Error) { };
+								}
+							}
+						} else {
+							data.state = "keep";
+							arr2.push([(data.part as String).toLowerCase(), data.part]);
+						}
+						break;
+					case 'keep':
+					case 'remove':
+					case 'part':
+					default:
+						data.state = st;
+						break;
+				}
+
+				onData();
+
+				FlexGlobals.topLevelApplication.updateFile((lastState == 'part' || data.state == 'part'), permanentChange);
+			}
+			
+			private function onEditPart():void {
+				data.part = part.text;
+				
+				// automatically adjust the width as user types...
+				var tlm:TextLineMetrics = part.getLineMetrics(0);
+				part.width = tlm.width + 20;
+			}
+			
+			private function onEnter():void {
+				FlexGlobals.topLevelApplication.updateFile(true, false);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Label id="txt_width" includeInLayout="false" visible="false" text="{part.text}"/>
+	<mx:TextInput id="part" text="{data.part}" width="{txt_width.width + 20}" change="onEditPart()" enter="onEnter()"/>
+	
+	<mx:VBox id="images" visible="{showImages}" includeInLayout="{showImages}" verticalGap="2">
+		<mx:Image id="remove_img" source="@Embed('/assets/minus.swf')" click="onStateChange('remove')" toolTip="Removed this word for this movie only." height="19" width="19" scaleContent="false"/>	
+		<mx:Image id="kill_img"  source="@Embed('/assets/x.swf')" click="onStateChange('remove*')" toolTip="Set this word as permantently removed for all movies. Click again to undo a permanent removal." height="19" width="19" scaleContent="false"/>	
+		<mx:Image id="keep_img"  source="@Embed('/assets/plus.swf')" click="onStateChange('keep')" toolTip="Save this word to be appended to the filename, but not as part of the movie title. Only for this movie." height="19" width="19" scaleContent="false"/>	
+		<mx:Image id="preserve_img"  source="@Embed('/assets/star.swf')" click="onStateChange('keep*')" toolTip="Always save this word to be appended to the filename, but not as part of the movie title." height="19" width="19" scaleContent="false"/>	
+		<mx:Image id="part_img"  source="@Embed('/assets/question.swf')" click="onStateChange('part')" toolTip="Use this word to search for the title." height="19" width="19" scaleContent="false"/>	
+	</mx:VBox>
+	
+	<mx:VBox id="labels" visible="{!showImages}" includeInLayout="{!showImages}" verticalGap="1">
+		<mx:Label id="remove_btn" text="REMOVE" click="onStateChange('remove')" fontWeight="normal" fontSize="10" paddingTop="-2" paddingBottom="-2" width="48" paddingLeft="-2" paddingRight="-2" toolTip="Removed this word for this movie only." color="#880000" useHandCursor="true" buttonMode="true" mouseChildren="false"/>	
+		<mx:Label id="kill_btn" text="REMOVE*" click="onStateChange('remove*')" fontWeight="normal" fontSize="10" paddingTop="-2" paddingBottom="-2" width="48" paddingLeft="-2" paddingRight="-2" toolTip="Set this word as permantently removed for all movies. Click again to undo a permanent removal." color="#880000" useHandCursor="true" buttonMode="true" mouseChildren="false"/>	
+		<mx:Label id="keep_btn" text="SAVE" click="onStateChange('keep')" fontWeight="normal" fontSize="10" paddingTop="-2" paddingBottom="-2" width="48" paddingLeft="-2" paddingRight="-2" toolTip="Save this word to be appended to the filename, but not as part of the movie title. Only for this movie."  color="#008800" useHandCursor="true" buttonMode="true" mouseChildren="false"/>	
+		<mx:Label id="preserve_btn" text="SAVE*" click="onStateChange('keep*')" fontWeight="normal" fontSize="10" paddingTop="-2" paddingBottom="-2" width="48" paddingLeft="-2" paddingRight="-2" toolTip="Always save this word to be appended to the filename, but not as part of the movie title."  color="#008800" useHandCursor="true" buttonMode="true" mouseChildren="false"/>	
+		<mx:Label id="part_btn" text="GOOD" click="onStateChange('part')" fontWeight="normal" fontSize="10" paddingTop="-2" paddingBottom="-2" width="48" paddingLeft="-2" paddingRight="-2" toolTip="Use this word to search for the title." useHandCursor="true" buttonMode="true" mouseChildren="false"/>	
+	</mx:VBox>
+</mx:VBox>

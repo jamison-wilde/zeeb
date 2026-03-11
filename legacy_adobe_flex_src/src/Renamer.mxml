@@ -1,0 +1,2357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+         width="100%" height="100%" creationComplete="onComp()" dataChange="onData()"
+         horizontalScrollPolicy="off" verticalScrollPolicy="off">
+
+	<mx:Script>
+		<![CDATA[
+      import com.adobe.serialization.json.JSON;
+      import com.pfp.events.JPEGAsyncCompleteEvent;
+      import com.slaingod.bigregexp.BigRegExp;
+      import com.slaingod.config.Config;
+      import com.slaingod.events.GenericEvent;
+      import com.slaingod.util.AlchemyAsyncJpegEncoder;
+      import com.slaingod.util.ArrayUtil;
+      
+      import flash.events.IOErrorEvent;
+      import flash.utils.setTimeout;
+      
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.core.Application;
+      import mx.core.Container;
+      import mx.core.FlexGlobals;
+      import mx.events.CloseEvent;
+      import mx.events.ListEvent;
+      import mx.events.ToolTipEvent;
+      import mx.managers.PopUpManager;
+      import mx.managers.ToolTipManager;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectProxy;
+      import mx.utils.StringUtil;
+
+			private const bTraceDetails:Boolean = false;
+			private const bTraceCalls:Boolean = false;
+			
+			private var asyncEncoder:AlchemyAsyncJpegEncoder; //OLD: JPEGAsyncEncoder
+
+			private var delay:Timer = new Timer(500, 1);
+
+			[Bindable]
+			public var _zeeb:zeeb;
+
+			[Bindable]
+			public var config:Config;
+			
+			[Bindable]
+			public var initalSelectedItem:int = 0;
+
+			[Bindable]
+			private var assumeKeepPartsEndTitle:Boolean = true;
+			
+			[Bindable]
+			public var movies:ArrayCollection;
+
+			[Bindable]
+			private var newFilename:String;
+
+			[Bindable]
+			private var origFilename:String;
+			
+			[Bindable]
+			private var selectedFile:File;
+
+			[Bindable]
+			private var selectedNFOFile:File;
+	
+			[Bindable]
+			public var currentMovieInfo:Object;
+
+			[Bindable]
+			private var currentMovieAKAs:ArrayCollection = new ArrayCollection;			
+
+			[Bindable]
+			private var currentMovieUrl:String = "";
+
+			[Bindable]
+			private var posters:ArrayCollection;
+      
+      private var tmdbApiKey:String = 'bb81778a56280ab7f28d2048dfdbec88';
+      private var tmdbLastConfigUpdate:Date = null;
+      private var tmdbAfterConfigTT:String = null
+      private var tmdbParsedConfig:Object = null;  
+      
+			private var bAKAUsed:Boolean = false;
+
+			private var movieYear:int;
+			
+			private var ul:URLLoader;
+
+			private var logFile:File;
+			
+			private var fileIsDVDFolder:Boolean = false;
+			
+			public function autoSelectFirstMovie():void {
+				if(_zeeb.files.length > 0) {
+					files_to_process.selectedIndex = 0;
+					_zeeb.dispatchEvent(new GenericEvent('FILE_SELECTED', this));				
+				}
+			}
+
+			public function changeLogLocation():void {
+				if(config.logfileLocation && config.logfileLocation != '') {
+					logFile = new File();
+					logFile = logFile.resolvePath(config.logfileLocation);
+				}
+			}
+			
+			private function onComp():void {
+				_zeeb.addEventListener(GenericEvent.EVENT("FILE_SELECTED"), onFileSelected);
+				delay.addEventListener(TimerEvent.TIMER_COMPLETE, onDelayTimer);
+			}
+			
+			private function onData():void {
+				if(data) {
+					_zeeb = data as zeeb;
+					config = _zeeb.config;
+					initBigRegExps();
+				}
+			}
+
+      private	var reRating:BigRegExp;
+      private	var reRatingAlternate:BigRegExp;
+      private	var reTitleId:BigRegExp;
+      private	var reTitleYear:BigRegExp;
+      private	var reAkaSingle:BigRegExp; 
+      private var reDirector:BigRegExp;
+			private var reDirectorGroup:BigRegExp;
+			private var reGenre:BigRegExp;
+			private var reGenreGroup:BigRegExp;
+      private var reStar:BigRegExp;
+      private var reStarsGroup:BigRegExp;
+      private var reDuration:BigRegExp;
+      private	var reMovieSearch:BigRegExp;
+      private	var reFindNoResults:BigRegExp;
+      private	var reTitleIdSearch:BigRegExp;
+			private	var reAkaMoreGroup:BigRegExp; 
+			private	var reAkaMore:BigRegExp; 
+			private var reOriginalTitle:BigRegExp;
+      private var reFilenamePartsSplitter:RegExp;
+      private var reMPAARating:BigRegExp;
+
+      private var reRemoveTerms:RegExp;
+      
+      public function initBigRegExps(bForce:Boolean = false):void {
+        if(!reRating || bForce) {
+          reTitleId = new BigRegExp(config.reTitleId);
+          reTitleYear = new BigRegExp(config.reTitleYear);
+          
+          reMovieSearch = new BigRegExp(config.reMovieSearch);
+          reFindNoResults = new BigRegExp(config.reFindNoResults);
+
+					// m is multiline with s is dotall (dot can match newlines)
+          reRating = new BigRegExp(config.reRating, 'ms');
+          reRatingAlternate = new BigRegExp(config.reRatingAlternate, 'ms');
+					reAkaMoreGroup = new BigRegExp(config.reAkaMoreGroup, 'ms');
+					reAkaMore = new BigRegExp(config.reAkaMore, 'ms');
+					reOriginalTitle = new BigRegExp(config.reOriginalTitle,'ms');
+					reDirector = new BigRegExp(config.reDirector,'ms');
+					reDirectorGroup = new BigRegExp(config.reDirectorGroup,'ms');
+					reGenre = new BigRegExp(config.reGenre,'ms');
+					reGenreGroup = new BigRegExp(config.reGenreGroup,'ms');
+          reStar = new BigRegExp(config.reStar,'ms');
+          reStarsGroup = new BigRegExp(config.reStarsGroup,'ms');
+          reMPAARating = new BigRegExp(config.reMPAARating,'ms');
+          reDuration = new BigRegExp(config.reDuration,'ms');
+          reAkaSingle = new BigRegExp(config.reAkaSingle,'ms');
+          
+          reFilenamePartsSplitter = new RegExp(config.reFilenamePartsSplitter);
+        }
+      }
+			
+      private function traceLargeString(s:String):void {
+        for(var i:int = 0; i < s.length; i+= 4096) {
+          trace(s.substr(i, 4096));
+        }
+      }
+      
+			private function startLookupTimer(ms:int):void {
+				delay.delay = ms;
+				delay.reset();
+				delay.start();
+			}
+
+			public function onDelayTimer(e:Event):void {
+				// give the visible window some time to get its html calls done
+				doImdbLookup(); 
+			}
+
+			public function cleanUp(full:Boolean = false):void {
+				bAKAUsed = false;
+				renamer.visible = false;
+				original_poster = null;
+        selectedNFOFile = null;
+				lastSeeMoreAka = '';
+				try {trace('Pre-cleanup current movie title: ' + currentMovieInfo.title);} catch (e:Error) {trace('No existing movie title before cleanup...');};
+				currentMovieInfo = null;
+				if(posters) {
+					posters.removeAll();
+					posters = new ArrayCollection();
+				}
+				newFilename = "";
+				try { // try to stop the active requests
+					if(ul) { 
+						ul.close();
+						ul = new URLLoader;
+					}
+				} catch(e:Error) {};
+				try { // try to stop the active requests
+					html_box.htmlLoader.cancelLoad();
+				} catch(e:Error) {};
+				currentMovieUrl = "";
+//				html_box.htmlText = '<html><body>&nbsp;</body></html>';
+				html_box.visible = false;
+				movies = new ArrayCollection;
+				if(full) { 
+					search_parts.removeAllChildren();
+				}
+			}
+
+			private const escapes:Array = [
+				[/\\/g, '\\'], [/\./g, '\\.'], [/\-/g, '\\-'], [/\[/g, '\\['], [/\]/g, '\\]'], [/\{/g, '\\{'],
+				[/\}/g, '\\}'], [/\^/g, '\\^'], [/\#/g, '\\#'], [/\+/g, '\\+'], [/\'/g, '\\\''], [/\$/g, '\\$'],
+				[/\&/g, '\\&']
+			];
+			
+			private function generateEscapedFilename(str:String):String {
+				var escapedFileName:String = str;
+				for each (var escape:Array in escapes) {
+					escapedFileName = escapedFileName.replace(escape[0],escape[1]); 
+				} 
+				return escapedFileName;
+			}
+			
+			private function getNextSelectedItem(event:GenericEvent):void {
+				if(event.data.files_to_process.selectedIndex + 1 < _zeeb.files.length) {
+					files_to_process.selectedIndex = event.data.files_to_process.selectedIndex + 1;
+				} else {
+					if(_zeeb.files.length > 0) {
+						files_to_process.selectedIndex = 0;
+					} else {
+						files_to_process.selectedIndex = -1;
+					}
+				}
+			}
+			
+			private function findNFOFile(name:String):File {
+				selectedNFOFile = null;
+				var reNfo:BigRegExp = new BigRegExp(name + ".*nfo$","i");
+
+				for each(var nfo:ObjectProxy in _zeeb.nfos) {
+					if(reNfo.exec(nfo.file)) {
+						selectedNFOFile = new File(nfo.full);
+						break;
+					}
+				}
+				return selectedNFOFile;
+			}
+			
+			private var reNfoUrl:BigRegExp = new BigRegExp(/(http:\/\/[a-z]+\.imdb\.[a-z]+\/title\/tt[0-9]+|http:\/\/imdb\.[a-z]+\/title\/tt[0-9]+)/i);
+			private function findImdbUrlFromNfo(name:String):String {
+				var imdb:String = "";
+			
+				selectedNFOFile = findNFOFile(generateEscapedFilename(name));
+				if(selectedNFOFile) {
+					var r:Array = reNfoUrl.exec(readNFO(selectedNFOFile));
+					if(r)
+						imdb = r[1];
+				}
+				return imdb;
+			}
+
+			private function handlePart720or1080(re:BigRegExp, part:String, parts:Array, i:int, cleaned:String):Boolean {
+				var match:Array = re.exec(part)
+				if(match) {
+					parts[i] = match[1];
+					if(!fileIsDVDFolder) {
+						var ext:String = parts.pop(); // preserve the placement of the extension so it gets skipped properly
+						if(parts.indexOf(cleaned) == -1) {
+							parts.push(cleaned);
+						}
+						parts.push(ext);
+					} else {
+						if(parts.indexOf(cleaned) == -1) {
+							parts.push(cleaned);
+						}
+					}
+				}
+				return Boolean(match);
+			}
+			
+			private var rePartYear:BigRegExp = new BigRegExp(/(\d\d\d\d)/);
+			private var rePartTT:BigRegExp = new BigRegExp(/tt\d\d\d\d\d+/); // don't include the tt or rating in the search parts
+			private var rePartRating:BigRegExp = new BigRegExp(/^\d\.?\d$/); // don't include the tt or rating in the search parts
+			private var rePart720:BigRegExp = new BigRegExp(/(.+)720p*$/); // split out the dumbasses who attach the quality with no separator
+			private var rePart1080:BigRegExp = new BigRegExp(/(.+)1080p*$/); // split out the dumbasses who attach the quality with no separator
+			
+			// update the parts of the filename, determining which parts are in the title
+			private function onFileSelected(event:GenericEvent):void {
+				cleanUp(true);
+				
+				// the other renamer got the call...we need to get the next selected item if possible
+				if(event && event.data != this) {
+					getNextSelectedItem(event);
+				}
+				
+				if(files_to_process.selectedIndex == -1) {
+					selectedFile = null; // hide the rename controls
+ 					return; // no file selected
+				}
+				
+				try {
+					selectedFile = new File(files_to_process.selectedItem.nativePath);
+				} catch (e:Error) {
+					// the file might have been deleted from the file system
+					selectedFile = null; // hide the rename controls
+ 					return; // no file selected
+				}
+        
+				fileIsDVDFolder = files_to_process.selectedItem.folder;
+				
+        var tt:Array = parseFileName(selectedFile);
+        
+				renamer.visible = true;
+				
+				if(tt && show_tt.selected && use_tt.selected) {
+					doImdbSingle({tt: tt[0]});
+					return;
+				}
+				if(!fileIsDVDFolder) {
+					var sNFOLookup:String = findImdbUrlFromNfo(selectedFile.name.substr(0, selectedFile.name.length - (selectedFile.extension.length + 1)));
+					if(sNFOLookup != "") {
+						doImdbLookup(sNFOLookup);
+						return;
+					}
+				}
+
+				startLookupTimer(event && event.data == this ? 0 : 1000);
+			}
+
+      
+      public function parseFileName(o:*):Array {
+        var setRestOfPartsAsKeep:Boolean = false;
+        var thisPartWasARealKeeper:Boolean = false;
+        var tt:Array;
+        
+        var name:String;
+        var file:File;
+        
+        if(o is String)
+          name = o;
+        else if(o is File) {
+          file = o;
+          if(config.includeFolderNameInSearchTerms && file && file.parent && file.parent.name)
+            name = file.parent.name + " " + file.name;
+          else
+            name = file.name; 
+        }
+        
+        var parts:Array = name.split(reFilenamePartsSplitter)
+        
+        movieYear = 0; // use movieYear for better match on remakes
+        
+        var extensionCount:int = 1;
+        if(fileIsDVDFolder) 
+          extensionCount = 0;
+        
+        for (var i:int = 0; i < parts.length - extensionCount ; i++) {
+          var part:String = parts[i];
+          var partLower:String = part.toLowerCase();
+          
+          // special handling for parts like 'avs720-somemovie', where we want to preserve the 720 for later
+          if(handlePart720or1080(rePart720,part,parts,i,'720p') || handlePart720or1080(rePart1080,part,parts,i,'1080p')) {
+            i--;
+            continue;
+          }
+          
+          thisPartWasARealKeeper = false;
+          var state:String = "part";
+          if(setRestOfPartsAsKeep)
+            state = 'keep';
+          
+          // parse the filename for the dont search but keep shit
+          // even if we are already auto keeping this part, check 
+          // to make sure that we don't need to translate the part
+          // like 720->720p, or DC-> Director's Cut
+
+          for each (var keeper:Array in config.keepTerms) {
+            if(keeper[0] == partLower) {
+              state = 'keep';
+              part = keeper[1];
+              thisPartWasARealKeeper = true;
+              if(assumeKeepPartsEndTitle) {
+                setRestOfPartsAsKeep = true;
+              }		
+            }
+          }					
+          
+          // don't do the remove or other logic if we have this marked as permanent keep
+          // this assumes that you don't 'keep' tt##### for some dumb reason and then expect Use TT? to work
+          if(!thisPartWasARealKeeper) {
+            
+            if(!reRemoveTerms) {
+              reRemoveTerms = new RegExp('^' + config.removeTerms.join('$|^') + '$');
+            }
+            
+            // parse the filename for all the bad shit
+            if(reRemoveTerms.exec(partLower) != null) {
+              state = 'remove';
+            }
+            
+            var year:Array = rePartYear.exec(part)
+            if(year && int(year[1]) > 1900) {
+              state = 'remove';
+              movieYear = year[1];
+            }
+            
+            if(!tt) { // only look for the first tt#####
+              tt = rePartTT.exec(part)
+              if(tt) {
+                state = 'remove';
+              }
+            }
+            
+            if(tt) {
+              // we found a tt previously so lets see if this is a rating we need to remove
+              // this assumes you are using something like the default format where
+              // ratings follow the TT##### in the filename parts. Otherwise this code is a little
+              // too overszealous.
+              if(rePartRating.exec(part)) 
+                state = 'remove';
+            }
+            
+          }
+          
+          switch(state) {
+            case 'keep':
+              break;
+            case 'remove':
+              break;
+            default:
+              if (i > 0 && config.lowerTerms.indexOf(partLower) > -1) {
+                part = partLower;
+              }
+          }	
+          
+          if(part != "") {
+            var sp:SearchPart = new SearchPart;
+            sp.initialize();
+            sp.showImages = config.showPartIcons;
+            sp.data = new ObjectProxy({
+              state: state,
+              part: part
+            });
+            search_parts.addChild(sp);					
+          }
+        }
+        
+        return tt;
+        
+      }
+        
+			private var searchUrl:String;
+
+      // do an imdb search with the current 'parts'
+			public function doImdbLookup(url:String = null):void {
+//				orig_parts.text = "";
+				if(url) {
+					searchUrl = url; // if we have an exact tt# url from the nfo...
+				} else {
+					searchUrl = config.searchUrl;
+	
+					var firstPart:Boolean = false;
+					for each(var sp:SearchPart in search_parts.getChildren()) {
+						if(sp.data.state == 'part') {
+							var part:String = sp.data.part;
+							if(part == "&") {
+								part = '%26';
+							}
+							if(!firstPart) {
+								firstPart = true;
+							} else {
+								searchUrl += '%20';
+							}
+							searchUrl = searchUrl + part; 
+						}
+					}				
+				}
+				
+				trace('########################\nSearch URL: ' + searchUrl + " : " + this.id);
+				
+				ul = new URLLoader();
+				ul.addEventListener(Event.COMPLETE, onImdbLookupComplete);
+				ul.addEventListener(IOErrorEvent.IO_ERROR, onIOError);
+				try {
+          loadURLLoader(ul, new URLRequest(searchUrl));
+				} catch (e:Error) {
+					onIOError(null);
+					return;
+				}
+			}
+			
+			private function onIOError(e:IOErrorEvent):void {
+					Alert.show("There was an error doing the IMDB search.  Please try the following URL manually and see what happens. Pass it along if it isn't a temporary IMDB error. " + searchUrl); 				
+			}
+	
+	
+			private var tempMovie:Object; // hack temp holder
+			// do an imdb search with the current 'parts'
+			public function doImdbSingle(movie:Object):void {
+        posters_status.text = 'Waiting for IMDB lookup.';
+        posters_status.visible = true;
+        if(movie.tt) {
+          tempMovie = movie;					
+          var url:String = config.urlImdbTT + movie.tt;
+          try {if (ul) ul.close();} catch(e:Error) {};
+          ul = new URLLoader();
+          ul.addEventListener(Event.COMPLETE, onImdbSingleComplete);
+          loadURLLoader(ul, new URLRequest(url));
+        }
+			}
+			
+			public function setOriginalFilename():void {
+				origFilename = "";
+				for each(var sp:SearchPart in search_parts.getChildren()) {
+					if(sp.data.state == 'part') {
+						origFilename = origFilename + ' ' + sp.data.part; 
+					}
+				}				
+			}
+
+			// parse the imdb tt single movie results
+			private function onImdbSingleComplete(e:Event):void {
+				try {
+					ul.removeEventListener(Event.COMPLETE, onImdbSingleComplete);
+				} catch(e:Error) {};
+
+        var html:String = (e.target as URLLoader).data.toString();
+				var newMovies:ArrayCollection = new ArrayCollection; // prevent repeat updates when updating by swapping the array collections
+				
+				reMovie(newMovies, html, 'Exact');
+				setMovieInfo(newMovies[0], bAKAUsed);
+			}
+
+			
+			// parse the imdb search results for all the movies returned, and update the controls
+			private function onImdbLookupComplete(e:Event):void {
+				try {
+					ul.removeEventListener(Event.COMPLETE, onImdbLookupComplete);
+					ul.removeEventListener(IOErrorEvent.IO_ERROR, onIOError);
+				} catch(e:Error) {};
+				
+				var re:BigRegExp;
+        var html:String = (e.target as URLLoader).data.toString();
+//				trace(html);
+
+				movies = new ArrayCollection;
+				var newMovies:ArrayCollection = new ArrayCollection; // prevent repeat updates when updating by swapping the array collections
+				
+				// get rid of the b.gif images...prob beed a better regexp to deal with them instead
+				html = html.replace(/img src="\/images\/b.gif"/g,'');
+ 
+        
+        if(!reFindNoResults.exec(html)) {         
+   				re = new BigRegExp(config.reTitle);
+   				// check to see if we got an exact match and therefore no search results
+   				if(re.exec(html) != null) {
+            
+  					reMovies(newMovies, html);
+   					
+   				} else {  
+   					// single movie returned
+   					reMovie(newMovies, html, 'Exact');
+   				}
+        }
+				
+				movies = newMovies;
+				
+				if(movies.length) {
+					var index:int = 0;
+					// see if we can find a year match on the movie in the first few movies
+					if(movieYear && movieYear > 1900) {
+						for (var i:int; i < movies.length && i < 8; i++) { 
+							if(int(movies[i].year) == movieYear) {
+								index = i;
+								break;
+							}
+						}
+					}
+					
+					movie_tiles.selectedIndex = index;
+					doImdbSingle(movies[index]);
+				} else {
+          posters_status.text = 'No matches found on IMDB.';
+          posters_status.visible = true;
+        }
+			}
+
+			// We need to get the ratings when ever we update which movie we are using.
+			private function updateMovie(movie:Object):void {
+				doImdbSingle(movie);
+			}
+			
+			// set the text for the final name of the movie			
+			private function setMovieInfo(movie:Object, bUseAKA:Boolean = false):void {
+				if(movie == null) {
+					// this can occur if the first search returned nothing, and then the user edits the search parts manually and does save/keep/etc.
+					return;
+				}
+				currentMovieInfo = movie;
+				
+				if(selectedFile && !movie.hasOwnProperty('title')) {
+					Alert.show("For some reason we lost the current movie's info. This is a bug I am trying to fix. If you can reproduce, please let me know. Thanks.");
+					return;
+				}
+
+				akaBox.visible = false;
+				if(movie.aka && movie.aka.length > 0) {
+					if(currentMovieAKAs.source != movie.aka) {
+						currentMovieAKAs.source = movie.aka;
+						currentMovieAKAs.refresh(); 
+					}
+					akaBox.visible = true;
+				}
+				
+				// IMPORTANT: Move this below the AKA refresh for the original title handling to work properly
+				if(bUseAKA) {
+					bAKAUsed = true;
+					generateFilename(((fileIsDVDFolder && config.separateDVDFolderFormat) ? config.renameAKAFormatDVDFolder : config.renameAKAFormat), movie);
+				} else {
+					bAKAUsed = false;
+					generateFilename(((fileIsDVDFolder && config.separateDVDFolderFormat) ? config.renameFormatDVDFolder : config.renameFormat), movie);
+				}
+				
+				if(movie.tt) {
+					html_box.visible = true;
+					if(currentMovieUrl != config.urlImdbTT + movie.tt) {
+						trace('cancel HTML load on new location');
+						html_box.htmlLoader.cancelLoad();
+						html_box.htmlText = null;
+						currentMovieUrl = config.urlImdbTT + movie.tt;
+						trace('HTML: ' + currentMovieUrl );
+						doTMDBLookup(movie.tt);
+					}
+				} else {
+					trace('cancel HTML load on no location');
+					html_box.htmlLoader.cancelLoad();
+					currentMovieUrl = "";
+					html_box.visible = false;
+				}
+				
+				setOriginalFilename();
+			}
+
+      private function reverseName(name:String):String {
+        try {
+          var names:Array = name.split(" ");
+          if(names && names.length) {
+            return names[names.length - 1] + ", " + names.slice(0, names.length - 1).join(" ");
+          }
+        } catch(e:Error) {
+          // maybe a single name? or something weird? Just return the original
+        }
+        return name;
+      }
+      
+			
+			public function parseFormat(format:String, movie:Object, ext:String = null):String {
+
+        if(!movie.hasOwnProperty('rating')) {
+          movie.rating = '0';
+        }
+
+				// THIS MUST BE FIRST BECAUSE OF SPECIAL AKA/TITLE MATCH HANDLING!!!!
+				if((format.search('<a>') > -1 || format.search('<aka>') > -1) && movie.aka.length) {
+					// get rid of any country helpers then clean up the title
+					var aka:String;
+          if(selectedFile) {
+            aka = cleanTitle(aka_name.text.replace(/ \*.*\*/,''));
+
+            var akaContainsTitle:Boolean = false;
+            
+            if(aka.toLowerCase().search(cleanTitle(movie.title).toLowerCase()) > -1) {
+              akaContainsTitle = true;
+            }
+            
+            if((config.removeThe || config.swapThe) && aka.substr(0,config.the.length + 1) == config.the + ' ') {
+              aka = aka.substr(config.the.length + 1);
+              if(config.swapThe)
+                aka += ', ' + config.the;
+            }
+            
+            if(config.replaceTitleSpacesWith && config.replaceTitleSpacesWith != '' && config.replaceTitleSpacesWith != ' ')
+              aka = aka.replace(/\s/g, config.replaceTitleSpacesWith);
+              
+            if(akaContainsTitle) {	
+              // Use the non-AKA format, and use the AKA instead of the title
+              format = ((fileIsDVDFolder && config.separateDVDFolderFormat) ? config.renameFormatDVDFolder : config.renameFormat)
+              format = format.replace(/<t>|<title>/g, aka);
+            } else {
+              format = format.replace(/<a>|<aka>/g, aka);
+            }
+            
+          } else
+            format = format.replace(/<a>|<aka>/g, movie.aka[0]);
+				}
+				
+				var title:String = movie.title;
+				if((config.removeThe || config.swapThe) && title.substr(0, config.the.length + 1) == (config.the + ' ')) {
+          title = title.substr(config.the.length + 1);
+          if(config.swapThe)
+            title += ', ' + config.the;
+        }
+        
+        if(config.replaceTitleSpacesWith && config.replaceTitleSpacesWith != '' && config.replaceTitleSpacesWith != ' ')
+          title = title.replace(/\s/g, config.replaceTitleSpacesWith);
+        
+				format = format.replace(/<t>|<title>/g, title);
+
+        
+        var minutesDuration:int = parseInt(movie.duration);
+        var hoursDuration:int = minutesDuration / 60;
+        if (minutesDuration > 60) {
+          minutesDuration %= 60;
+        }
+        
+        while(true) {
+          var matches:Array = format.match(/<H([^>]*)>/);
+          if(matches) {
+            var replacement:String = hoursDuration.toString() + matches[1];
+            format = format.replace(/<H[^>]*>/, replacement);
+          }
+          else
+            break;
+        }
+        
+        while(true) {
+          var matches2:Array = format.match(/<M([^>]*)>/);
+          if(matches2) {
+            var replacement2:String = minutesDuration.toString() + matches2[1];
+            format = format.replace(/<M[^>]*>/, replacement2);
+          }
+          else
+            break;
+        }
+        
+        
+				format = format.replace(/<y>|<year>/g, movie.year);
+				format = format.replace(/<tt>|<imdb>/g, movie.tt);
+				format = format.replace(/<r100>|<rating100>/g, movie.rating);
+				format = format.replace(/<r10>|<rating10>/g, rating_formatter.format(Number(movie.rating) / 10));
+				format = format.replace(/<d>|<directors>/g, movie.directors);
+				format = format.replace(/<d1>|<director>/g, movie.director);
+        format = format.replace(/<D>|<rdirectors>/g, movie.rev_directors);
+        format = format.replace(/<D1>|<rdirector>/g, movie.rev_director);
+				format = format.replace(/<g>|<genres>/g, movie.genres);
+				format = format.replace(/<g1>|<genre>/g, movie.genre);
+        format = format.replace(/<o>|<original>/g, (ext ? selectedFile.name.substr(0, selectedFile.name.length - 4)  : selectedFile.name));
+        format = format.replace(/<c>|<mpaa>|<certification>/g, movie.mpaa);
+        format = format.replace(/<stars>/g, movie.stars);
+        format = format.replace(/<star1>/g, movie.star1);
+        format = format.replace(/<stars2>/g, movie.stars2);
+        format = format.replace(/<stars3>/g, movie.stars3);
+        format = format.replace(/<duration>|<time>/g, movie.duration);
+
+        
+				var savedStr:String = '';
+        
+        var keepSavedParts:Array = [];
+        
+				for each(var sp:SearchPart in search_parts.getChildren()) {
+					if(sp.data.state == 'keep') 
+            keepSavedParts.push(sp.data.part);
+				}
+
+        savedStr = keepSavedParts.join(config.savedPartSeparator.replace('&nbsp;',' '));
+
+        format = format.replace(/<s>|<saved>/g, savedStr);
+				
+ 				if(ext) { // test and file is dvd folder, ext is null 
+          if(format.substr(format.length - 1) != '.')
+            format += '.';
+          format += ext.toLowerCase();
+				} else {
+          // Don't let a folder name end in a period
+          format = format.replace(/\.+$/,'');
+        }
+				format = cleanTitle(format, true);
+				return format;
+			}
+			
+			private function generateFilename(format:String, movie:Object):void {
+        try {
+          newFilename = parseFormat(format, movie, (fileIsDVDFolder ? null : selectedFile.extension));
+        } catch (e:Error) {
+          // errors when options set from folders page?
+        }
+			}	
+
+			// parse imdb SINGLE MOVIE html for movie info with regular expressions
+			private function reMovie(movies:ArrayCollection, html:String, type:String):void {
+				var results:Array;
+
+        // NEW: There is now JSON in the returned page that we can grab
+        
+        var jsonRegex:BigRegExp = new BigRegExp("<script type=\"application\\/ld\\+json\">(.*?})\\s*<\\/script>","ms");
+        
+        var obj:Object = {};
+        
+        if(config.useImdbJson) 
+          results = jsonRegex.exec(html);
+        
+        if (results) {
+          var jobj:Object = JSON.decode(results[1]);
+          if(jobj) {
+            obj.title = cleanTitle(htmlUnescape(StringUtil.trim(jobj.name)).replace(/\.\.\./g,'…'));
+
+            var yearRe:RegExp = new RegExp("(\\d+)-\\d+-\\d+");
+            var resultsYear:Array = yearRe.exec(jobj.datePublished);
+            if(resultsYear)
+              obj.year = StringUtil.trim(resultsYear[1]);
+            
+            var urlTt:RegExp = new RegExp("\\/title\\/(tt\\d+)\\/");
+            var resultsTt:Array = urlTt.exec(jobj.url);
+            if(resultsTt)
+              obj.tt = StringUtil.trim(resultsTt[1]);
+            
+            
+            obj.rating = "";
+            var ratingRe:RegExp = new RegExp("(\\d+\\.\\d+)");
+            var resultsRating:Array = ratingRe.exec(jobj.aggregateRating.ratingValue);
+            if(resultsRating)
+              obj.rating = resultsRating[1].toString().replace(/\./,'');
+            
+            
+            obj.stars = "";
+            obj.star1 = "";
+            obj.stars2 = "";
+            obj.stars3 = "";
+            
+            if(jobj.actor) {
+              if (jobj.actor is Array) {
+                
+                var stars_names:Array = [];
+                for each (var jstar:Object in jobj.actor) {
+                  stars_names.push(jstar.name);
+                }
+                obj.stars = stars_names.join(config.starsSeparator.replace('&nbsp;',' '));
+
+                if(jobj.actor[0] && jobj.actor[0].name) {
+                  obj.star1 = obj.stars2 = obj.stars3 = htmlUnescape(StringUtil.trim(jobj.actor[0].name));
+                  if(jobj.actor[1] && jobj.actor[1].name) {
+                    obj.stars2 = obj.stars3 = obj.stars2 + "," + htmlUnescape(StringUtil.trim(jobj.actor[1].name));
+                    if(jobj.actor[2] && jobj.actor[2].name) {
+                      obj.stars3 = obj.stars3 + "," + htmlUnescape(StringUtil.trim(jobj.actor[2].name));
+                    }
+                  }
+                }
+              } else {
+                if(jobj.actor.name) {
+                  obj.stars = obj.star1 = obj.stars2 = obj.starts3 = htmlUnescape(StringUtil.trim(jobj.actor.name));
+                }
+              }
+            }
+            
+            if(bTraceDetails) trace('Stars: ' + obj.stars);
+            
+            
+            obj.directors = "";
+            obj.director = "";
+            obj.rev_directors = "";
+            obj.rev_director = "";
+
+            if(jobj.director) {
+              if (jobj.director is Array) {
+
+                var directors_names:Array = [];
+                var reversed_directors_names:Array = [];
+                for each (var jdirector:Object in jobj.director) {
+                  directors_names.push(jdirector.name);
+                  reversed_directors_names.push(reverseName(jdirector.name));
+                }
+
+                obj.directors = directors_names.join(config.directorsSeparator.replace('&nbsp;',' '));
+                obj.rev_directors = reversed_directors_names.join(config.rdirectorsSeparator.replace('&nbsp;',' '));
+                
+                if(jobj.director[0] && jobj.director[0].name) {
+                  obj.director = htmlUnescape(StringUtil.trim(jobj.director[0].name));
+                  obj.rev_director = htmlUnescape(StringUtil.trim(reverseName(jobj.director[0].name)));
+                }
+              } else {
+                if(jobj.director.name) {
+                  obj.directors = obj.director = htmlUnescape(StringUtil.trim(jobj.director.name));
+                  obj.rev_directors = obj.rev_director = htmlUnescape(StringUtil.trim(reverseName(jobj.director.name)));
+                }
+              }
+            }
+            
+            if(bTraceDetails) trace('Director(s): ' + obj.directors);
+            
+
+            obj.genres = "";
+            obj.genre = "";
+            
+            if(jobj.genre) {
+              if (jobj.genre is Array) {
+                obj.genres = jobj.genre.join(config.genresSeparator.replace('&nbsp;',' '));
+                
+                if(jobj.genre[0]) {
+                  obj.genre = htmlUnescape(StringUtil.trim(jobj.genre[0]));
+                }
+              } else {
+                if(jobj.genre) {
+                  obj.genres = obj.genre = htmlUnescape(StringUtil.trim(jobj.genre));
+                }
+              }
+            }
+            
+            if(bTraceDetails) trace('Genre(s): ' + obj.genres);
+            
+            
+            obj.duration = "";
+            if(jobj.duration) {
+              var durationRe:RegExp = new RegExp("PT(\\d*)H?(\\d+)M");
+              var resultsDuration:Array = durationRe.exec(jobj.duration);
+              if(resultsDuration) {
+                var minutes:int = 0;
+                if(resultsDuration[1] && resultsDuration[1] != "") {
+                  minutes = parseInt(resultsDuration[1]) * 60;
+                }
+                if(resultsDuration[2] && resultsDuration[2] != "") {
+                  minutes += parseInt(resultsDuration[2]);
+                }
+              }
+              obj.duration = minutes;
+            }
+            if(bTraceDetails) trace('Duration: ' + obj.duration);
+
+            obj.mpaa = "";
+            if(jobj.contentRating) {
+              obj.mpaa = jobj.contentRating;
+              for each (var conv:Array in config.mpaaConversion) {
+                if(conv[0] == jobj.contentRating) {
+                  obj.mpaa = conv[1];
+                  break;
+                }
+              }
+            }
+            if(bTraceDetails) trace('ContentRating: ' + obj.duration);
+            
+          }
+        }
+          
+        if(!obj.title || !obj.year || obj.title == "" || obj.year == "") {
+          results = reTitleYear.exec(html);
+          if(results) {
+            if(!obj.title || obj.title == "") {
+              obj.title = cleanTitle(htmlUnescape(StringUtil.trim(results[1])).replace(/\.\.\./g,'…'));
+            }
+            if(!obj.year || obj.year == "") {
+              obj.year = StringUtil.trim(results[2]);
+            }
+            results = reTitleId.exec(html);
+            if(results) {
+              obj.tt = 'tt' + StringUtil.trim(results[1]);
+            }
+          } else {
+            trace("Couldn't read title/year!!!");
+            traceLargeString(html);
+          }
+        }
+       
+        
+        if(!obj.rating || obj.rating == "") {
+          results = reRating.exec(html);
+          
+          if(results) {
+            obj.rating = results[1].toString().replace(/\./,'');
+          } else {
+            results = reRatingAlternate.exec(html);
+            if(results)
+              obj.rating = results[1].toString().replace(/\./,'');
+          }
+        }
+        
+        trace('++> Title: ' + obj.title + ' Year: ' + obj.year + ' TT: ' + obj.tt);
+
+				// There appears to be some limit or other condition that causes BigRegExp to fail on large strings when looking for the AKA info, director, etc.
+				// going line by line resolves it...for certain movies the AKA happens 45k+ into the html.				
+				// var lines:Array = html.split(/\n/);
+        
+        if(!obj.directors || obj.directors == "") {
+          obj.directors = "";
+          obj.director = "";
+          obj.rev_directors = "";
+          obj.rev_director = "";
+          results = reDirectorGroup.exec(html);
+          if(results) {
+            var directorIndex:int = 0;
+            var directorString:String = results[1];
+            do {
+              results = reDirector.exec(directorString.substring(directorIndex));
+              if(results) {
+                var director:String = (htmlUnescape(StringUtil.trim(results[1])));
+                directorIndex += (results[0].length + results.index);
+                if(obj.directors != "") {
+                  obj.directors += config.directorsSeparator.replace('&nbsp;',' ');
+                  obj.rev_directors += config.rdirectorsSeparator.replace('&nbsp;',' ');
+                }
+                obj.directors += director;
+                obj.rev_directors += reverseName(director);
+                if(obj.director == "") {
+                  obj.director = director;
+                  obj.rev_director = reverseName(obj.director);
+                }
+                if(bTraceDetails) trace('Directors: ' + obj.directors);
+              }
+            } while(results);
+          }
+        }
+        
+        if(!obj.genre || obj.genre == "") {
+          obj.genres = "";
+          obj.genre = "";
+          results = reGenreGroup.exec(html);
+          if(results) {
+            var genreIndex:int = 0;
+            var genreString:String = results[1];
+            do {
+              results = reGenre.exec(genreString.substring(genreIndex));
+              if(results) {
+                var genre:String = (htmlUnescape(StringUtil.trim(results[1]))); 
+                genreIndex += (results[0].length + results.index);
+                if(obj.genres != "")
+                  obj.genres += config.genresSeparator.replace('&nbsp;',' ');
+                obj.genres += genre;
+                if(obj.genre == "")
+                  obj.genre = genre;
+                if(bTraceDetails) trace('Genres: ' + obj.genre);
+              }
+            } while(results);
+          }
+        }
+
+        if(!obj.stars || obj.stars == "") {
+          obj.stars = "";
+          obj.star1 = "";
+          obj.stars2 = "";
+          obj.stars3 = "";
+          results = reStarsGroup.exec(html);
+          if(results) {
+            var starIndex:int = 0;
+            var starCount:int = 0;
+            var starsString:String = results[1];
+            do {
+              results = reStar.exec(starsString.substring(starIndex));
+              if(results) {
+                starCount += 1;
+                starIndex += (results[0].length + results.index);
+                
+                var star:String = (htmlUnescape(StringUtil.trim(results[1])));
+                
+                if(obj.stars != "")
+                  obj.stars += config.starsSeparator.replace('&nbsp;',' ');
+                obj.stars += star;
+                
+                if(obj.star1 == "")
+                  obj.star1 = star;
+                
+                if(starCount < 3) {
+                  if(obj.stars2 != "") 
+                    obj.stars2 += config.starsSeparator.replace('&nbsp;',' ');
+                  obj.stars2 += star;
+                }
+                
+                if(starCount < 4) {
+                  if(obj.stars3 != "") 
+                    obj.stars3 += config.starsSeparator.replace('&nbsp;',' ');
+                  obj.stars3 += star;
+                }
+                
+                if(bTraceDetails) trace('Stars: ' + obj.stars);
+              }
+            } while(results);
+          }
+        }
+
+        if(!obj.duration || obj.duration == "") {
+          results = reDuration.exec(html);
+          if(results) {
+            obj.duration = htmlUnescape(StringUtil.trim(results[1]));
+          } else {
+            obj.duration = "";
+          }
+        }
+        
+        if(!obj.mpaa || obj.mpaa == "") {
+          obj.mpaa = config.mpaaConversion[0][1]; // ['NF','NR'] so 'NR'
+          results = reMPAARating.exec(html);
+          if(results) {
+            obj.mpaa = results[1];
+            for each (var conv:Array in config.mpaaConversion) {
+              if(conv[0] == results[1]) {
+                obj.mpaa = conv[1];
+                break;
+              }
+            }
+          }
+        }
+        
+				// see if there is one AKA...new design only shows one
+				obj.aka = [];
+
+				results = reOriginalTitle.exec(html);
+				if(results) {
+					if(config.useOriginalTitleAsAka) {
+						bAKAUsed = true;
+					}
+					obj.original = cleanTitle(htmlUnescape( StringUtil.trim(results[1])));
+					obj.aka.push(cleanTitle(htmlUnescape(obj.title + ' *this page title*'), false, true));
+					obj.title = obj.original;
+					if(bTraceDetails) trace('Original Title/AKA: ' + obj.original);
+				}
+
+				results = reAkaSingle.exec(html);
+				if(results) {
+					obj.aka.push(htmlUnescape(StringUtil.trim(results[1])));
+					if(bTraceDetails) trace('AKA: ' + obj.aka[obj.aka.length -1]);
+				}
+				
+				obj.type = type;
+				movies.addItem(new ObjectProxy(obj));					
+			}
+
+			// parse imdb SEARCH html for movie info with regular expressions
+			// The main thing we are missing from the search results is the rating...
+			private function reMovies(movies:ArrayCollection, html:String, type:String = ""):void {
+				var results:Array;
+
+        var index:int = 0;
+        while(true) {
+          var obj:Object = {};
+          results = reMovieSearch.exec(html.substr(index));
+          if(results) {
+            index += results.index + results[0].length;
+            
+            obj.tt = 'tt' + StringUtil.trim(results[1]);
+            obj.title = StringUtil.trim(results[2]);
+            obj.year = StringUtil.trim(results[3]);
+            obj.aka = [];
+            obj.type = type;
+            trace('==> Title: ' + obj.title + ' Year: ' + obj.year + ' TT: ' + obj.tt);
+            movies.addItem(new ObjectProxy(obj));					
+          } else {
+            break;
+          }
+        }
+			}
+/*			
+			private function safeRenameFileWithUndo(origFile:File, newName:String, newExtenstion:String = ""):Boolean {
+				var newFile:File = generateNewFilename(origFile, newName);
+				
+				if(newFile.exists) {
+					if(newFile.nativePath != origFile.nativePath) {
+						Alert.show("The filename already exists!\n" + newFile.nativePath);
+						return false; 
+					}		
+				} else {
+					try {
+						var n:String = origFile.nativePath;
+						origFile.moveTo(newFile, false);
+						_zeeb.addUndoAction(['rename', newFile.nativePath, origFile.nativePath]);
+						log += "\nRename " + n + " to " +  newFile.nativePath;
+					} catch(e:Error) {
+						Alert.show("Couldn't rename the file. It could be open by another process (like a video player or copy process) or you don't have permissions.");
+						_zeeb.commitUndoTransaction();
+						return false;
+					}
+				}
+				return true;
+			}
+*/			
+			private function generateNewRelativeFile(origFile:File, newName:String, newExtension:String = ""):File {
+				var newFile:File = new File();
+				newFile = origFile.resolvePath('..');
+				newFile = newFile.resolvePath(newFile.nativePath + "/" + newName);
+				if(newExtension != "" && newExtension != null) {
+					newFile.nativePath = newFile.nativePath.substr(0, newFile.nativePath.length - newFile.extension.length) + '.' + newExtension;
+				}
+				return newFile;
+			}
+
+			private function checkFileExists(newFile:File, origFile:File = null):Boolean {
+				if(newFile.exists) {
+					if(origFile != null && newFile.nativePath == origFile.nativePath) {
+						// just don't do anything if we are trying to rename to the same thing
+            return true;
+					}	else {
+						Alert.show("The filename you are trying to use already exists!\n" + newFile.nativePath);
+						return true; 
+					}		
+				}
+				return false;
+			}
+			
+			private function moveFile(origFile:File, newFile:File):Boolean {
+				try {
+					var n:String = origFile.nativePath;
+					origFile.moveTo(newFile, false);
+					_zeeb.addUndoAction(['rename', newFile.nativePath, origFile.nativePath]);
+					log += "\nRename " + n + " to " +  newFile.nativePath;
+					return true;
+				} catch(e:Error) {
+					Alert.show("Couldn't rename the file. It could be open by another process (like a video player or copy process) or you don't have permissions.");
+					_zeeb.commitUndoTransaction();
+				}
+				return false;
+			}
+			
+			private function createURLFile(movieFile:File):Boolean {
+				var oldURLFileData:String = removeExistingURLFile(movieFile);
+				var urlFile:File = new File(movieFile.nativePath);
+				
+				if(fileIsDVDFolder) {
+					urlFile = new File(movieFile.nativePath + 
+						(config.posterInDVDFolder ? '/' : '/../') + 
+						(config.separateURLFormat ? parseFormat(config.renameFormatURL, currentMovieInfo, 'url') : movieFile.name + '.url' ));
+				} else {
+					if(config.separateURLFormat)
+						urlFile = new File(movieFile.nativePath + '/../' + parseFormat(config.renameFormatURL, currentMovieInfo, 'url'));
+					else 
+						urlFile = new File(movieFile.nativePath.substr(0, movieFile.nativePath.length - movieFile.extension.length) + 'url');
+				}
+				
+				if(movieFile.nativePath != urlFile.nativePath && urlFile.extension.toLowerCase() == 'url') { // never overwrite the original file!
+					var fs:FileStream = new FileStream();
+					try {
+						fs.open(urlFile, FileMode.WRITE);
+						fs.writeMultiByte("[InternetShortcut]\nURL=" + config.urlImdbTT + currentMovieInfo.tt + "\n", File.systemCharset);  // trailing \n is important for Safari
+						if(config.includeOriginalMovieFilenameinURLFile)  
+							fs.writeMultiByte("\n[OriginalFilename]\nNAME=" + selectedFile.nativePath + "\n", File.systemCharset);  // trailing \n is important for Safari
+
+            try {
+              if(config.includeNFOinURLFile && selectedNFOFile != null && selectedNFOFile.exists && selectedNFOFile.size < 200 * 1024) {
+                fs.writeMultiByte("\n[NFO]\n", File.systemCharset);
+                try {
+                  
+                  var nfoLines:String = "NFO=" + readNFO(selectedNFOFile).split(/\r*\n+/m).join("\nNFO=");
+                  
+                  fs.writeMultiByte(nfoLines, File.systemCharset);
+                } catch(e:Error) {
+                  Alert.show("Unable to read NFO file to include in .url file.\n" + selectedNFOFile.nativePath + "\n" +e.message);
+                  return false;
+                };
+                
+                fs.writeMultiByte("\n", File.systemCharset);
+                
+                if(config.deleteOriginalNFO) {
+                  try {
+                    selectedNFOFile.deleteFile();
+                  } catch(e:Error) {
+                    trace(e.message);  
+                  }
+                }
+              }
+            } catch(e:Error) {
+              Alert.show("Unable to read NFO file to include in .url file.\n" + selectedNFOFile.nativePath + "\n" + e.message);
+            }
+
+            if(oldURLFileData && oldURLFileData != "") {
+							fs.writeMultiByte(oldURLFileData + "\n", File.systemCharset);
+						}
+						
+						fs.close();
+						
+						_zeeb.addUndoAction(['delete', urlFile.nativePath]);
+					} catch(e:Error) {
+						Alert.show("Unable to write .url file. The disk may be full or there is some other issue.\n" + urlFile.nativePath + "\n" +e.message);
+						return false;
+					}
+				} else {
+					Alert.show("WARNING! URL file not created! Was the same name as the movie file or the extension was missing!\n" + urlFile.nativePath );
+					return false;
+				}
+				return true;
+			}
+			
+			private function addIfExists(t:File, a:Array, extension:String = null):void {
+				if(t.exists && (!extension || t.extension == extension)) {
+          // if we are renaming to the same thing there can be dupes...
+          for each(var b:File in a) {
+            if(b.nativePath == t.nativePath) 
+              return;
+          }
+          a.push(new File(t.nativePath)); 
+        }
+			}
+			
+			private function findExistingFiles(files:Array, _extension:Object, format:String = null):Array {
+				var testFiles:Array = [];
+				var t:File;
+        var ext:String;
+				var formatted:String;
+        if(format)
+          formatted = parseFormat(format, currentMovieInfo);
+				var finalFiles:Array = [];
+
+        var extensions:Array;
+        if(_extension is Array)
+          extensions = (_extension as Array);
+        else
+          extensions = [_extension];
+        
+				for each(var f:File in files) {
+					if(f.isDirectory || (!f.exists && f.extension == null)) {
+						// no extension!
+						if(format) {
+              for each (ext in extensions) {
+                testFiles.push(f.nativePath + '/' + formatted + '.' + ext);
+                testFiles.push(f.nativePath + '/../' + formatted + '.' + ext);
+              }
+						} 
+            for each (ext in extensions) {
+  						testFiles.push(f.nativePath + '.' + ext);
+  						testFiles.push(f.nativePath + '/' + f.name + '.' + ext);
+            }
+					} else {
+						// extension!
+						if(format) {
+              for each (ext in extensions) {
+  							testFiles.push(f.nativePath.substr(0, f.nativePath.length - f.name.length) + formatted + '.' + ext);
+              }
+						} 
+            for each (ext in extensions) {
+  						testFiles.push(f.nativePath.substr(0, f.nativePath.length - f.extension.length) + ext);
+            }
+					}
+				}
+					
+				if(testFiles.length > 0) {
+					for each(var s:String in testFiles) {
+						t = new File(s);
+						addIfExists(t, finalFiles);
+					}
+				}
+				return finalFiles;
+			}
+			
+  		private function removeExistingURLFile(movieFile:File):String {
+				var result:String = "";
+
+				// find the original .url file...it may have been moved if the movie is a directory 
+				
+				var urlFiles:Array = findExistingFiles([movieFile, selectedFile], 'url', (config.separateURLFormat ? config.renameFormatURL : null));
+				if(urlFiles.length > 0) {
+          
+          for each (var f:File in urlFiles) {
+            var d:Object = processExistingURLFile(f);
+
+            for (var key:String in d) {
+              switch(key) {
+                case 'InternetShortcut':
+                case 'OldInternetShortcut':
+                  result += '\n[OldInternetShortcut]\n' + d[key];
+                  break;
+                 case 'OriginalFilename':
+                   if(config.includeOriginalMovieFilenameinURLFile)
+                    result += '\n[' + key + ']\n' + d[key];
+                   break;
+                 case 'NFO':
+                   if(config.includeNFOinURLFile)
+                     result += '\n[' + key + ']\n' + d[key];
+                   break;
+                 default:
+                   result += '\n[' + key + ']\n' + d[key];
+                   break;
+              }
+            }
+           
+            try {
+              var n:String = f.nativePath;
+              f.deleteFile();
+              log += "\nDelete " + n;
+            } catch(e:Error) {
+              trace(e.message);
+            }
+          }
+				}
+				
+				return result;
+			}
+      
+      private function moveAndRenameSubtitleFiles(movieFile:Object):void {
+        // rename the existing subtitle files 
+        var subTitleFiles:Array = findExistingFiles([movieFile, selectedFile], config.subtitle_extensions);
+        for each(var subtitleFile:File in subTitleFiles) {
+          
+          var newSubtitleFile:File = subtitleFile.resolvePath('..');
+          newSubtitleFile.nativePath += "/" + escaped_name;
+          newSubtitleFile.nativePath = newSubtitleFile.nativePath.substr(0, newSubtitleFile.nativePath.length - newSubtitleFile.extension.length) + subtitleFile.extension;
+          
+          if(newSubtitleFile.exists) {
+            if(newSubtitleFile.nativePath == subtitleFile.nativePath) {
+              // just don't do anything is we are trying to rename to the same thing						
+            }	else {
+              Alert.show("Couldn't rename a subtitle file because it already exists: " + newSubtitleFile.nativePath );
+            }		
+          } else {
+            try {
+              var n:String = subtitleFile.name;
+              subtitleFile.moveTo(newSubtitleFile, false);
+              _zeeb.addUndoAction(['rename', newSubtitleFile.nativePath, subtitleFile.nativePath]);
+              log += "\nRename Subtitle " + n + " to " +  newSubtitleFile.name;
+            } catch(e:Error) {
+              Alert.show("Couldn't rename a subtitle file: " + subtitleFile.nativePath + ". It could be open by another process (like a video player or copy process) or you don't have permissions.");
+            }
+          }
+        } 
+      }
+      
+      private function processExistingURLFile(file:File):Object {
+        var r:Object = {};
+        
+        var fileStream:FileStream = new FileStream();
+        fileStream.open(file, FileMode.READ);
+        var lines:Array = fileStream.readMultiByte(file.size, File.systemCharset).split(/\r*\n+/m); // For some reason Flex converts \n to \r?
+        fileStream.close();
+        
+        var nextSection:Object;
+        while(nextSection = getNextURLFileStringSection(lines)) {
+          if(!r.hasOwnProperty(nextSection.key)) {
+            r[nextSection.key] = [];
+          }
+          (r[nextSection.key] as Array).push(nextSection.data);
+        }
+        
+        return r;
+      }
+      
+      
+      private var reURLFileSection:RegExp = /^\[(.*)\]$/;
+      
+      private function getNextURLFileStringSection(lines:Array):Object {
+        var r:Object = {};
+        var match:Array;
+        
+        var line:String;
+        while((line = lines.shift()) != null) {
+          if((match = reURLFileSection.exec(line)) != null) {
+            r.key = match[1];
+            r.data = "";
+            while((line = lines.shift()) != null) {
+              if((match = reURLFileSection.exec(line)) != null) {
+                lines.unshift(line);
+                break;
+              }
+              if(line != "" && line != " ") 
+                r.data = r.data + line + "\n";
+            }
+            return r;
+          }
+        }
+        return null;
+      }
+			
+      private function removeExistingPoster(movieFile:File):void {
+        if(!config.downloadPosters)
+          return;
+        var jpgFiles:Array = findExistingFiles([movieFile, selectedFile], 'jpg', (config.separatePosterFormat ? config.renameFormatPoster : null));
+        
+        for each (var f:File in jpgFiles) {
+          if(f.exists && f.extension == 'jpg') {
+            try {
+              f.deleteFile();            
+            } catch(e:Error) {
+              Alert.show("There was an error deleting an existing poster (" + f.nativePath + "). Please resolve and try again.\n" + e.message, "Error");
+            }
+          }
+        }
+      }
+      
+      private function removeEmptyFolder(_file:File):void {
+        if(config.recurseForMovies == 'only')
+          return;
+        var file:File = _file.resolvePath('..');
+        if(file.exists && file.isDirectory && file.getDirectoryListing().length < 1)
+          file.moveToTrashAsync();
+      }
+			
+			private var escaped_name:String;
+			private var log:String;
+      private var _movieFile:File;
+      private var _destFile:File;
+      private var _bPosterOnly:Boolean;
+      
+      private function renameContainingFolder():Boolean {
+        if(config.recurseForMovies != 'only' && config.renameFolder && !fileIsDVDFolder && !selectedFile.isDirectory) {
+          // rename the containing folder to the same thing?
+          var folder:File = selectedFile.resolvePath('..');
+          if(folder.isDirectory && folder.nativePath != selectedFile.nativePath) {
+            var destinationFolder:File = folder.resolvePath('../' + _destFile.name.substr(0, _destFile.name.length - _destFile.extension.length - 1));
+            if(!destinationFolder.exists) {
+              try {
+                var n:String = folder.name;
+                folder.moveTo(destinationFolder, false);
+                _zeeb.addUndoAction(['rename', destinationFolder.nativePath, folder.nativePath]);
+                // make sure we have the correct new location for the JPG
+                selectedFile.nativePath = destinationFolder.nativePath + '/' + selectedFile.name;
+                log += "\nRename Folder " + n + " to " +  destinationFolder.name;
+                return true;
+              } catch(e:Error) {
+                Alert.show("Couldn't rename folder containing movie: " + destinationFolder.nativePath + ". It could be open by another process (like a video player or copy process) or you don't have permissions.");
+              }
+            }
+          }
+          return false;
+        } else {
+          return false;
+        }
+      }
+      
+			// actually move the file to the new name
+			private function onFinalRename(bPosterOnly:Boolean = false):void {
+				var n:String;
+        var bSkip:Boolean;
+        
+        _bPosterOnly = bPosterOnly;
+        
+				if(config.downloadPosters) {
+					if(original_poster && poster_loading) {
+						// the large sized poster hasn't loaded yet, so let's wait
+						poster_loading_message.visible = true;
+						setTimeout(onFinalRename, 10, bPosterOnly);
+					} else {
+						poster_loading_message.visible = false;
+					}
+				}				
+				
+				log = "";
+					
+				if(bPosterOnly) {
+					escaped_name = cleanTitle(selectedFile.name);
+				} else {
+					escaped_name = cleanTitle(final_name.text, true); //allow slashes in the final name for folders
+				}
+				
+				if(escaped_name == null ||  escaped_name == "") {
+					Alert.show("A problem occurred. Probably an update to the filename was being processed when you hit Rename. Please try again.");
+					return;
+				}
+
+				_movieFile = new File(selectedFile.nativePath);
+        _destFile = generateNewRelativeFile(_movieFile, escaped_name);
+				
+				_zeeb.beginUndoTransaction();
+				
+				if(!bPosterOnly) {
+					
+					if(checkFileExists(_destFile, _movieFile)) {
+					} else {
+						moveFile(_movieFile, _destFile);
+					}
+
+          moveAndRenameSubtitleFiles(_movieFile);
+
+					if(config.createURLFile) {
+						// create a *.url file
+	          createURLFile(_destFile);
+					}
+
+          removeExistingPoster(_destFile);
+          if(handlePoster())
+            return;
+          
+        } else {
+          removeExistingPoster(_movieFile);
+          if(handlePoster())
+            return;
+        }
+				
+				onSkip(true);
+			}
+
+      private function handlePoster():Boolean {
+        if(config.downloadPosters && original_poster && !poster_loading && original_poster.content != null &&
+          original_poster.content is Bitmap &&
+          (original_poster.content as Bitmap).bitmapData.height > 0 &&
+          (original_poster.content as Bitmap).bitmapData.width > 0) {	
+
+          
+          // Old JpegEncoder Library code...
+          //asyncEncoder = new JPEGAsyncEncoder(90);
+          // new Alchemy based JPegEncoder library code
+          asyncEncoder = new AlchemyAsyncJpegEncoder(93, 50);
+
+          asyncEncoder.addEventListener(JPEGAsyncCompleteEvent.JPEGASYNC_COMPLETE, onEncodeComplete);
+          asyncEncoder.encode((original_poster.content as Bitmap).bitmapData );
+          
+          
+          _zeeb.flipVisible(); 
+          return true;
+        }
+        return false;
+      }
+      
+			private function onEncodeComplete(e:JPEGAsyncCompleteEvent):void {
+				var posterFile:File;
+
+        if(fileIsDVDFolder) {
+          posterFile = new File(_destFile.nativePath + 
+            (config.posterInDVDFolder ? '/' : '/../') + 
+            (config.separatePosterFormat ? parseFormat(config.renameFormatPoster, currentMovieInfo, 'jpg') : _destFile.name + '.jpg' ));
+        } else {
+          if(config.separatePosterFormat)
+            posterFile = new File(_destFile.nativePath + '/../' + parseFormat(config.renameFormatPoster, currentMovieInfo, 'jpg'));
+          else 
+            posterFile = new File(_destFile.nativePath.substr(0, _destFile.nativePath.length - _destFile.extension.length) + 'jpg');
+        }
+
+				var wr:File = new File( posterFile.nativePath );
+				var stream:FileStream = new FileStream();
+        
+				try {
+					stream.open( wr , FileMode.WRITE);
+					stream.writeBytes ( e.data, 0, e.data.length );
+					stream.close();
+					_zeeb.addUndoAction(['delete', posterFile.nativePath]);
+					log += "\nCreate Poster: " + posterFile.name;
+				} catch(a:Error) {
+					Alert.show("There was an error writing the poster. Your disk may be full or some other issue has occurred. Please resolve and try again.\n" + a.message, "Error");
+				}
+
+        onSkip(true, false);
+			}
+      
+			private function onSkip(deleteSelected:Boolean = false, flip:Boolean = true):void {
+
+        if(deleteSelected) {
+          try {
+            if(!_bPosterOnly) {
+              removeEmptyFolder((renameContainingFolder() ? selectedFile.resolvePath('..') : selectedFile));
+            }
+          } catch(a:Error) {
+            Alert.show("Unable to remove empty folder\n" + a.message, "Error");
+          }
+
+          try {
+            _zeeb.commitUndoTransaction();
+          } catch(a:Error) {
+            Alert.show("Unable to commit undo transaction\n" + a.message, "Error");
+          }
+
+          try {
+            writeToLog(log);
+          } catch(a:Error) {
+            Alert.show("Unable to write to log\n" + a.message, "Error");
+          }
+        }
+        
+
+        // make this an event? 
+				if(flip)
+					_zeeb.flipVisible(); 
+
+				var index:int = files_to_process.selectedIndex;
+
+				if(_zeeb.files.length > 1 || (!deleteSelected && _zeeb.files.length ==1)) {
+					if(files_to_process.selectedIndex < _zeeb.files.length - 2) {
+						files_to_process.selectedIndex += 2;
+					} else if(files_to_process.selectedIndex == _zeeb.files.length - 2) {
+						files_to_process.selectedIndex = 0;
+					} else {
+						files_to_process.selectedIndex = 1;
+					}
+					_zeeb.scrollToIndex(files_to_process.selectedIndex - 1);
+				} else {
+					_zeeb.forceCleanUp();
+				}
+				
+				if(deleteSelected) {
+          try {
+					  _zeeb.files.removeItemAt(index);
+          } catch(e:Error) {
+            Alert.show("Error removing file from list of files...\n" + e.message);            
+          }
+        }
+					
+				onFileSelected(null);
+			}
+			
+			private function onAKA():void {
+				setMovieInfo(currentMovieInfo, true);
+			}
+			
+			public function updateFile(reload:Boolean):void {
+        reRemoveTerms = null;
+					if(visible == true) {
+							if(reload) 
+								startLookupTimer(1000); // give the user a little time to remove other words
+							else
+								setMovieInfo(currentMovieInfo, bAKAUsed);
+					} else
+						onFileSelected(null);  // always do the lookup on the invisible one
+			}
+			
+			private function readNFO(file:File):String {
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.READ);
+				var str:String = fileStream.readMultiByte(file.size, File.systemCharset);
+				fileStream.close();	    
+				return str;
+			}
+			
+			private function showNFO():void {
+				if(selectedNFOFile.size < 100 * 1024) {
+					var str:String = readNFO(selectedNFOFile);
+					var nfoPopup:NfoViewer = new NfoViewer;
+					nfoPopup.initialize();
+					nfoPopup.data = str;
+					nfoPopup.title = selectedNFOFile.name;
+					PopUpManager.addPopUp(nfoPopup, this);
+				} else {
+					Alert.show("NFO is larger than 100K in size.  Ignoring...");
+				}
+			}
+
+			private var htmlEntities:Object = {
+				quot: 0x0022, amp: 0x0026, lt: 0x003c, gt: 0x003e, nbsp: 0x00a0, iexcl: 0x00a1, 
+				cent: 0x00a2, pound: 0x00a3, curren: 0x00a4, yen: 0x00a5, brvbar: 0x00a6, 
+				sect: 0x00a7, uml: 0x00a8, copy: 0x00a9, ordf: 0x00aa, laquo: 0x00ab, not: 0x00ac, 
+				shy: 0x00ad, reg: 0x00ae, macr: 0x00af, deg: 0x00b0, plusmn: 0x00b1, sup2: 0x00b2, 
+				sup3: 0x00b3, acute: 0x00b4, micro: 0x00b5, para: 0x00b6, middot: 0x00b7, cedil: 0x00b8, 
+				sup1: 0x00b9, ordm: 0x00ba, raquo: 0x00bb, frac14: 0x00bc, frac12: 0x00bd, frac34: 0x00be, 
+				iquest: 0x00bf, Agrave: 0x00c0, Aacute: 0x00c1, Acirc: 0x00c2, Atilde: 0x00c3, 
+				Auml: 0x00c4, Aring: 0x00c5, AElig: 0x00c6, Ccedil: 0x00c7, Egrave: 0x00c8, 
+				Eacute: 0x00c9, Ecirc: 0x00ca, Euml: 0x00cb, Igrave: 0x00cc, Iacute: 0x00cd, Icirc:0x00ce, 
+				Iuml: 0x00cf, ETH: 0x00d0, Ntilde: 0x00d1, Ograve: 0x00d2, Oacute: 0x00d3, Ocirc: 0x00d4, 
+				Otilde: 0x00d5, Ouml: 0x00d6, times: 0x00d7, Oslash: 0x00d8, Ugrave: 0x00d9, Uacute: 0x00da, 
+				Ucirc: 0x00db, Uuml: 0x00dc, Yacute: 0x00dd, THORN: 0x00de, szlig: 0x00df, agrave: 0x00e0, 
+				aacute: 0x00e1, acirc: 0x00e2, atilde: 0x00e3, auml: 0x00e4, aring: 0x00e5, aelig: 0x00e6, 
+				ccedil: 0x00e7, egrave: 0x00e8, eacute: 0x00e9, ecirc: 0x00ea, euml: 0x00eb, igrave: 0x00ec, 
+				iacute: 0x00ed, icirc: 0x00ee, iuml: 0x00ef, eth: 0x00f0, ntilde: 0x00f1, ograve: 0x00f2, 
+				oacute: 0x00f3, ocirc: 0x00f4, otilde: 0x00f5, ouml: 0x00f6, divide: 0x00f7, oslash: 0x00f8, 
+				ugrave: 0x00f9, uacute: 0x00fa, ucirc: 0x00fb, uuml: 0x00fc, yacute: 0x00fd, thorn: 0x00fe, 
+				yuml: 0x00ff, OElig: 0x0152, oelig: 0x0153, Scaron: 0x0160, scaron: 0x0161, Yuml: 0x0178, 
+				fnof: 0x0192, circ: 0x02c6, tilde: 0x02dc, Alpha: 0x0391, Beta: 0x0392, Gamma: 0x0393, 
+				Delta: 0x0394, Epsilon: 0x0395, Zeta: 0x0396, Eta: 0x0397, Theta: 0x0398, Iota: 0x0399, 
+				Kappa: 0x039a, Lambda: 0x039b, Mu: 0x039c, Nu: 0x039d, Xi: 0x039e, Omicron: 0x039f, 
+				Pi: 0x03a0, Rho: 0x03a1, Sigma: 0x03a3, Tau: 0x03a4, Upsilon: 0x03a5, Phi: 0x03a6, 
+				Chi: 0x03a7, Psi: 0x03a8, Omega: 0x03a9, alpha: 0x03b1, beta: 0x03b2, gamma: 0x03b3, 
+				delta: 0x03b4, epsilon: 0x03b5, zeta: 0x03b6, eta: 0x03b7, theta: 0x03b8, iota: 0x03b9, 
+				kappa: 0x03ba, lambda: 0x03bb, mu: 0x03bc, nu: 0x03bd, xi: 0x03be, omicron: 0x03bf, 
+				pi: 0x03c0, rho: 0x03c1, sigmaf: 0x03c2, sigma: 0x03c3, tau: 0x03c4, upsilon: 0x03c5, 
+				phi: 0x03c6, chi: 0x03c7, psi: 0x03c8, omega: 0x03c9, thetasym: 0x03d1, upsih: 0x03d2, 
+				piv: 0x03d6, ensp: 0x2002, emsp: 0x2003, thinsp: 0x2009, zwnj: 0x200c, zwj: 0x200d, 
+				lrm: 0x200e, rlm: 0x200f, ndash: 0x2013, mdash: 0x2014, lsquo: 0x2018, rsquo: 0x2019, 
+				sbquo: 0x201a, ldquo: 0x201c, rdquo: 0x201d, bdquo: 0x201e, dagger: 0x2020, Dagger: 0x2021, 
+				bull: 0x2022, hellip: 0x2026, permil: 0x2030, prime: 0x2032, Prime: 0x2033, lsaquo: 0x2039, 
+				rsaquo: 0x203a, oline: 0x203e, frasl: 0x2044, euro: 0x20ac, image: 0x2111, weierp: 0x2118, 
+				real: 0x211c, trade: 0x2122, alefsym: 0x2135, larr: 0x2190, uarr: 0x2191, rarr: 0x2192, 
+				darr: 0x2193, harr: 0x2194, crarr: 0x21b5, lArr: 0x21d0, uArr: 0x21d1, rArr: 0x21d2, 
+				dArr: 0x21d3, hArr: 0x21d4, forall: 0x2200, part: 0x2202, exist: 0x2203, empty: 0x2205, 
+				nabla: 0x2207, isin: 0x2208, notin: 0x2209, ni: 0x220b, prod: 0x220f, sum: 0x2211, 
+				minus: 0x2212, lowast: 0x2217, radic: 0x221a, prop: 0x221d, infin: 0x221e, ang: 0x2220, 
+				and: 0x2227, or: 0x2228, cap: 0x2229, cup: 0x222a, int: 0x222b, there4: 0x2234, 
+				sim: 0x223c, cong: 0x2245, asymp: 0x2248, ne: 0x2260, equiv: 0x2261, le: 0x2264, 
+				ge: 0x2265, sub: 0x2282, sup: 0x2283, nsub: 0x2284, sube: 0x2286, supe: 0x2287, 
+				oplus: 0x2295, otimes: 0x2297, perp: 0x22a5, sdot: 0x22c5, lceil: 0x2308, rceil: 0x2309, 
+				lfloor: 0x230a, rfloor: 0x230b, lang: 0x2329, rang: 0x232a, loz: 0x25ca, spades: 0x2660, 
+				clubs: 0x2663, hearts: 0x2665, diams: 0x2666			
+			};
+			
+			// The XMLDocument hack above doesn't handle all entities
+			//http://www.markledford.com/blog/2009/02/25/as3-htmldecode-htmlencode-xml-hack/
+			//modified from http://www.cnblogs.com/laudy/articles/1186810.html
+			private function htmlUnescape(s:String):String {
+				var replacement:String;
+				var i:int;
+				var code:int;
+				var already_matched:Array = [];
+				var re:RegExp;
+				var matches:Array;
+				var match_part:String;
+				var match:String;
+				
+				if (s==null || s == "") return "";
+				//regex convert all numeric character references to regular chars
+				matches = s.match(/&#(\d+);/g);
+				var dec:String;
+				for(i = 0; i < matches.length; i++){
+					match = matches[i];
+					match_part = match.substring(2,match.length - 1);
+					if(already_matched.indexOf(match_part) > -1) 
+						continue;
+					replacement = String.fromCharCode(uint(match_part));
+					re = new RegExp(match,'gi');
+					s = s.replace(re, replacement);
+					already_matched.push(match_part);
+				}
+				
+				//regex convert all hexadecimal character references to regular chars
+				var hex:uint;
+				matches = s.match(/&#x?([0-9a-f]+);/gi);
+				for(i = 0; i < matches.length; i++){
+					match = matches[i];
+					match_part = match.substring(3,match.length - 1);
+					if(already_matched.indexOf(match_part.toLowerCase()) > -1) 
+						continue;
+					hex = uint("0x" + match_part);
+					replacement = String.fromCharCode(hex);
+					re = new RegExp(match,'gi');
+					s = s.replace(re, replacement);
+					already_matched.push(match_part.toLowerCase());
+				}
+				
+				//regex convert all named entities to regular chars
+				matches = s.match(/&([0-9a-z]+);/gi);
+				for(i = 0; i < matches.length; i++){
+					match = matches[i];
+					match_part = match.substring(1,match.length - 1);
+					if(already_matched.indexOf(match_part) > -1) 
+						continue;
+					code = htmlEntities[match_part];
+					if(code > -1) {
+						re = new RegExp(match,'g');
+						s = s.replace(re, String.fromCharCode(code));
+						already_matched.push(match_part);
+					} else {
+						trace('Bad entity! ' + match);
+					}
+				}
+				return s;
+			}
+			
+			private function cleanTitle(orig:String, bAllowSlashes:Boolean = false, bAllowStars:Boolean = false):String {
+				var title:String = htmlUnescape(orig);
+				title = StringUtil.trim(title);
+/*        
+         Windows and possibly other OS's do not allow periods at the end of a folder name
+         Some movies have names like 'And Justice For All.' and a user could also inadvertently put the extraneous period in.
+        
+        ../Something => OK
+        Something../Else  => BAD
+        ../Something/../Else   => OK
+        Something/../Else   => OK
+        Something./Else   => BAD
+        Something/./Else  => OK
+        ./Something/Else  => OK
+        ...And Justice For All  => OK
+        .../Something Else  => BAD
+
+        http://ryanswanson.com/regexp/#start
+        
+        */
+        title = title.replace(/^([^\.\/\\]+)\.\.*(.*)/g, '$1.$2');
+        title = title.replace(/^([^\.\/\\]*)\.\.\.+([\\\/].*)/g, '$1.$2');
+        
+				title = title.replace(/: ?/g, ' - ');
+				title = title.replace(/\?/g, '');
+        if(!bAllowStars)
+				  title = title.replace(/\*/g, '');
+				if(!bAllowSlashes) {
+					title = title.replace(/\//g, ' - ');
+					title = title.replace(/\\/g, ' - ');
+				}
+				title = title.replace(/\"/g, "");  //"//Flex Builder has problems with this regexp causing format issues 
+				title = title.replace(/  /g, ' '); // get rid of double spaces
+
+				title = title.replace(/([^\\\/\.])\.\.([^\.\\\/])/g, '$1.$2'); // get rid of double periods that aren't ellipses or folders
+				title = title.replace(/\.$/, ''); // get rid trailing period
+
+				return title;
+			}
+			
+			private var seeMoreLoader:URLLoader;
+			private var lastSeeMoreAka:String = '';
+			private function onSeeMoreAka():void {
+				var url:String = config.urlImdbTT + currentMovieInfo.tt + config.strSeeMoreAka;
+				if(lastSeeMoreAka == url)
+					return;
+				
+				lastSeeMoreAka = url;
+				try {if (seeMoreLoader) seeMoreLoader.close();} catch(e:Error) {};
+				
+				seeMoreLoader = new URLLoader(new URLRequest(url));
+				seeMoreLoader.addEventListener(Event.COMPLETE, onSeeMoreComplete);
+				trace('AkaSeeMore Called: ' + url);
+			}
+			
+			private function onSeeMoreComplete(e:Event):void {
+				var html:String = (e.target as URLLoader).data.toString();
+//				trace(html);
+				
+				var results:Array;
+				
+				results = reAkaMoreGroup.exec(html);
+				if(results) {
+					currentMovieInfo.aka = []
+					
+					var akaIndex:int = 0;
+					var akas:String = results[0];
+					do {
+						results = reAkaMore.exec(akas.substring(akaIndex));
+						if(results) {
+							akaIndex += (results[0].length + results.index);
+							currentMovieInfo.aka.push((htmlUnescape( StringUtil.trim(results[2]).replace(/\.\.\./g,'…') + " *" + StringUtil.trim(results[1]) + "*")));
+							if(bTraceDetails) trace('AkaMore: ' + htmlUnescape(StringUtil.trim(results[1]) + " *" + StringUtil.trim(results[2]) + "*"));
+						}
+					} while(results);
+					
+					currentMovieAKAs.source = currentMovieInfo.aka;
+					currentMovieAKAs.refresh();
+					aka_name.open();
+				}
+			}
+
+			private var optionsPopup:Options;
+			private function onOptions():void {
+				optionsPopup = new Options();
+				optionsPopup.config = config;
+        optionsPopup.renamer = this;
+				optionsPopup.addEventListener(CloseEvent.CLOSE, onOptionsSave); 
+				PopUpManager.addPopUp(optionsPopup, this, true);
+			}
+			
+			private function onOptionsSave(e:Event):void {
+				this.parentDocument.saveConfig();
+				trace('Options Save Refresh'); 
+				cleanUp(); 
+				_zeeb.onProcess();
+			} 
+			
+			private var undoPopup:Undo;
+			private function onUndo():void {
+				undoPopup = new Undo();
+				undoPopup.data = data;
+				PopUpManager.addPopUp(undoPopup, this, true);
+			}
+			
+			private function writeToLog(output:String):void {
+				if(logFile) {
+					var fileStream:FileStream = new FileStream();
+					fileStream.open(logFile, FileMode.APPEND);
+					fileStream.writeMultiByte(output, File.systemCharset);
+					fileStream.close();	    
+				} else {
+					Alert.show('The rename log file location has not been set, though this should have happened automatically. Logs are not being created', 'Non-critical Warning');
+				}
+			} 
+			
+      private var tmdbRetries:int;
+      
+			private function doTMDBLookup(tt:String):void {
+        posters_status.visible = true;  
+        posters_status.text = 'Loading posters from themoviedb.org...';
+				posters  = new ArrayCollection;
+				if(currentMovieInfo.hasOwnProperty('tt')) {
+          
+                     
+          if(doTMDBConfigLookupAsNeeded(tt)) return;
+          
+          tmdbRetries = 0;
+//					tmdbImagesTT.url="http://api.themoviedb.org/2.1/Movie.getImages/en/xml/bb81778a56280ab7f28d2048dfdbec88/" + currentMovieInfo.tt
+					tmdbImagesTT.url="http://api.themoviedb.org/3/movie/" + currentMovieInfo.tt + "/images?api_key=" + tmdbApiKey;
+          trace(tmdbImagesTT.url);  
+					fetchURL(tmdbImagesTT);
+				}
+			}
+			
+      private function doTMDBConfigLookupAsNeeded(tt:String):Boolean {
+        if(!tmdbLastConfigUpdate || tmdbLastConfigUpdate + 21600 > new Date()) { //21600 = 6 hrs
+          tmdbConfig.url = 'http://api.themoviedb.org/3/configuration?api_key=' + tmdbApiKey;
+          fetchURL(tmdbConfig);
+          tmdbAfterConfigTT = tt;
+          return true;
+        }
+        return false;
+      }
+
+      private function tmdbConfigResult(e:ResultEvent):void {
+        trace(new Date().toTimeString() + " <- fetchURL: " + e.currentTarget.url);
+        tmdbLastConfigUpdate = new Date();
+        tmdbParsedConfig = JSON.decode(tmdbConfig.lastResult as String);
+        doTMDBLookup(tmdbAfterConfigTT);
+      }
+      
+			private function tmdbImagesResult(e:ResultEvent):void {
+        trace(new Date().toTimeString() + " <- fetchURL: " + e.currentTarget.url);
+        posters_status.visible = false;  
+        
+        var decoded:Object = JSON.decode(tmdbImagesTT.lastResult as String);
+        
+				if(!decoded.posters) {
+					posters = new ArrayCollection();
+          posters_status.text = 'Movie not found on themoviedb.org';
+          posters_status.visible = true;
+				} else if(!(decoded.posters is Array)) {
+          posters = new ArrayCollection();
+          posters_status.text = 'No posters found on themoviedb.org';
+          posters_status.visible = true;
+        } else {
+					try {
+						posters = new ArrayCollection(ArrayUtil.toArray(decoded.posters));
+					} catch(e:Error) {
+						posters = null;
+            posters_status.text = 'Error processing posters on themoviedb.org';
+            posters_status.visible = true;
+					}
+				}
+			}
+			
+			private function onPosterData(e:Event):void {
+				var i:Image = e.currentTarget as Image;
+				if(i.data[0]) {
+  				var size:String = browser_enabled.selected ? 'w92' : 'w185';
+          i.width = browser_enabled.selected ? 92 : 185;
+          i.source = tmdbParsedConfig.images.base_url + size + i.data[0].file_path;
+          trace(i.source);
+        }
+				if(i.data[1] == 0) {
+				  callLater(function(target:Image):void {
+					  onPosterClickProcess(target);
+				  }, [i]);
+				}
+			}
+
+			private function onPosterClick(e:Event):void {
+				onPosterClickProcess(e.currentTarget as Image);		
+			}
+		
+			private var original_poster:Image;
+			private var poster_loading:Boolean = false;
+			private function onPosterClickProcess(i:Image):void {
+        
+        if(i.parent == null) {
+          callLater(function(target:Image):void {
+            onPosterClickProcess(target);
+          }, [i]);
+          return;
+        }
+        
+				if(original_poster) {
+					try {
+						original_poster.removeEventListener(Event.COMPLETE, onPosterLoaded);	
+					} catch(e:Error) {};
+					original_poster = null;
+				}
+				
+				var c:Container; 
+				for each(c in posters_box.getChildren()) {
+					c.setStyle('borderColor','#FFFFFF');
+				}
+        try { 
+          (i.parent.parent as Container).setStyle('borderColor','#000000');
+        } catch(e:Error) {
+          trace(e.message);
+        }
+        
+				original_poster = new Image();
+				original_poster.initialize();
+        original_poster.load(tmdbParsedConfig.images.base_url + 'w500' + i.data[0].file_path);
+				original_poster.addEventListener(Event.COMPLETE, onPosterLoaded);
+				poster_loading = true;
+			}
+			
+			private function onPosterLoaded(e:Event):void {
+				try {
+					original_poster.removeEventListener(Event.COMPLETE, onPosterLoaded);	
+				} catch(e:Error) {};
+				poster_loading = false;
+			}
+			
+			private function onPosterOnly():void {
+				onFinalRename(true);				
+			}
+			
+			private function onTMDBFault(e:FaultEvent):void {
+        if(e.statusCode == 404) {
+          posters_status.visible = true;
+          posters_status.text = "No posters found on themoviedb.org";
+        } else if(e.statusCode == 503) {
+         if(tmdbRetries < 5) { 
+           tmdbRetries +=1;
+           posters_status.visible = true;
+           posters_status.text = "Retry #" + tmdbRetries + ". Loading movies from themoviedb.org...";
+           trace(e.message.toString());
+           fetchURL(tmdbImagesTT);
+           return;
+         }
+         Alert.show("Unable to retrieve poster from themoviedb.org after " + tmdbRetries.toString() + " attempts. It appears their API is down, which seems to happen occasionally. We recommend trying again later when the API is functioning properly if you see this message more than once.");
+        } else {
+          Alert.show("Unable to retrieve poster from themoviedb.org. Status code returned was :" + e.statusCode + ".");
+        }
+			}
+
+			private function createPosterTip(event:ToolTipEvent):void {
+				ToolTipManager.hideDelay = 20000;
+				ToolTipManager.showDelay = 200;
+				ToolTipManager.showDelay = 50;
+				var pt:PosterTooltip = new PosterTooltip();
+        var image:Object = event.currentTarget.data[0];
+        pt.source = tmdbParsedConfig.images.base_url + 'w500' + image.file_path;
+				event.toolTip = pt;
+			}
+			
+      private function playMovie():void {
+        selectedFile.openWithDefaultApplication();       
+      }
+
+      private function exploreMovie():void {
+        selectedFile.parent.openWithDefaultApplication();       
+      }
+      
+      private function useHtmlURL():void {
+        doImdbLookup(html_box.location);
+      }
+      
+      private function fetchURL(http:HTTPService):void {
+        trace(new Date().toTimeString() + " -> fetchURL:" + http.url);
+        http.send();
+      }
+      
+      private function loadURLLoader(ul:*, url:URLRequest):void {
+        trace(new Date().toTimeString() + " -> loadURLLoader:" + url.url);
+        ul.load(url);
+      }
+      
+
+		]]>
+	</mx:Script>
+
+	<mx:HTTPService id="tmdbImagesTT" fault="onTMDBFault(event)" method="GET"
+                  result="tmdbImagesResult(event)" resultFormat="object" useProxy="false"/>
+
+  <mx:HTTPService id="tmdbConfig" fault="onTMDBFault(event)" method="GET"
+                  result="tmdbConfigResult(event)" resultFormat="object" useProxy="false"/>
+
+	<mx:NumberFormatter id="rating_formatter" precision="1"/>
+	
+	<mx:HBox id="both_boxes" width="100%" height="{this.height - renamer.height - 7}"
+           horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:VBox id="left_box" width="520" height="100%" verticalGap="1">
+			<mx:HBox width="100%">
+				<mx:Spacer width="5"/>
+				<mx:Label fontSize="16" text="Movie Files"/>
+				<mx:Spacer width="100%"/>
+				<mx:Button label="Folders" click="_zeeb.showFolders()" styleName="btn"/>
+				<mx:Button label="Refresh" click="trace('Cleanup Refresh'); cleanUp(); _zeeb.onProcess()"
+                   styleName="btn"/>
+				<mx:Button id="options_btn" label="Options" click="onOptions()" styleName="btn"/>
+				<mx:Button id="undo" label="Undo" click="onUndo()" styleName="btn"/>
+			</mx:HBox>
+			
+			<mx:VBox width="100%" height="100%" borderStyle="solid" borderThickness="3" cornerRadius="3"
+               paddingBottom="3" paddingLeft="5" paddingRight="8" paddingTop="3">
+				<mx:TileList id="files_to_process" width="100%" height="100%" backgroundAlpha="0"
+                     borderStyle="none" columnCount="1" columnWidth="490"
+                     dataProvider="{_zeeb.files}" fontSize="11"
+                     itemClick="_zeeb.dispatchEvent(new GenericEvent('FILE_SELECTED', this));"
+                     rollOverColor="0xF8F8F8" selectionColor="0xaaaaaa">
+					<mx:itemRenderer>
+						<mx:Component>
+							<mx:Canvas dataChange="onData(event);" horizontalScrollPolicy="off"
+                         verticalScrollPolicy="off">
+								<mx:Script>
+									<![CDATA[
+										private function onData(e:Event):void {
+											c.setStyle('backgroundColor','#FFFFFF');
+                      if(data && data.tt) 
+                        c.setStyle('backgroundColor','#aaaaaa');
+											if(data && !(data is File)) { // File if we are duplicating
+												if((data.poster || outerDocument.config.downloadPosters == false) && 
+													(data.url || outerDocument.config.createURLFile == false)) 
+													c.setStyle('backgroundColor','#d2e6b2');
+												else if(data.url && !data.poster)
+													c.setStyle('backgroundColor','#cdbddd');
+												else if(!data.url && data.poster)
+													c.setStyle('backgroundColor','#b9e1f7');
+											}
+										}
+									]]>
+								</mx:Script>
+								<mx:Canvas id="c" width="100%" backgroundAlpha="1" horizontalScrollPolicy="off"
+                           verticalScrollPolicy="off">
+									<mx:Label paddingBottom="-2" paddingLeft="5" paddingTop="-2" text="{data.name}"
+                            toolTip="{data.name}"/>
+								</mx:Canvas>
+							</mx:Canvas>
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:TileList>
+			</mx:VBox>
+			
+			<mx:Spacer height="5"/>
+			
+			<mx:HBox width="100%" paddingBottom="-3">
+				<mx:Spacer width="5"/>
+				<mx:Label fontSize="16" text="Search Results"/>
+				<mx:Spacer width="100%"/>
+				<mx:CheckBox id="use_tt" visible="{show_tt.selected}" label="Use TT?"
+                     change="config.useTTFile = use_tt.selected; _zeeb.files.refresh()"
+                     color="#000000" fontSize="11" paddingTop="-9" selected="{config.useTTFile}"
+                     toolTip="Use the 'tt######' already in the filename? This lets you quickly find the same IMDB page again for updates to poster and ratings. Uncheck this if you are fixing an incorrectly named file."/>
+				<mx:CheckBox id="show_tt" label="Show TT?"
+                     change="config.showTTFile = show_tt.selected; _zeeb.forceCleanUp();"
+                     color="#000000" fontSize="11" paddingTop="-9" selected="{config.showTTFile}"
+                     toolTip="Show Files with the IMDB 'tt######' already in the title?"/>
+				<mx:CheckBox id="show_sample" label="Show Sample?"
+                     change="config.showSampleFile = show_sample.selected; _zeeb.forceCleanUp();"
+                     color="#000000" fontSize="11" paddingTop="-9"
+                     selected="{config.showSampleFile}"
+                     toolTip="Show Files with 'sample' in the title?"/>
+				<mx:HBox horizontalGap="0">
+					<mx:Label fontSize="10" paddingTop="-5" text="Legend"/>
+					<mx:Spacer width="2"/>
+					<mx:Canvas width="10" height="10" backgroundColor="#FFFFFF"
+                     toolTip="Files with this color do not have tt##### in the file name and haven't been processed."/>
+					<mx:Canvas width="10" height="10" backgroundColor="#d2e6b2"
+                     toolTip="Files with this color have tt####### in the name and have both a .url file and a poster .jpg file, if those features are enabled."/>
+					<mx:Canvas width="10" height="10" backgroundColor="#cdbddd"
+                     toolTip="Files with this color have tt####### in the name and have a .url file but are missing a poster .jpg file, if those features are enabled."/>
+					<mx:Canvas width="10" height="10" backgroundColor="#b9e1f7"
+                     toolTip="Files with this color have tt####### in the name and have a poster .jpg file but are missing a .url file, if those features are enabled."/>
+          <mx:Canvas width="10" height="10" backgroundColor="#aaaaaa"
+                     toolTip="Files with this color have tt####### in the name but are missing both a .url file and poster .jpg file, if those features are enabled."/>
+				</mx:HBox>
+			</mx:HBox>
+			<mx:VBox width="100%" height="100%" borderStyle="solid" borderThickness="3" cornerRadius="3"
+               paddingBottom="3" paddingLeft="5" paddingRight="8" paddingTop="3">
+				<mx:TileList id="movie_tiles" width="100%" height="100%" backgroundAlpha="0"
+                     borderStyle="none" columnWidth="480" dataProvider="{movies}"
+                     direction="horizontal" fontSize="12" horizontalScrollPolicy="off"
+                     itemClick="updateMovie(movie_tiles.selectedItem)" rollOverColor="0xF8F8F8"
+                     rowHeight="45" selectionColor="0xaaaaaa" verticalScrollPolicy="auto">
+					<mx:itemRenderer>
+						<mx:Component>
+							<mx:VBox width="480" height="45" borderColor="#999999" borderStyle="solid"
+                       borderThickness="1" horizontalScrollPolicy="off" verticalGap="0"
+                       verticalScrollPolicy="off">
+								<mx:Label width="100%" fontSize="13"
+                          htmlText="{data.title} ({data.year}) &lt;font color='#666666'&gt;{data.type}&lt;/font&gt;"
+                          paddingTop="1"/>
+								<mx:Label visible="{data.aka != ''}" width="100%" color="#666666" fontSize="9"
+                          htmlText=" aka: {data.aka}" includeInLayout="{data.aka != ''}"
+                          paddingTop="-7" toolTip="{data.aka}"/>
+							</mx:VBox>
+						</mx:Component>
+					</mx:itemRenderer>
+				</mx:TileList>
+			</mx:VBox>
+		</mx:VBox>
+		<mx:VBox id="right_box" width="100%" height="100%" horizontalScrollPolicy="off" verticalGap="1"
+             verticalScrollPolicy="off">
+			<mx:HBox width="100%"  paddingBottom="-3">
+				<mx:Spacer width="5"/>
+				<mx:Label fontSize="16" text="Browser"/>
+				<mx:CheckBox id="browser_enabled" change="config.showBrowser = browser_enabled.selected"
+                     paddingTop="4" selected="{config.showBrowser}"
+                     toolTip="Uncheck to disable the browser temporarily. This is generally useful for adding posters to already renamed movies."/>
+				<mx:Spacer width="20"/>
+				<mx:TextInput id="url_box" visible="{browser_enabled.selected}" width="100%"
+                      enter="html_box.location = url_box.text;" fontSize="13"
+                      text="{html_box.location}"/>
+        <mx:Button visible="{browser_enabled.selected}" label="Use" click="useHtmlURL()"
+                   styleName="btn"
+                   toolTip="Use the current url as the movie you wish to rename with. This should be an IMDB movie url in the Browser URL box to the left, ending in tt#######/ for it to work properly."/>
+				<mx:Button visible="{browser_enabled.selected}" label="Back" click="html_box.historyBack();"
+                   styleName="btn"/>
+				<mx:Spacer width="15"/>
+				<!--					<mx:Label text="Scale:" fontSize="13"/>
+				<mx:HSlider id="html_zoom" minimum="0.6" maximum="1.2" value="{config.htmlZoom}" width="200" liveDragging="true" tickInterval="0.05" snapInterval="0.05" change="config.htmlZoom = html_zoom.value;"/>
+			-->				</mx:HBox>
+			<mx:VBox id="html_box_box" visible="{browser_enabled.selected}" width="100%" height="100%"
+               borderStyle="solid" borderThickness="3" cornerRadius="3"
+               includeInLayout="{browser_enabled.selected}" paddingBottom="0" paddingLeft="5"
+               paddingRight="8" paddingTop="3">
+				<mx:HTML id="html_box" width="100%" height="100%" backgroundAlpha="0"
+                 location="{browser_enabled.selected ? currentMovieUrl : 'app:/'}"
+                 paintsDefaultBackground="false" uncaughtScriptException=";"
+                 userAgent="Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)"/>
+			</mx:VBox>
+			<mx:Spacer height="0"/>
+			<!-- This kind of ugly on the resizing... -->
+      <mx:Canvas width="100%">
+        <mx:Tile id="posters_box" visible="{config.downloadPosters}" width="100%"
+                 height="{ browser_enabled.selected ? 150 : right_box.height - 35}"
+                 borderStyle="solid" borderThickness="3" cornerRadius="3" direction="horizontal"
+                 includeInLayout="{config.downloadPosters}" paddingBottom="3" paddingLeft="5"
+                 paddingRight="8" paddingTop="3">
+          <mx:Repeater id="posters_rp" dataProvider="{posters}">
+            <mx:VBox borderColor="#FFFFFF" borderStyle="solid" borderThickness="3" paddingBottom="2"
+                     paddingLeft="2" paddingRight="2" paddingTop="2">
+              <mx:Canvas>
+                <mx:Image maxHeight="{browser_enabled.selected ? 120 : 270}"
+                          click="onPosterClick(event)"
+                          data="{[posters_rp.currentItem, posters_rp.currentIndex]}"
+                          dataChange="onPosterData(event)" horizontalCenter="0" toolTip=" "
+                          toolTipCreate="createPosterTip(event)" verticalCenter="0"/>
+              </mx:Canvas>
+            </mx:VBox>
+          </mx:Repeater>
+        </mx:Tile>
+        <mx:Text id="posters_status" visible="false" width="100%" includeInLayout="false"
+                 text="No posters found." textAlign="center" verticalCenter="0"/>
+      </mx:Canvas>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:VBox id="renamer" visible="{selectedFile != null}" width="100%">
+		<mx:HBox width="100%" height="100%">
+			<mx:VBox width="100%">
+				<mx:HBox width="100%">
+					<mx:Button id="show_nfo" visible="{selectedNFOFile != null}" label="View NFO"
+                     click="showNFO()" fontSize="10" styleName="btn"/>
+          <mx:Button id="play_movie" visible="{selectedFile.size &gt; 1048576}" label="Play"
+                     click="playMovie()" fontSize="10" styleName="btn"
+                     toolTip="Launch the default movie player for the selected file."/>
+          <mx:Button id="explore" label="Explore" click="exploreMovie()" fontSize="10"
+                     styleName="btn"
+                     toolTip="Launch the default file explorer for the selected movie's containing folder."/>
+					<mx:Text id="orig_filename" htmlText="Filename: {selectedFile.name}"/> 
+					<mx:Text id="orig_size" color="{selectedFile.size &gt; 157286400 ? 0x000000 : 0xFF0000 }"
+                   htmlText="FileSize: {int((selectedFile.size as Number)/1024/1024)}MB"/>
+				</mx:HBox>
+				<mx:HBox width="100%" height="140">
+					<mx:HBox id="search_parts"/>			
+					<mx:Button id="research" label="Search Again" click="doImdbLookup()" styleName="btn"/>
+				</mx:HBox>			
+				<mx:Spacer height="1"/>
+				<mx:HBox width="100%" height="100%">
+					<mx:Button id="rename" label="Rename" click="onFinalRename()" paddingLeft="20"
+                     paddingRight="20" styleName="btn"/>
+					<mx:Button id="skip" label="Skip" click="onSkip()" styleName="btn"/>
+					<mx:Button id="poster_only" visible="{config.downloadPosters}" label="Poster Only"
+                     click="onPosterOnly()" includeInLayout="{config.downloadPosters}"
+                     styleName="btn"
+                     toolTip="Only download the selected poster. Use this to quickly download posters for previously renamed files. Uses the exiting filename to name the poster (not what is in the rename text input field)."/>
+					<mx:TextInput id="final_name" width="100%" backgroundAlpha="0" htmlText="{newFilename}"/>
+				</mx:HBox>
+				<mx:HBox id="akaBox" visible="false" width="100%" height="100%">
+					<mx:Button id="aka" label="Use AKA Format" click="onAKA()" fontSize="11" styleName="btn"/>
+					<mx:Label text="Also Known As"/>
+					<mx:ComboBox id="aka_name" width="450" color="#000000" dataProvider="{currentMovieAKAs}"
+                       editable="true" fontWeight="normal" open="onSeeMoreAka()" rowCount="20"/>
+<!--					<mx:Label id="see_more_aka" text="see more AKAs" click="onSeeMoreAka()" textDecoration="underline" useHandCursor="true" buttonMode="true" mouseChildren="false"/>
+-->				</mx:HBox>
+			</mx:VBox>
+		</mx:HBox>
+		
+		<mx:TextArea id="poster_loading_message" visible="false" backgroundColor="#000000"
+                 borderColor="#000000" borderStyle="solid" color="#FFFFFF" cornerRadius="3"
+                 editable="false" horizontalCenter="0"
+                 htmlText="The large poster is still loading, please wait..."
+                 includeInLayout="false" selectable="false" verticalCenter="0"/>
+<!--		<mx:Image id="original_poster" visible="false" includeInLayout="false"/> 	
+-->	</mx:VBox>
+
+</mx:VBox>

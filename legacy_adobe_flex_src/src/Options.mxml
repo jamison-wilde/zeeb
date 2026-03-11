@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" 
+								title="Options"
+								creationComplete="onComp()"
+								modalTransparencyBlur="0.3"
+								modalTransparencyColor="#FFFFFF"
+								borderAlpha="0.9" 
+								showCloseButton="true"
+								close="onClose()"
+								fontFamily="Lucida Sans Unicode"
+								fontWeight="normal"
+								width="1150"
+                height="700"
+								dataChange="onData()"
+>
+	
+	<mx:Script>
+		<![CDATA[
+      import com.slaingod.config.Config;
+      
+      import mx.collections.ArrayCollection;
+      import mx.managers.PopUpManager;
+			
+			[Bindable]
+			public var config:Config;
+
+      [Bindable]
+      public var renamer:Renamer;
+
+      [Bindable]
+      private var tooltipConfig:Config = new Config;
+			
+			private function onComp():void {
+				PopUpManager.centerPopUp(this);
+			}
+
+			private function onData():void {
+//				config = data as Config;	
+			}
+			
+			private function onNfoBrowse():void {
+        var file:File = new File();
+				file.addEventListener(Event.SELECT, nfoDirSelected);
+				file.browseForDirectory("Select directory containing NFOs");
+			}
+
+      private function onLogfileBrowse():void {
+        var file:File = new File();
+        if(logfile_location.text && logfile_location.text != "") {
+          try {
+            file.resolvePath(logfile_location.text);
+          } catch (e:Error) {
+            file.resolvePath(File.applicationStorageDirectory.nativePath);            
+          }
+        }
+        file.addEventListener(Event.SELECT, logfileDirSelected);
+        file.browseForDirectory("Select directory to store logfile");
+      }
+
+			private function nfoDirSelected(e:Event):void {
+				nfo_folder.text = (e.target as File).nativePath;
+				config.nfoFolder = (e.target as File).nativePath; 
+			} 
+
+      private function logfileDirSelected(e:Event):void {
+        var file:File = new File();
+        var name:String;
+        try {
+          name = file.resolvePath(logfile_location.text).name;
+        } catch(e:Error) {
+        } 
+        if(!name || name == "")
+          name = "zeeb.log";
+        
+        logfile_location.text = ((e.target as File).nativePath + '/' + name).replace("\\","/");
+        config.logfileLocation = logfile_location.text; 
+      } 
+
+			private function onClose():void {
+				dispatchEvent(new Event('SAVE_OPTIONS')); 
+				PopUpManager.removePopUp(this);				
+			}
+
+      private var html:String = "";
+      
+      [Bindable]
+      private var movie:Object;
+      
+      private function testRegularExpressions(isMovie:Boolean):void {
+        renamer.initBigRegExps(true);
+        renamer.cleanUp(true);
+        if(isMovie) {
+          renamer.doImdbSingle({tt: 'tt' + tt.text});
+        } else {
+          renamer.parseFileName(search.text);
+          renamer.doImdbLookup();
+        }
+      }
+      
+      protected function on_clickRemoveExtension(e:MouseEvent):void
+      {
+        if(movie_extensions.selectedIndex) {
+          var ac:ArrayCollection = new ArrayCollection(config.movie_extensions);
+          ac.removeItemAt(movie_extensions.selectedIndex);
+          config.movie_extensions = ac.toArray();
+        }
+      }
+
+      protected function on_clickAddExtension(e:MouseEvent):void
+      {
+        var t:String = add_extension.text;
+        if(t != "" && config.movie_extensions.indexOf(t) == -1) {
+          config.movie_extensions.push(t);
+          movie_extensions.dataProvider = null;
+          movie_extensions.dataProvider = config.movie_extensions;
+          movie_extensions.scrollToIndex(config.movie_extensions.length -1);
+        }
+      }
+
+    ]]>
+	</mx:Script>
+	
+	<mx:TabNavigator height="100%" width="100%" fontWeight="normal">
+		<mx:VBox label="General Settings" verticalGap="5" width="100%">
+			<mx:VBox width="100%">
+        <mx:HBox width="100%">
+          <mx:VBox width="100%">
+            <mx:CheckBox id="check_for_updates" label="Automatically check for new versions of Zeeb?" change="config.checkForUpdates = check_for_updates.selected;" selected="{config.checkForUpdates}" color="#000000" toolTip="Zeeb can check SourceForge.net to see if there is a new version available. You will be given a notice that there is a new version and the option to install it. The update does not happen without your permission."/>
+            <mx:CheckBox id="use_json_if_available" label="Use IMDB JSON if available" change="config.useImdbJson = use_json_if_available.selected;" selected="{config.useImdbJson}" color="#000000" toolTip="IMDB is now conveniently putting JSON with much of the info we need in a script tag. Attempt to use this first (recommended)."/>
+            <mx:CheckBox id="use_original_title" label="Use 'Original Title' as AKA automatically?" change="config.useOriginalTitleAsAka = use_original_title.selected;" selected="{config.useOriginalTitleAsAka}" color="#000000" toolTip="IMDB is now putting the original foreign title in grey underneath the default language's title. This checkbox will allow you to specifiy if you automatically want Zeeb to put that original title in the filename as an AKA automatically."/>
+            <mx:CheckBox id="show_hidden" label="Show Hidden Files?" toolTip="On OSX in particular, Volumes folder will not show unless this is checked." selected="{config.showHiddenFiles}" change="{config.showHiddenFiles = show_hidden.selected;}"/>
+            <mx:CheckBox id="show_part_icons" label="Show Remove, Save, etc. as Icons?" toolTip="Uncheck this to use the old text labels instead when deciding which parts of the filename to save, remove or search on in the renamer view." selected="{config.showPartIcons}" change="{config.showPartIcons = show_part_icons.selected;}"/>
+            <mx:CheckBox id="create_url_file" label="Create a .url file that opens IMDB page for each movie?" change="config.createURLFile = create_url_file.selected;" selected="{config.createURLFile}" color="#000000" toolTip="You can enable or disable the creation of the &lt;name&gt;.url file."/>
+            <mx:CheckBox id="original_movie_in_url" label="Original Movie Filename in URL file?" change="config.includeOriginalMovieFilenameinURLFile = original_movie_in_url.selected;" selected="{config.includeOriginalMovieFilenameinURLFile}" color="#000000" toolTip="If a .url file is created, you can have it include the original movie filename in the .url, which you can later view in a text editor, for reference." enabled="{config.createURLFile}"/>
+            <mx:CheckBox id="nfo_in_url" label="Original NFO in URL file?" change="config.includeNFOinURLFile = nfo_in_url.selected;" selected="{config.includeNFOinURLFile}" color="#000000" toolTip="If a .url file is created, you can have it include the original NFO file text in the .url file, which you can later view in a text editor, for reference." enabled="{config.createURLFile}"/>
+            <mx:CheckBox id="delete_original_nfo" label="Delete Original NFO after including in URL file?" change="config.deleteOriginalNFO = delete_original_nfo.selected;" selected="{config.deleteOriginalNFO}" color="#000000" toolTip="If a .url file is created and contains an NFO file, you can have Zeeb delete the original NFO file after it is copied into the new URL file." enabled="{config.createURLFile &amp;&amp; config.includeNFOinURLFile}"/>
+          </mx:VBox>
+          <mx:VBox width="100%">
+            <mx:CheckBox id="download_poster" label="Download poster from themoviedb.com?" change="config.downloadPosters = download_poster.selected;" selected="{config.downloadPosters}" color="#000000" toolTip="Download a JPEG file of the movie poster when you rename a file?"/>
+            <mx:CheckBox id="rename_folders" label="Rename the folder as well? See Tooltip." change="config.renameFolder = rename_folders.selected;" selected="{config.renameFolder}" color="#000000" toolTip="Rename the folder that contains this movie when the file is renamed. This is really only useful for situations where each subfolder has a separate file."/>
+            <mx:CheckBox id="include_folder_name" label="Include parent folder name in search terms?" change="config.includeFolderNameInSearchTerms = include_folder_name.selected;" selected="{config.includeFolderNameInSearchTerms}" color="#000000" toolTip="If you want to include the folder name of the file you are renaming in the search terms, check this item. Use this if you have well named folders for your movies, but the movie files in the folders aren't well named."/>
+            <mx:CheckBox id="remove_the" selected="{config.removeThe}" change="config.removeThe = remove_the.selected;" label="Remove 'The' from the beginning of movie names"/>
+            <mx:CheckBox id="swap_the" selected="{config.swapThe}" change="config.swapThe = swap_the.selected;" label="Swap 'The' from the beginning of movie names and append to the end after a comma"/>
+            <mx:CheckBox id="auto_select" selected="{config.autoSelectFirstMovie}" change="config.autoSelectFirstMovie = auto_select.selected;" label="Auto select the first movie" toolTip="When you select a folder and list the movies, by default Zeeb does not select a movie file. Check this box to have it automatically load the first movie in the Movie Files list."/>
+            <mx:CheckBox id="detect_dvd" label="Detect DVD/BluRay files and rename folder instead?" change="config.detectDVDs = detect_dvd.selected;" selected="{config.detectDVDs}" color="#000000" toolTip="This option allows you to rename folders that contain DVD &amp; Bluray files. Each DVD/BluRay must be in a separate folder. This option works best when used with one of the 'search subfolders' options in the folders view. For Zeeb, a DVD folder must contain a VIDEO_TS folder or VIDEO_TS.IFO file. For BluRay, the folder must contain a BDMV folder."/>
+            <mx:CheckBox id="poster_inside" label="DVD poster/.url inside folder?" change="config.posterInDVDFolder = poster_inside.selected;" selected="{config.posterInDVDFolder}" color="#000000" toolTip="The poster and .url files for DVD folder renames will be saved inside the folder if this is checked."/>
+          </mx:VBox>
+        </mx:HBox>
+			</mx:VBox>
+			<mx:HBox>
+        <mx:Label text="Separators"/>
+        <mx:Spacer width="5"/>
+				<mx:TextInput id="saved_part_separator" text="{config.savedPartSeparator.replace('&amp;nbsp;',' ')}" change="config.savedPartSeparator = saved_part_separator.text;" maxChars="2" width="20" toolTip="Default is period, typical are space and dash as well. You can use up to two characters, like commma and space."/>
+				<mx:Label text="Saved Parts"/>
+        <mx:Spacer width="5"/>
+        <mx:TextInput id="stars_separator" text="{config.starsSeparator.replace('&amp;nbsp;',' ')}" change="config.starsSeparator = stars_separator.text.replace(' ','&amp;nbsp;');" width="30" toolTip="When more than one star is used in the filename, choose a separator for the stars. Default is comma then space."/>
+        <mx:Label text="Stars"/>
+        <mx:Spacer width="5"/>
+        <mx:TextInput id="genres_separator" text="{config.genresSeparator.replace('&amp;nbsp;',' ')}" change="config.genresSeparator = genres_separator.text.replace(' ','&amp;nbsp;');" width="30" toolTip="When more than one genre is used in the filename, choose a separator for the genres. Default is comma then space."/>
+        <mx:Label text="Genres"/>
+        <mx:Spacer width="5"/>
+        <mx:TextInput id="directors_separator" text="{config.directorsSeparator.replace('&amp;nbsp;',' ')}" change="config.directorsSeparator = directors_separator.text.replace(' ','&amp;nbsp;');" width="30" toolTip="When more than one director is used in the filename, choose a separator for the directors. Default is comma then space."/>
+        <mx:Label text="Directors"/>
+        <mx:Spacer width="5"/>
+        <mx:TextInput id="rdirectors_separator" text="{config.rdirectorsSeparator.replace('&amp;nbsp;',' ')}" change="config.rdirectorsSeparator = rdirectors_separator.text.replace(' ','&amp;nbsp;');" width="30" toolTip="When more than one name reversed director is used in the filename, choose a separator for the directors. Default is semicolon then space, because a comma is used to separate the 'last name, first name'."/>
+        <mx:Label text="Reversed Directors"/>
+			</mx:HBox>
+      <mx:HBox>
+        <mx:Label text="'The' in your language"/>
+        <mx:TextInput id="the" text="{config.the}" change="config.the = the.text;" width="70" toolTip="You can change the word used for 'The' removal or swapping, such as 'Die' if you use the German name for movies. This is pretty simplistically implemented currently."/>
+      </mx:HBox>
+      <mx:HBox>
+        <mx:Label text="Replaces spaces in titles with"/>
+        <mx:TextInput id="title_spaces" text="{config.replaceTitleSpacesWith}" change="config.replaceTitleSpacesWith = title_spaces.text;" width="70" toolTip="You can have zeeb replace spaces in a title with the text you specify here. Leave empty to keep spaces in the titles."/>
+      </mx:HBox>
+			<mx:HBox>
+				<mx:Label text="Maximum Undos Remembered"/>
+				<mx:NumericStepper id="max_undos" value="{config.maxUndos}" change="config.maxUndos = max_undos.value;" width="78" minimum="0" maximum="1000"/>
+				<mx:Button styleName="btn" label="Clear Undo List" click="config.undoList = [];"/>
+			</mx:HBox>
+
+			<mx:HBox>
+				<mx:Label text="Additional NFO Folder"/>
+				<mx:TextInput id="nfo_folder" text="{config.nfoFolder}" change="config.nfoFolder = nfo_folder.text;" toolTip="If you regularly move your files around before you have renamed them, you may want to specify a folder that contains the NFO files."/>
+				<mx:Button id="browse_nfo_folder" label="Browse" useHandCursor="true" mouseChildren="false" buttonMode="true" click="onNfoBrowse()" styleName="btn"/>
+				<mx:CheckBox id="nfo_folder_recurse" toolTip="Do you wish to check all subfolders for NFO files?" label="Recurse NFO Folder's subfolders?" selected="{config.nfoFolderRecurse}" change="config.nfoFolderRecurse = nfo_folder_recurse.selected;"/>          
+			</mx:HBox>
+			
+			<mx:HBox width="100%">
+				<mx:Label text="Logfile location"/>
+				<mx:TextInput id="logfile_location" text="{config.logfileLocation}" change="config.logfileLocation = logfile_location.text;" toolTip="If you want to change the location of Zeeb's log file to something more conventient, change the path and filename here." width="100%"/>
+        <mx:Button id="browse_logfile_folder" label="Browse" useHandCursor="true" mouseChildren="false" buttonMode="true" click="onLogfileBrowse()" styleName="btn"/>
+			</mx:HBox>
+			
+			<mx:VBox>
+				<mx:Label text="'Duplicate for Testing' Small File Copy Limit"/>
+				<mx:HBox>
+					<mx:NumericStepper id="small_file_limit" minimum="1" maximum="100000" value="{config.smallFileCopyLimit}" change="config.smallFileCopyLimit = small_file_limit.value;" toolTip="Change the size of the copy cutoff when using the Duplicate for Testing functionality. Files larger than this cutoff size will be recreated with a zero size to prevent copying very large files. Default is 1024 which is 1MB."/>
+          <mx:Label text="Kilobytes"/>
+				</mx:HBox>
+			</mx:VBox>
+			
+		</mx:VBox>
+		
+		<mx:VBox label="Movie Filename Formatting">
+			<mx:HBox width="100%" height="100%">
+				<mx:VBox width="50%" height="100%">
+					<mx:Label text="Movie Format ({tooltipConfig.renameFormat})" selectable="true"/>
+					<mx:TextInput id="movie_format" text="{config.renameFormat}" change="{config.renameFormat = movie_format.text}" width="100%"/>
+					<mx:Label text="Movie With AKA Format ({tooltipConfig.renameAKAFormat})" selectable="true"/>
+					<mx:TextInput id="movie_with_aka_format" text="{config.renameAKAFormat}" change="{config.renameAKAFormat = movie_with_aka_format.text}" width="100%"/>
+
+					<mx:CheckBox id="separate_poster_format" label="Separate Poster Format?" change="config.separatePosterFormat = separate_poster_format.selected;" selected="{config.separatePosterFormat}" color="#000000" toolTip="If you would like to use a different format when creating posters, check this box and make any needed adjustments." enabled="{config.downloadPosters}"/>
+					<mx:Label text="Poster Format ({tooltipConfig.renameFormatPoster})" enabled="{separate_poster_format.selected &amp;&amp; config.downloadPosters}" selectable="true"/>
+					<mx:HBox width="100%" horizontalGap="-2">
+						<mx:TextInput id="poster_format" text="{config.renameFormatPoster}" change="{config.renameFormatPoster = poster_format.text}" width="100%" enabled="{separate_poster_format.selected &amp;&amp; config.downloadPosters}" toolTip="Please note, that it is not recommended you use a format containing tags that you may edit manually, like &lt;t&gt;. Format is relative to the renamed movie file/dvd folder, not the original filename. Do not include the extension."/>
+						<mx:Label text=".jpg"/>
+					</mx:HBox>
+					
+					<mx:CheckBox id="separate_url_format" label="Separate URL Format?" change="config.separateURLFormat = separate_url_format.selected;" selected="{config.separateURLFormat}" color="#000000" toolTip="If you would like to use a different format when creating .url files, check this box and make any needed adjustments." enabled="{config.createURLFile}"/>
+					<mx:Label text="URL Format ({tooltipConfig.renameFormatURL})" enabled="{separate_url_format.selected &amp;&amp; config.createURLFile}" selectable="true"/>
+					<mx:HBox width="100%" horizontalGap="-2">
+						<mx:TextInput id="url_format" text="{config.renameFormatURL}" change="{config.renameFormatURL = url_format.text}" width="100%" enabled="{separate_url_format.selected &amp;&amp; config.createURLFile}" toolTip="Please note, that it is not recommended you use a format containing tags that you may edit manually, like &lt;t&gt;. Format is relative to the renamed movie file/dvd folder, not the original file/folder. Do not include the extension."/>
+						<mx:Label text=".url"/>
+					</mx:HBox>
+					
+					<mx:CheckBox id="separate_dvd_folder_format" label="Separate DVD Folder Formats?" change="config.separateDVDFolderFormat = separate_dvd_folder_format.selected;" selected="{config.separateDVDFolderFormat}" color="#000000" toolTip="If you would like to use a different format when renaming DVD folders, check this box and make any needed adjustments."/>
+					<mx:Label text="DVD Movie Folder Format ({tooltipConfig.renameFormatDVDFolder})" enabled="{separate_dvd_folder_format.selected}" selectable="true"/>
+					<mx:TextInput id="dvd_movie_format" text="{config.renameFormatDVDFolder}" change="{config.renameFormatDVDFolder = dvd_movie_format.text}" width="100%" enabled="{separate_dvd_folder_format.selected}"/>
+					<mx:Label text="DVD Movie Folder With AKA Format ({tooltipConfig.renameAKAFormatDVDFolder})" enabled="{separate_dvd_folder_format.selected}" selectable="true"/>
+					<mx:TextInput id="dvd_movie_with_aka_format" text="{config.renameAKAFormatDVDFolder}" change="{config.renameAKAFormatDVDFolder = dvd_movie_with_aka_format.text}" width="100%" enabled="{separate_dvd_folder_format.selected}"/>
+				</mx:VBox>
+				<mx:TextArea width="50%" editable="false" height="100%">
+					<mx:text>
+						<![CDATA[It is highly recommended you include the IMDB <tt> in the filename itself (not just a the folder name) to help ease future renaming/updating using the Show TT? and Use TT? options in the renamer. When changing to a new renaming format for the first time, it is recommended you use the Duplicate for Testing functionality before applying to your real media files, to ensure your format is working as you expect it to.
+            
+The following substitutions are made in the formats to the left:
+	<t> or <title> -> The movie title
+	<tt> or <imdb> -> The IMDB unique 'tt01234567' number for the movie.  It is always recommended you include this as it will allow you to distinguish movies using Zeeb and other media cataloguing tools in the future.
+	<a> or <aka> -> The movie Also Known As title you selected, when a foreign or secondary title is used. Note that if the AKA includes the title as a subpart, it will completely replace the original title and use the normal format.
+	<r100> or <rating100> -> The IMDB movie rating as a whole number 0-100, where 6.4/10 is '64'.
+	<r10> or <rating10> -> The IMDB movie rating as a decimal number 0-10, such as '6.4'.			
+	<s> or <saved> -> Indicate where the saved parts are added to the filename.  Usually this would be at the end of the filename format.
+	<y> or <year> -> The year for this movie.
+	<d> or <directors> -> The list of comma sepated directors
+  <D> or <rdirectors> -> The list of comma sepated directors, last name first
+	<d1> or <director> -> The first director listed
+  <D1> or <rdirector> -> The first director listed, last name first
+	<g> or <genres> -> The list of comma sepated genres
+	<g1> or <genre> -> The first genre listed
+  <o> or <original> -> Include original filename (useful for folder renames only typically)
+  <c> or <mpaa> or <certification> -> Include the MPAA (or other certificate from non-US) Rating if available.
+  <stars>, <star1>, <stars2>, <stars3> -> Include all stars, 1 star, up to 2 stars, or up to 3 stars in the filename. You can also set the stars separate in the Options.
+  <duration> or <time> -> Include the IMDB listed duration of the movie. This may not match the actual time of your file if it has additional scenes, unrated, etc.         
+  <H*> -> Imdb duration hours if greater than zero. Use like <H> for "3", <HH> for "3H", <Hh> for "3h" <H hours> for "3 hours".
+  <M*> -> Imdb duration in minutes. Use like <M> for "14", <MM> if you want to "14M", <Mm> for "14m" <M mins> for "14 mins".
+	Any other text will be included as is, such as spaces and punctuation (excluding file system punctuation such as colons, double quotes, question marks, and asterisks). You may use slashes to indicate that the saved file should be written to another folder. For instance, if you want to have all of your movies in a folder based on the movie title, but in that folder have your files named 'tt01234567.mkv', this would allow that.
+						]]>
+					</mx:text>
+				</mx:TextArea>
+			</mx:HBox>
+			
+		</mx:VBox>
+		
+    <mx:VBox label="Movie File Extensions">
+      <mx:HBox>
+        <mx:Button styleName="btn" label="Add Extension" click="on_clickAddExtension(event)"/>  
+        <mx:TextInput id="add_extension" width="70"/>
+      </mx:HBox>
+      <mx:List id="movie_extensions" dataProvider="{config.movie_extensions}" selectable="true" allowMultipleSelection="false" width="250" height="100%">
+        <mx:itemRenderer>
+          <mx:Component>
+            <mx:Label text="{data}"/>
+          </mx:Component>
+        </mx:itemRenderer>
+      </mx:List>
+      <mx:Button styleName="btn" label="Remove Selected Extension" click="on_clickRemoveExtension(event)"/>  
+    </mx:VBox>
+    
+		<mx:VBox label="IMDB Settings">
+			<mx:Label text="IMDB Search URL:"/>
+			<mx:TextInput id="search_url" text="{config.searchUrl}" change="config.searchUrl = search_url.text;" width="100%"/>
+			<mx:Label text="IMDB TT URL:"/>
+			<mx:TextInput id="tt_url" text="{config.urlImdbTT}" change="config.urlImdbTT = tt_url.text;" toolTip="This is mostly useful if you want to change the country for the domain." width="100%"/>
+		</mx:VBox>
+    
+    <mx:VBox label="Advanced" width="100%" height="100%" horizontalScrollPolicy="off">
+      <mx:Text width="100%" htmlText="You may directly edit the Regular Expressions used by Zeeb to scrape IMDB here.&lt;p&gt;This may enable you to adapt Zeeb to a different language version&lt;p&gt;of IMDB for instance, or fix a problem when IMDB's&lt;p&gt; site design is tweaked. Feel free to post any improvements&lt;p&gt;or non-English queries on the forum at&lt;p&gt;&lt;u&gt;&lt;a href='http://sourceforge.net/projects/zeeb/forums/forum/1064112'&gt;http://sourceforge.net/projects/zeeb/forums/forum/1064112&lt;/a&gt;&lt;/u&gt;."/>
+      <mx:Text width="100%" htmlText="NOTE: DISABLE USE IMDB JSON IF YOU WANT TO ENSURE YOU ARE USING THESE REGULAR EXPRESSIONS"/>
+      
+      <mx:HRule width="100%"/>
+      
+      <mx:HBox width="100%" height="100%">
+        
+        <mx:VBox width="100%">
+          <mx:Label text="Movie Results" fontSize="18" fontWeight="bold"/>
+          
+          <mx:Text text="IMDB TT Id&#13;{tooltipConfig.reTitleId}" selectable="true"/>
+          <mx:TextInput text="{config.reTitleId}" change="config.reTitleId = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Rating&#13;{tooltipConfig.reRating}" selectable="true"/>
+          <mx:TextInput text="{config.reRating}" change="config.reRating = (event.currentTarget as TextInput).text"/>
+
+          <mx:Text text="Rating Alternate&#13;{tooltipConfig.reRatingAlternate}" selectable="true"/>
+          <mx:TextInput text="{config.reRatingAlternate}" change="config.reRatingAlternate = (event.currentTarget as TextInput).text"/>
+
+          <mx:Label text="Title/Year&#13;{tooltipConfig.reTitleYear}" selectable="true"/>
+          <mx:TextInput text="{config.reTitleYear}" change="config.reTitleYear = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="AKA See More&#13;{tooltipConfig.reAkaSeeMore}" selectable="true"/>
+          <mx:TextInput text="{config.reAkaSeeMore}" change="config.reAkaSeeMore = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="AKA First&#13;{tooltipConfig.reAkaSingle}" selectable="true"/>
+          <mx:TextInput text="{config.reAkaSingle}" change="config.reAkaSingle = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Director Group&#13;{tooltipConfig.reDirectorGroup}" selectable="true"/>
+          <mx:TextInput text="{config.reDirectorGroup}" change="config.reDirectorGroup = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Director Each&#13;{tooltipConfig.reDirector}" selectable="true"/>
+          <mx:TextInput text="{config.reDirector}" change="config.reDirector = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Genre Group&#13;{tooltipConfig.reGenreGroup}" selectable="true"/>
+          <mx:TextInput text="{config.reGenreGroup}" change="config.reGenreGroup = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Genre Each&#13;{tooltipConfig.reGenre}" selectable="true"/>
+          <mx:TextInput text="{config.reGenre}" change="config.reGenre = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Original Title&#13;{tooltipConfig.reOriginalTitle}" selectable="true"/>
+          <mx:TextInput text="{config.reOriginalTitle}" change="config.reOriginalTitle = (event.currentTarget as TextInput).text"/>
+
+          <mx:Text text="MPAA/Certification&#13;{tooltipConfig.reMPAARating}" selectable="true"/>
+          <mx:TextInput text="{config.reMPAARating}" change="config.reMPAARating = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Stars Group&#13;{tooltipConfig.reStarsGroup}" selectable="true"/>
+          <mx:TextInput text="{config.reStarsGroup}" change="config.reStarsGroup = (event.currentTarget as TextInput).text"/>
+
+          <mx:Text text="Stars Each&#13;{tooltipConfig.reStar}" selectable="true"/>
+          <mx:TextInput text="{config.reStar}" change="config.reStar = (event.currentTarget as TextInput).text"/>
+
+          <mx:Text text="Duration/Time&#13;{tooltipConfig.reDuration}" selectable="true"/>
+          <mx:TextInput text="{config.reDuration}" change="config.reDuration = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Full AKA Group&#13;{tooltipConfig.reAkaMoreGroup}" selectable="true"/>
+          <mx:TextInput text="{config.reAkaMoreGroup}" change="config.reAkaMoreGroup = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Text text="Full AKA Each&#13;{tooltipConfig.reAkaMore}" selectable="true"/>
+          <mx:TextInput text="{config.reAkaMore}" change="config.reAkaMore = (event.currentTarget as TextInput).text"/>
+
+        </mx:VBox>
+        
+        <mx:VRule height="100%"/>
+        
+        <mx:VBox width="400">
+          <mx:Label text="Test Movie" fontSize="18" fontWeight="bold"/>
+          <mx:Label text="TT Movie Id ({tooltipConfig.testMovieId})" selectable="true"/>
+          <mx:HBox horizontalGap="-2">
+            <mx:Label text="tt"/>
+            <mx:TextInput id="tt" text="{config.testMovieId}" change="config.testMovieId = (event.currentTarget as TextInput).text"/>
+            <mx:Spacer width="10"/>
+            <mx:Button styleName="btn" label="Test Movie" click="testRegularExpressions(true);"/>
+          </mx:HBox>
+          
+          <mx:Text width="100%" text="IMDB TT:&#13;{renamer.parseFormat('&lt;tt&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Title:&#13;{renamer.parseFormat('&lt;t&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Initial AKA:&#13;{renamer.parseFormat('&lt;a&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Rating(100):&#13;{renamer.parseFormat('&lt;r100&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Rating(10.0):&#13;{renamer.parseFormat('&lt;r10&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Year:&#13;{renamer.parseFormat('&lt;y&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Directors List:&#13;{renamer.parseFormat('&lt;d&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Director (First):&#13;{renamer.parseFormat('&lt;d1&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Genre List:&#13;{renamer.parseFormat('&lt;g&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Genre (First):&#13;{renamer.parseFormat('&lt;g1&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="MPAA/Certification:&#13;{renamer.parseFormat('&lt;c&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Stars:&#13;{renamer.parseFormat('&lt;stars&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Star1:&#13;{renamer.parseFormat('&lt;star1&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Stars2:&#13;{renamer.parseFormat('&lt;stars2&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Stars3:&#13;{renamer.parseFormat('&lt;stars3&gt;', renamer.currentMovieInfo)}"/>
+          <mx:Text width="100%" text="Duration/Time:&#13;{renamer.parseFormat('&lt;duration&gt;', renamer.currentMovieInfo)}"/>
+          
+        </mx:VBox>
+        
+      </mx:HBox>
+      
+      <mx:HRule width="100%"/>
+      
+      <mx:HBox width="100%">
+        
+        <mx:VBox width="100%">
+          <mx:Label text="Search Results" fontSize="18" fontWeight="bold"/>
+          
+          <mx:Label text="No Results ({tooltipConfig.reFindNoResults})" selectable="true"/>
+          <mx:TextInput text="{config.reFindNoResults}" change="config.reFindNoResults = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Label text="Title Begin ({tooltipConfig.reTitle})" selectable="true"/>
+          <mx:TextInput text="{config.reTitle}" change="config.reTitle = (event.currentTarget as TextInput).text"/>
+          
+          <mx:Label text="Movie Each ({tooltipConfig.reMovieSearch})" selectable="true"/>
+          <mx:TextInput text="{config.reMovieSearch}" change="config.reMovieSearch = (event.currentTarget as TextInput).text"/>
+          
+        </mx:VBox>
+        
+        <mx:VRule height="100%"/>
+        
+        <mx:VBox width="400">
+          <mx:Label text="Test Search" fontSize="18" fontWeight="bold"/>
+          <mx:Label text="Movie Filename ({tooltipConfig.testMovieFileName})" selectable="true"/>
+          <mx:HBox>
+            <mx:TextInput id="search" text="{config.testMovieFileName}" change="config.testMovieFileName = (event.currentTarget as TextInput).text"/>
+            <mx:Button styleName="btn" label="Test Search" click="testRegularExpressions(false);"/>
+          </mx:HBox>
+
+          <mx:TileList id="movie_tiles" dataProvider="{renamer.movies}" width="385" backgroundAlpha="0" fontSize="12" height="400" selectionColor="0xaaaaaa" rollOverColor="0xF8F8F8" direction="horizontal" horizontalScrollPolicy="off" verticalScrollPolicy="auto" columnWidth="380" rowHeight="45" borderStyle="none">
+            <mx:itemRenderer>
+              <mx:Component>
+                <mx:VBox verticalScrollPolicy="off" borderStyle="solid" borderThickness="1" borderColor="#999999" height="45" width="480" verticalGap="0" horizontalScrollPolicy="off">
+                  <mx:Label htmlText="{data.title} ({data.year}) &lt;font color='#666666'&gt;{data.type}&lt;/font&gt;" width="100%" paddingTop="1" fontSize="13"/>
+                  <mx:Label htmlText=" aka: {data.aka}" visible="{data.aka != ''}" includeInLayout="{data.aka != ''}" width="100%" paddingTop="-7" fontSize="9" color="#666666" toolTip="{data.aka}"/>
+                </mx:VBox>
+              </mx:Component>
+            </mx:itemRenderer>
+          </mx:TileList>
+          
+        </mx:VBox>
+        
+      </mx:HBox>
+      
+      
+      <mx:HRule width="100%"/>
+      <mx:Label text="Other Regular Expression Settings" fontSize="18" fontWeight="bold"/>
+      
+      <mx:Label text="Filename Parts Delimiters ({tooltipConfig.reFilenamePartsSplitter})" selectable="true"/>
+      <mx:TextInput text="{config.reFilenamePartsSplitter}" change="config.reFilenamePartsSplitter = (event.currentTarget as TextInput).text"/>
+      
+      <mx:HRule width="100%"/>
+      
+      <mx:Label text="Non-Regular Expression Settings" fontSize="18" fontWeight="bold"/>
+      
+      <mx:Label text="See More AKA URL Path ({tooltipConfig.strSeeMoreAka})" selectable="true"/>
+      <mx:HBox>
+        <mx:Label text="http://www.imdb.com/title/tt{tt.text}"/>
+        <mx:TextInput text="{config.strSeeMoreAka}" change="config.strSeeMoreAka = (event.currentTarget as TextInput).text"/>
+      </mx:HBox>
+      
+    </mx:VBox>
+	</mx:TabNavigator>
+  
+<!--	<mx:Script> <![CDATA[ import com.flexspy.FlexSpy;  ]]>	</mx:Script>
+	<mx:Button id="btnFlexSpy" label="Debug" click="FlexSpy.show()" color="#000000"/>
+-->  
+</mx:TitleWindow>
