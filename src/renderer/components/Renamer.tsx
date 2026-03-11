@@ -39,6 +39,7 @@ interface RenamerProps {
 export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
+  const [webviewReady, setWebviewReady] = useState(false);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [selectedTt, setSelectedTt] = useState('');
@@ -81,7 +82,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
 
   // Auto-trigger search when parts are set from a new file
   useEffect(() => {
-    if (!autoSearchRef.current || searchParts.length === 0 || !webviewEl) return;
+    if (!autoSearchRef.current || searchParts.length === 0 || !webviewEl || !webviewReady) return;
     autoSearchRef.current = false;
     const query = searchParts
       .filter((p) => p.state === 'search')
@@ -91,7 +92,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     const url = buildSearchUrl(query, config.urlImdbSearch);
     navigationMode.current = 'search';
     webviewEl.loadURL(url);
-  }, [searchParts, webviewEl, config.urlImdbSearch]);
+  }, [searchParts, webviewEl, webviewReady, config.urlImdbSearch]);
 
   useEffect(() => {
     if (!metadata || !currentFile) {
@@ -163,6 +164,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     };
 
     const handleDomReady = () => {
+      setWebviewReady(true);
       try {
         const url = webview.getURL();
         setUrlInput(url);
