@@ -26,7 +26,8 @@
       "Bash(npm uninstall:*)",
       "Bash(npm test:*)",
       "Bash(git commit:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(timeout 30 npm start 2>&1 || true)"
     ]
   }
 }
