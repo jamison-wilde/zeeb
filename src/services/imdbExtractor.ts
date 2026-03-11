@@ -10,7 +10,7 @@ export function buildTitleUrl(tt: string, baseUrl: string): string {
 
 export function generateSearchExtractionScript(): string {
   return `
-    (function() {
+    new Promise(function(resolve) {
       var attempts = 0;
       var maxAttempts = 20;
       var interval = 150;
@@ -32,23 +32,17 @@ export function generateSearchExtractionScript(): string {
 
             seen[m[1]] = true;
 
-            // Walk up to find the result row container
             var container = allLinks[i].closest('li, [class*="list-summary"], [class*="find-result"]');
             if (!container) container = allLinks[i].parentElement;
 
-            // Extract year: remove the title text from container text,
-            // then look for a 4-digit year in what remains.
-            // This avoids confusing "2001" (title) with "1968" (year).
             var year = null;
             if (container) {
               var fullText = container.textContent || '';
               var metaText = fullText.replace(linkText, '');
-              // Look for year in parentheses first: (1968)
               var parenYear = metaText.match(/\\(((?:19|20)\\d{2})\\)/);
               if (parenYear) {
                 year = parseInt(parenYear[1], 10);
               } else {
-                // Fallback: standalone year
                 var plainYear = metaText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
                 if (plainYear) year = parseInt(plainYear[1], 10);
               }
@@ -74,25 +68,18 @@ export function generateSearchExtractionScript(): string {
             setTimeout(extract, interval);
             return;
           }
-          window.zeebIpc.sendToHost(JSON.stringify({
-            type: 'searchResults',
-            results: results,
-          }));
+          resolve(JSON.stringify({ type: 'searchResults', results: results }));
         } catch(e) {
           if (attempts < maxAttempts) {
             attempts++;
             setTimeout(extract, interval);
           } else {
-            window.zeebIpc.sendToHost(JSON.stringify({
-              type: 'searchResults',
-              results: [],
-              error: e.message,
-            }));
+            resolve(JSON.stringify({ type: 'searchResults', results: [], error: e.message }));
           }
         }
       }
       extract();
-    })();
+    })
   `;
 }
 
@@ -110,18 +97,15 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
           var p = patterns[i];
           var value = null;
 
-          // Try JSON-LD first
           if (p.jsonLdPath && ld[p.jsonLdPath] !== undefined) {
             value = ld[p.jsonLdPath];
           }
 
-          // Fallback to DOM selector
           if (value === null && p.domSelector) {
             var el = document.querySelector(p.domSelector);
             if (el) value = el.textContent.trim();
           }
 
-          // Fallback to regex
           if (value === null && p.regexPattern) {
             var html = document.documentElement.innerHTML;
             var re = new RegExp(p.regexPattern);
@@ -132,7 +116,6 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
           if (value !== null) data[p.field] = value;
         }
 
-        // Extract standard fields from JSON-LD
         var tt = '';
         var urlMatch = window.location.href.match(/title\\/(tt\\d+)/);
         if (urlMatch) tt = urlMatch[1];
@@ -162,32 +145,26 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
           }
         }
 
-        var result = {
-          tt: tt,
-          title: data.title || ld.name || '',
-          year: data.year ? parseInt(data.year, 10) : (ld.datePublished ? parseInt(ld.datePublished, 10) : null),
-          rating: ld.aggregateRating ? ld.aggregateRating.ratingValue : null,
-          directors: directors,
-          genres: genres,
-          actors: actors,
-          duration: duration,
-          mpaa: ld.contentRating || null,
-          aka: [],
-          posterUrl: ld.image || null,
-        };
-
-        window.zeebIpc.sendToHost(JSON.stringify({
+        return JSON.stringify({
           type: 'titleData',
-          data: result,
-        }));
+          data: {
+            tt: tt,
+            title: data.title || ld.name || '',
+            year: data.year ? parseInt(data.year, 10) : (ld.datePublished ? parseInt(ld.datePublished, 10) : null),
+            rating: ld.aggregateRating ? ld.aggregateRating.ratingValue : null,
+            directors: directors,
+            genres: genres,
+            actors: actors,
+            duration: duration,
+            mpaa: ld.contentRating || null,
+            aka: [],
+            posterUrl: ld.image || null,
+          }
+        });
       } catch(e) {
-        window.zeebIpc.sendToHost(JSON.stringify({
-          type: 'titleData',
-          data: null,
-          error: e.message,
-        }));
+        return JSON.stringify({ type: 'titleData', data: null, error: e.message });
       }
-    })();
+    })()
   `;
 }
 

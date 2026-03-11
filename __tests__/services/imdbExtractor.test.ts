@@ -22,8 +22,8 @@ describe('imdbExtractor', () => {
 
   it('generates JS injection script for search page', () => {
     const script = generateSearchExtractionScript();
-    expect(script).toContain('zeebIpc.sendToHost');
-    expect(script).toContain('JSON.stringify');
+    expect(script).toContain('resolve(JSON.stringify');
+    expect(script).toContain('searchResults');
   });
 
   it('generates JS injection script for title page', () => {
@@ -35,16 +35,17 @@ describe('imdbExtractor', () => {
     expect(script).toContain('querySelector');
   });
 
-  it('search extraction script uses zeebIpc.sendToHost', () => {
+  it('search extraction script returns results via Promise', () => {
     const script = generateSearchExtractionScript();
-    expect(script).toContain('window.zeebIpc.sendToHost');
-    expect(script).not.toContain('ReactNativeWebView');
+    expect(script).toContain('new Promise');
+    expect(script).toContain('resolve(');
+    expect(script).not.toContain('sendToHost');
   });
 
-  it('title extraction script uses zeebIpc.sendToHost', () => {
+  it('title extraction script returns results directly', () => {
     const script = generateTitleExtractionScript([]);
-    expect(script).toContain('window.zeebIpc.sendToHost');
-    expect(script).not.toContain('ReactNativeWebView');
+    expect(script).toContain('return JSON.stringify');
+    expect(script).not.toContain('sendToHost');
   });
 
   it('parses search results from WebView message', () => {
