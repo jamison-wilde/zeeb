@@ -1,1 +1,0 @@
-export { UndoModal } from './UndoModal';

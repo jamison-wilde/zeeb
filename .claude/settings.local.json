@@ -18,7 +18,15 @@
       "Bash(git -C /c/Users/slain/claude/zeeb ls-tree -r HEAD --name-only)",
       "Bash(git add:*)",
       "Bash(head -20 /c/Users/slain/claude/zeeb/docs/plans/*.md 2>/dev/null)",
-      "Bash(ls C:/Users/slain/claude/zeeb/src/types* C:/Users/slain/claude/zeeb/src/utils/cp437* 2>/dev/null)"
+      "Bash(ls C:/Users/slain/claude/zeeb/src/types* C:/Users/slain/claude/zeeb/src/utils/cp437* 2>/dev/null)",
+      "Bash(cd \"C:/Users/slain/claude/zeeb\" && rm -rf node_modules/react-native-windows/Microsoft.ReactNative/obj && export PATH=\"/c/Program Files/dotnet:$PATH\" && npx react-native run-windows --logging 2>&1)",
+      "Bash(cd \"C:/Users/slain/claude/zeeb\" && rm -rf node_modules/react-native-webview/windows/ReactNativeWebView/obj node_modules/react-native-webview/windows/ReactNativeWebView/x64 && export PATH=\"/c/Program Files/dotnet:$PATH\" && npx react-native run-windows --logging 2>&1)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm test:*)",
+      "Bash(git commit:*)",
+      "Bash(npx vitest:*)"
     ]
   }
 }
