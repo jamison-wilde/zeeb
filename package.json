@@ -2,59 +2,44 @@
   "name": "Zeeb",
   "version": "0.0.1",
   "private": true,
+  "main": ".vite/build/main.js",
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
-    "lint": "eslint .",
-    "start": "react-native start",
-    "test": "jest",
-    "macos": "react-native run-macos",
-    "windows": "npx @react-native-community/cli run-windows",
-    "test:windows": "jest --config jest.config.windows.js"
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@react-native/new-app-screen": "0.81.1",
     "react": "19.1.0",
-    "react-native": "0.81.1",
-    "react-native-fs": "^2.20.0",
-    "react-native-macos": "^0.81.3",
-    "react-native-safe-area-context": "^5.5.2",
-    "react-native-webview": "^13.16.1",
-    "react-native-windows": "^0.81.5",
+    "react-dom": "^19.2.4",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/preset-env": "^7.25.3",
-    "@babel/runtime": "^7.25.0",
-    "@react-native-community/cli": "20.0.0",
-    "@react-native-community/cli-platform-android": "20.0.0",
-    "@react-native-community/cli-platform-ios": "20.0.0",
-    "@react-native/babel-preset": "0.81.1",
-    "@react-native/eslint-config": "0.81.1",
-    "@react-native/metro-config": "0.81.1",
-    "@react-native/typescript-config": "0.81.1",
-    "@rnx-kit/jest-preset": "^0.1.17",
-    "@testing-library/react-native": "^13.3.3",
-    "@types/jest": "^29.5.13",
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-dmg": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-vite": "^7.11.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.4.0",
     "@types/react": "^19.2.14",
-    "@types/react-test-renderer": "^19.1.0",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "electron": "^41.0.0",
     "eslint": "^8.19.0",
     "jest": "^29.7.0",
+    "jsdom": "^28.1.0",
     "prettier": "2.8.8",
-    "react-test-renderer": "19.1.0",
-    "ts-jest": "^29.4.6",
-    "typescript": "^5.8.3"
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.8.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=20"
-  },
-  "react-native-windows": {
-    "init-windows": {
-      "name": "Zeeb",
-      "namespace": "Zeeb",
-      "template": "cpp-app"
-    }
   }
 }
