@@ -122,7 +122,7 @@ npm uninstall react-native react-native-fs react-native-webview react-native-win
 
 ```bash
 npm install react-dom
-npm install --save-dev @types/react-dom @vitejs/plugin-react @testing-library/react @testing-library/jest-dom vitest jsdom tailwindcss @tailwindcss/vite
+npm install --save-dev @types/react-dom @vitejs/plugin-react @testing-library/react @testing-library/jest-dom@^6 vitest jsdom tailwindcss @tailwindcss/vite
 ```
 
 - [ ] **Step 4: Write forge.config.ts**
