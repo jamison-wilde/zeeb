@@ -9,7 +9,7 @@ import { MovieResults } from '../MovieResults';
 import { RenamePreview } from '../RenamePreview';
 import { createRenamerStore } from '../../stores/renamerStore';
 import { useConfigStore } from '../../stores/configStore';
-import type { MovieFile, SearchPartState } from '../../types';
+import type { MovieFile, SearchPartState, UndoEntry } from '../../types';
 import { parseFilename } from '../../services/filenameParser';
 import {
   buildSearchUrl,
@@ -29,7 +29,7 @@ interface RenamerProps {
   files?: MovieFile[];
   undoStore?: StoreApi<{
     beginTransaction: () => void;
-    addEntry: (entry: { type: string; sourcePath: string; destPath: string | null }) => void;
+    addEntry: (entry: UndoEntry) => void;
     commitTransaction: () => void;
   }>;
   onComplete?: () => void;
