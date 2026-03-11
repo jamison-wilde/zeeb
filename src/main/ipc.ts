@@ -53,4 +53,8 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('app:getPath', (_event, name: string) => {
     return app.getPath(name as Parameters<typeof app.getPath>[0]);
   });
+
+  ipcMain.handle('app:getWebviewPreloadPath', () => {
+    return `file://${path.join(__dirname, 'webview.js').replace(/\\/g, '/')}`;
+  });
 }

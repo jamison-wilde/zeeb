@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import path from 'node:path';
 
 contextBridge.exposeInMainWorld('zeebFs', {
   readdir: (dirPath: string) => ipcRenderer.invoke('fs:readdir', dirPath),
@@ -17,11 +16,5 @@ contextBridge.exposeInMainWorld('zeebDialog', {
 
 contextBridge.exposeInMainWorld('zeebApp', {
   getPath: (name: string) => ipcRenderer.invoke('app:getPath', name),
+  getWebviewPreloadPath: () => ipcRenderer.invoke('app:getWebviewPreloadPath'),
 });
-
-// Expose the webview preload script path so the renderer can set it on <webview> tags.
-// __dirname is available in the preload script (it runs in Node.js context).
-// The file is named by the forge config `name: 'webview_preload'`.
-contextBridge.exposeInMainWorld('WEBVIEW_PRELOAD_PATH',
-  `file://${path.join(__dirname, 'webview_preload.js')}`
-);

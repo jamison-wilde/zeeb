@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import type { StoreApi } from 'zustand/vanilla';
 import type { FsAdapter } from '../../adapters/fs';
@@ -38,6 +38,7 @@ interface RenamerProps {
 export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const webviewRef = useRef<WebviewTag | null>(null);
+  const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
 
   const currentIndex = useStore(storeRef.current, (s) => s.currentIndex);
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
@@ -58,6 +59,10 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const currentFile = useMemo(() => files[currentIndex] ?? null, [files, currentIndex]);
 
   const navigationMode = useRef<'search' | 'title' | 'idle'>('idle');
+
+  useEffect(() => {
+    window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
+  }, []);
 
   useEffect(() => {
     if (!currentFile) return;
@@ -251,7 +256,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
         ref={(el: any) => { webviewRef.current = el; }}
         data-testid="imdb-webview"
         src="about:blank"
-        preload={window.WEBVIEW_PRELOAD_PATH ?? ''}
+        preload={webviewPreloadPath}
         className="flex-1"
       />
     </div>

@@ -24,9 +24,9 @@ interface Window {
   };
   zeebApp: {
     getPath(name: string): Promise<string>;
+    getWebviewPreloadPath(): Promise<string>;
   };
   zeebIpc: {
     sendToHost(data: string): void;
   };
-  WEBVIEW_PRELOAD_PATH: string;
 }
