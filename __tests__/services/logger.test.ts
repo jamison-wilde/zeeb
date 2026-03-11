@@ -1,17 +1,21 @@
-jest.mock('react-native-fs', () => ({
-  appendFile: jest.fn().mockResolvedValue(undefined),
-}));
-
-import RNFS from 'react-native-fs';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createLogger } from '../../src/services/logger';
+import { createMockFsAdapter } from '../../src/adapters/fs';
+import type { FsAdapter } from '../../src/adapters/fs';
 
 describe('logger', () => {
-  beforeEach(() => jest.clearAllMocks());
+  let fs: FsAdapter;
+
+  beforeEach(() => {
+    fs = createMockFsAdapter({
+      appendFile: vi.fn().mockResolvedValue(undefined),
+    });
+  });
 
   it('appends timestamped entry to log file', async () => {
-    const logger = createLogger('/mock/zeeb.log');
+    const logger = createLogger(fs, '/mock/zeeb.log');
     await logger.log('rename', '/old.mkv', '/new.mkv');
-    expect(RNFS.appendFile).toHaveBeenCalledWith(
+    expect(fs.appendFile).toHaveBeenCalledWith(
       '/mock/zeeb.log',
       expect.stringMatching(/\d{4}-\d{2}-\d{2}.*rename.*\/old\.mkv.*\/new\.mkv/),
       'utf8',
@@ -19,8 +23,8 @@ describe('logger', () => {
   });
 
   it('logs different operation types', async () => {
-    const logger = createLogger('/mock/zeeb.log');
+    const logger = createLogger(fs, '/mock/zeeb.log');
     await logger.log('poster', '/movie.jpg', null);
-    expect(RNFS.appendFile).toHaveBeenCalled();
+    expect(fs.appendFile).toHaveBeenCalled();
   });
 });
