@@ -38,7 +38,7 @@ interface RenamerProps {
 
 export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
-  const webviewRef = useRef<WebviewTag | null>(null);
+  const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [selectedTt, setSelectedTt] = useState('');
@@ -81,17 +81,17 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
 
   // Auto-trigger search when parts are set from a new file
   useEffect(() => {
-    if (!autoSearchRef.current || searchParts.length === 0) return;
+    if (!autoSearchRef.current || searchParts.length === 0 || !webviewEl) return;
     autoSearchRef.current = false;
     const query = searchParts
       .filter((p) => p.state === 'search')
       .map((p) => p.text)
       .join(' ');
-    if (!query.trim() || !webviewRef.current) return;
+    if (!query.trim()) return;
     const url = buildSearchUrl(query, config.urlImdbSearch);
     navigationMode.current = 'search';
-    webviewRef.current.loadURL(url);
-  }, [searchParts, config.urlImdbSearch]);
+    webviewEl.loadURL(url);
+  }, [searchParts, webviewEl, config.urlImdbSearch]);
 
   useEffect(() => {
     if (!metadata || !currentFile) {
@@ -134,8 +134,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
   }, [movieMatches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const webview = webviewRef.current;
-    if (!webview) return;
+    if (!webviewEl) return;
+    const webview = webviewEl;
 
     const handleMessage = (event: any) => {
       const message = event.args?.[0];
@@ -194,7 +194,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('did-navigate-in-page', handleNavigate);
     };
-  }, [webviewPreloadPath, config.extractionPatterns, setMovieMatches, setMetadata]);
+  }, [webviewEl, config.extractionPatterns, setMovieMatches, setMetadata]);
 
   const handleFileSelect = useCallback(
     (_index: number) => {
@@ -243,22 +243,22 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     if (!query.trim()) return;
     const url = buildSearchUrl(query, config.urlImdbSearch);
     navigationMode.current = 'search';
-    webviewRef.current?.loadURL(url);
-  }, [searchParts, config.urlImdbSearch]);
+    webviewEl?.loadURL(url);
+  }, [searchParts, webviewEl, config.urlImdbSearch]);
 
   const handleMovieSelect = useCallback(
     (tt: string) => {
       setSelectedTt(tt);
       const url = buildTitleUrl(tt, config.urlImdbTT);
       navigationMode.current = 'title';
-      webviewRef.current?.loadURL(url);
+      webviewEl?.loadURL(url);
     },
-    [config.urlImdbTT],
+    [webviewEl, config.urlImdbTT],
   );
 
   const handleBack = useCallback(() => {
-    webviewRef.current?.goBack();
-  }, []);
+    webviewEl?.goBack();
+  }, [webviewEl]);
 
   const handleUrlSubmit = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -266,10 +266,10 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       if (url && !url.startsWith('http')) url = 'https://' + url;
       if (url) {
         navigationMode.current = 'idle';
-        webviewRef.current?.loadURL(url);
+        webviewEl?.loadURL(url);
       }
     }
-  }, [urlInput]);
+  }, [webviewEl, urlInput]);
 
   const handlePreviewChange = useCallback(
     (name: string) => {
@@ -367,7 +367,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
           <div className="flex-1 min-h-0">
             {webviewPreloadPath && (
               <webview
-                ref={(el: any) => { webviewRef.current = el; }}
+                ref={(el: any) => { if (el && el !== webviewEl) setWebviewEl(el); }}
                 data-testid="imdb-webview"
                 src="about:blank"
                 preload={webviewPreloadPath}
