@@ -226,39 +226,43 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   if (!visible) return null;
 
   return (
-    <div className="flex-1 flex flex-col">
-      <FileList
-        files={files}
-        selectedIndex={currentIndex}
-        onSelect={handleFileSelect}
-      />
-      <div data-testid="search-parts">
-        <SearchParts
-          parts={searchParts}
-          onPartStateChange={handlePartStateChange}
-          onPartTextChange={handlePartTextChange}
-          onSearch={handleSearch}
+    <div className="flex-1 flex flex-row">
+      <div className="w-[520px] flex flex-col overflow-y-auto">
+        <FileList
+          files={files}
+          selectedIndex={currentIndex}
+          onSelect={handleFileSelect}
+        />
+        <div data-testid="search-parts">
+          <SearchParts
+            parts={searchParts}
+            onPartStateChange={handlePartStateChange}
+            onPartTextChange={handlePartTextChange}
+            onSearch={handleSearch}
+          />
+        </div>
+        <div data-testid="movie-results">
+          <MovieResults
+            matches={movieMatches}
+            onSelect={handleMovieSelect}
+          />
+        </div>
+        <RenamePreview
+          originalName={currentFile?.name ?? ''}
+          previewName={previewFilename}
+          onRename={handleRename}
+          onSkip={handleSkip}
         />
       </div>
-      <div data-testid="movie-results">
-        <MovieResults
-          matches={movieMatches}
-          onSelect={handleMovieSelect}
+      <div className="flex-1 flex flex-col">
+        <webview
+          ref={(el: any) => { webviewRef.current = el; }}
+          data-testid="imdb-webview"
+          src="about:blank"
+          preload={webviewPreloadPath}
+          className="flex-1"
         />
       </div>
-      <RenamePreview
-        originalName={currentFile?.name ?? ''}
-        previewName={previewFilename}
-        onRename={handleRename}
-        onSkip={handleSkip}
-      />
-      <webview
-        ref={(el: any) => { webviewRef.current = el; }}
-        data-testid="imdb-webview"
-        src="about:blank"
-        preload={webviewPreloadPath}
-        className="flex-1"
-      />
     </div>
   );
 }
