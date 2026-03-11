@@ -32,12 +32,12 @@ export function generateSearchExtractionScript(): string {
             thumbnailUrl: img ? img.src : null,
           });
         }
-        window.ReactNativeWebView.postMessage(JSON.stringify({
+        window.zeebIpc.sendToHost(JSON.stringify({
           type: 'searchResults',
           results: results,
         }));
       } catch(e) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
+        window.zeebIpc.sendToHost(JSON.stringify({
           type: 'searchResults',
           results: [],
           error: e.message,
@@ -127,12 +127,12 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
           posterUrl: ld.image || null,
         };
 
-        window.ReactNativeWebView.postMessage(JSON.stringify({
+        window.zeebIpc.sendToHost(JSON.stringify({
           type: 'titleData',
           data: result,
         }));
       } catch(e) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
+        window.zeebIpc.sendToHost(JSON.stringify({
           type: 'titleData',
           data: null,
           error: e.message,

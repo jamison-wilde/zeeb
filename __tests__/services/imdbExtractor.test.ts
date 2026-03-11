@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import {
   buildSearchUrl,
   buildTitleUrl,
@@ -21,7 +22,7 @@ describe('imdbExtractor', () => {
 
   it('generates JS injection script for search page', () => {
     const script = generateSearchExtractionScript();
-    expect(script).toContain('ReactNativeWebView.postMessage');
+    expect(script).toContain('zeebIpc.sendToHost');
     expect(script).toContain('JSON.stringify');
   });
 
@@ -32,6 +33,18 @@ describe('imdbExtractor', () => {
     const script = generateTitleExtractionScript(patterns);
     expect(script).toContain('application/ld+json');
     expect(script).toContain('querySelector');
+  });
+
+  it('search extraction script uses zeebIpc.sendToHost', () => {
+    const script = generateSearchExtractionScript();
+    expect(script).toContain('window.zeebIpc.sendToHost');
+    expect(script).not.toContain('ReactNativeWebView');
+  });
+
+  it('title extraction script uses zeebIpc.sendToHost', () => {
+    const script = generateTitleExtractionScript([]);
+    expect(script).toContain('window.zeebIpc.sendToHost');
+    expect(script).not.toContain('ReactNativeWebView');
   });
 
   it('parses search results from WebView message', () => {
