@@ -26,14 +26,14 @@ This is Electron's default architecture, not a design choice. Every Electron app
 
 ## What Stays Unchanged
 
-- All 11 services (`src/services/*`) — pure TS, no RN imports
-- All 4 stores (`src/stores/*`) — Zustand vanilla stores
+- Services without RN imports (`filenameParser`, `formatEngine`, `nfoParser`, `tmdbService`, `legacyImporter`, `urlFileWriter`) — pure TS
+- Stores without RN imports (`fileStore`, `renamerStore`) — Zustand vanilla stores
 - All types (`src/types/*`)
 - All utils except `platform.ts` (simplifies to `process.platform`)
 - Default terms, CP437 table, config defaults
 - Three-tier IMDB extraction strategy (JSON-LD → DOM selectors → regex)
-- Dual-instance pattern (visible + prefetch)
-- 117 tests: service/store/util tests move as-is; component tests rewrite for `@testing-library/react`
+- Dual-instance pattern (two Renamer instances at App level — one visible, one hidden for prefetch)
+- 34 test files in `__tests__/`: service/store/util tests move as-is; component tests rewrite for `@testing-library/react`
 
 ## What Changes
 
@@ -41,7 +41,7 @@ This is Electron's default architecture, not a design choice. Every Electron app
 
 `react-native-fs` → Node.js `fs/promises` exposed through preload script's `contextBridge`.
 
-Services that call RNFS (`configStore`, `fileScanner`, `fileRenamer`, `logger`, `urlFileWriter`) get a thin adapter layer so the service code itself stays unchanged.
+Files that import `react-native-fs`: `configStore`, `undoStore`, `fileScanner`, `fileRenamer`, `logger`. Each gets refactored to accept an `fs` adapter interface instead of importing RNFS directly. The adapter is injected from the renderer via the preload-exposed API.
 
 ### WebView
 
@@ -51,11 +51,15 @@ Services that call RNFS (`configStore`, `fileScanner`, `fileRenamer`, `logger`, 
 |---|---|
 | `injectJavaScript(script)` | `webviewRef.executeJavaScript(script)` |
 | `onMessage` callback | `webviewRef.addEventListener('ipc-message', handler)` |
-| `ReactNativeWebView.postMessage(data)` | `window.ipcRenderer.sendToHost(data)` |
+| `ReactNativeWebView.postMessage(data)` | `ipcRenderer.sendToHost(data)` (via webview preload script) |
 
-Dual `<webview>` instances in Renamer component (one visible, one hidden) — same pattern as RN.
+**WebView preload script**: `<webview>` guest pages run in isolated renderer processes. A dedicated webview preload script uses `contextBridge` to expose `ipcRenderer.sendToHost()` to the guest page. This is separate from the main window's preload script. The `<webview>` tag specifies this via its `preload` attribute.
 
-The injected JS extraction scripts need one change: replace `ReactNativeWebView.postMessage()` with `ipcRenderer.sendToHost()`.
+**`webviewTag: true`**: Required in BrowserWindow's `webPreferences` to enable `<webview>` tags in the renderer.
+
+**Dual instances at App level**: Two `<Renamer>` components rendered in `App.tsx` (one visible, one hidden for prefetch) — same pattern as the RN implementation. The swap logic lives in App, not inside Renamer.
+
+**`imdbExtractor.ts` changes**: The injected JS scripts contain `ReactNativeWebView.postMessage()` as string literals (4 occurrences). These change to use the webview preload's exposed `sendToHost()` function.
 
 ### Components
 
@@ -95,24 +99,27 @@ src/
 │   ├── index.ts       # App entry, window creation
 │   └── ipc.ts         # IPC handlers (file ops, dialog)
 ├── preload/
-│   └── index.ts       # contextBridge exposing fs/dialog APIs
+│   ├── index.ts       # contextBridge exposing fs/dialog APIs to main window
+│   └── webview.ts     # contextBridge exposing sendToHost() to webview guests
 ├── renderer/          # React app (Vite-built)
 │   ├── App.tsx
 │   ├── components/    # Ported from RN → HTML+Tailwind
 │   ├── index.html
 │   └── index.tsx      # React DOM entry
-├── services/          # Unchanged (pure TS)
-├── stores/            # Unchanged (Zustand)
+├── services/          # Mostly unchanged; imdbExtractor + RNFS users get adapter
+├── stores/            # configStore + undoStore refactored for fs adapter
 ├── types/             # Unchanged
 └── utils/             # Unchanged (except platform.ts)
 ```
 
 ## Security Model
 
-- `contextIsolation: true`, `nodeIntegration: false`
-- Preload script exposes only whitelisted APIs via `contextBridge`
-- `<webview>` tags sandboxed by default — IMDB pages can't access Node.js
-- File system access scoped through IPC handlers
+- `contextIsolation: true`, `nodeIntegration: false` on main BrowserWindow
+- **Main window preload** (`src/preload/index.ts`): exposes whitelisted fs/dialog APIs via `contextBridge`
+- **Webview preload** (`src/preload/webview.ts`): exposes only `ipcRenderer.sendToHost()` via `contextBridge` — this is the only API IMDB guest pages can call
+- `<webview>` tags sandboxed by default — IMDB pages can't access Node.js or the main renderer's APIs
+- File system access scoped through IPC handlers in main process
+- `webviewTag: true` explicitly set in BrowserWindow preferences
 
 ## Data Flow
 
