@@ -15,9 +15,9 @@ describe('SearchParts', () => {
     render(
       <SearchParts parts={parts} onPartStateChange={vi.fn()} onPartTextChange={vi.fn()} onSearch={vi.fn()} />
     );
-    expect(screen.getByText('The')).toBeDefined();
-    expect(screen.getByText('Matrix')).toBeDefined();
-    expect(screen.getByText('BluRay')).toBeDefined();
+    expect(screen.getByDisplayValue('The')).toBeDefined();
+    expect(screen.getByDisplayValue('Matrix')).toBeDefined();
+    expect(screen.getByDisplayValue('BluRay')).toBeDefined();
   });
 
   it('calls onSearch when search button pressed', () => {
