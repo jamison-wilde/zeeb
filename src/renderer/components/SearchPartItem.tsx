@@ -54,13 +54,13 @@ export function SearchPartItem({ part, onStateChange, onTextChange }: SearchPart
   return (
     <div
       className={`inline-flex flex-col mr-1 mb-1 border rounded text-sm ${CONTAINER_COLORS[part.state]}`}
-      style={{ minWidth: '56px' }}
+      style={{ minWidth: '48px' }}
     >
       <input
-        className={`px-2 pt-1 pb-0 w-full text-center text-sm font-medium bg-transparent border-none outline-none ${INPUT_COLORS[part.state]}`}
+        className={`px-1 pt-1 pb-0 w-full text-center text-xs font-medium bg-transparent border-none outline-none ${INPUT_COLORS[part.state]}`}
         value={part.text}
         onChange={(e) => onTextChange(part.id, e.target.value)}
-        style={{ minWidth: '48px', width: `${Math.max(part.text.length, 3)}ch` }}
+        style={{ width: `${Math.max(part.text.length + 1, 3)}ch` }}
       />
       <div className="grid grid-cols-2 gap-0.5 px-1 pb-1 pt-0.5">
         {ACTION_BUTTONS.map((btn, i) =>

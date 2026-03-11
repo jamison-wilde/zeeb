@@ -18,7 +18,7 @@ export function FileList({ files, selectedIndex, onSelect }: FileListProps): Rea
           }`}
           onClick={() => onSelect(index)}
         >
-          <span className="flex-1">{file.name}</span>
+          <span className="flex-1 text-xs">{file.name}</span>
           {file.hasNfo && (
             <span className="text-xs text-blue-500 font-bold ml-2">NFO</span>
           )}

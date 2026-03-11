@@ -55,6 +55,7 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('app:getWebviewPreloadPath', () => {
-    return `file://${path.join(__dirname, 'webview.js').replace(/\\/g, '/')}`;
+    const p = path.join(__dirname, 'webview.js').replace(/\\/g, '/');
+    return `file:///${p}`;
   });
 }

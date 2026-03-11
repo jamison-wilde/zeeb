@@ -39,6 +39,8 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const storeRef = useRef(createRenamerStore());
   const webviewRef = useRef<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
+  const [webviewUrl, setWebviewUrl] = useState('');
+  const [urlInput, setUrlInput] = useState('');
 
   const currentIndex = useStore(storeRef.current, (s) => s.currentIndex);
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
@@ -55,6 +57,8 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const reset = useStore(storeRef.current, (s) => s.reset);
 
   const config = useConfigStore((s) => s.config);
+  const updateConfig = useConfigStore((s) => s.updateConfig);
+  const saveConfig = useConfigStore((s) => s.save);
 
   const currentFile = useMemo(() => files[currentIndex] ?? null, [files, currentIndex]);
 
@@ -130,6 +134,10 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     };
 
     const handleLoadEnd = () => {
+      const url = webview.getURL();
+      setWebviewUrl(url);
+      setUrlInput(url);
+
       if (navigationMode.current === 'search') {
         const script = generateSearchExtractionScript();
         webview.executeJavaScript(script);
@@ -146,7 +154,7 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
       webview.removeEventListener('ipc-message', handleMessage);
       webview.removeEventListener('did-finish-load', handleLoadEnd);
     };
-  }, [config.extractionPatterns, setMovieMatches, setMetadata]);
+  }, [webviewPreloadPath, config.extractionPatterns, setMovieMatches, setMetadata]);
 
   const handleFileSelect = useCallback(
     (index: number) => {
@@ -159,8 +167,25 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   const handlePartStateChange = useCallback(
     (id: string, state: SearchPartState) => {
       updatePartState(id, state);
+
+      // Persist always keep/remove terms immediately
+      const part = storeRef.current.getState().searchParts.find((p) => p.id === id);
+      if (!part) return;
+      const term = part.text.toLowerCase();
+
+      if (state === 'keepAlways') {
+        if (!config.keepTerms.some((t) => t.toLowerCase() === term)) {
+          updateConfig({ keepTerms: [...config.keepTerms, part.text] });
+          void saveConfig();
+        }
+      } else if (state === 'removeAlways') {
+        if (!config.removeTerms.some((t) => t.toLowerCase() === term)) {
+          updateConfig({ removeTerms: [...config.removeTerms, part.text] });
+          void saveConfig();
+        }
+      }
     },
-    [updatePartState],
+    [updatePartState, config.keepTerms, config.removeTerms, updateConfig, saveConfig],
   );
 
   const handlePartTextChange = useCallback(
@@ -189,6 +214,21 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
     },
     [config.urlImdbTT],
   );
+
+  const handleBack = useCallback(() => {
+    webviewRef.current?.goBack();
+  }, []);
+
+  const handleUrlSubmit = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      let url = urlInput.trim();
+      if (url && !url.startsWith('http')) url = 'https://' + url;
+      if (url) {
+        navigationMode.current = 'idle';
+        webviewRef.current?.loadURL(url);
+      }
+    }
+  }, [urlInput]);
 
   const advance = useCallback(() => {
     const nextIndex = currentIndex + 1;
@@ -239,13 +279,70 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
   if (!visible) return null;
 
   return (
-    <div className="flex-1 flex flex-row">
-      <div className="w-[520px] flex flex-col overflow-y-auto">
-        <FileList
-          files={files}
-          selectedIndex={currentIndex}
-          onSelect={handleFileSelect}
-        />
+    <div className="flex-1 flex flex-col h-full">
+      {/* Top area: left panel + right panel */}
+      <div className="flex-1 flex flex-row min-h-0">
+        {/* Left panel: file list + search results */}
+        <div className="w-[420px] flex flex-col border-r border-gray-300">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <FileList
+              files={files}
+              selectedIndex={currentIndex}
+              onSelect={handleFileSelect}
+            />
+          </div>
+          <div className="border-t border-gray-300">
+            <div className="px-2 py-1 bg-gray-100 text-xs font-bold text-gray-600">Search Results</div>
+            <div data-testid="movie-results" className="overflow-y-auto max-h-48">
+              <MovieResults
+                matches={movieMatches}
+                onSelect={handleMovieSelect}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel: URL bar + webview + poster area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* URL bar */}
+          <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 border-b border-gray-300">
+            <button
+              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+              onClick={handleBack}
+              title="Back"
+            >
+              ←
+            </button>
+            <input
+              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={handleUrlSubmit}
+              placeholder="URL"
+            />
+          </div>
+          {/* Webview */}
+          <div className="flex-1 min-h-0">
+            {webviewPreloadPath && (
+              <webview
+                ref={(el: any) => { webviewRef.current = el; }}
+                data-testid="imdb-webview"
+                src="about:blank"
+                preload={webviewPreloadPath}
+                style={{ width: '100%', height: '100%' }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom area: search parts + rename preview (full width) */}
+      <div className="border-t border-gray-300">
+        {currentFile && (
+          <div className="px-2 py-1 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
+            Filename: {currentFile.name} &nbsp; FileSize: {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : '—'}
+          </div>
+        )}
         <div data-testid="search-parts">
           <SearchParts
             parts={searchParts}
@@ -254,29 +351,12 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
             onSearch={handleSearch}
           />
         </div>
-        <div data-testid="movie-results">
-          <MovieResults
-            matches={movieMatches}
-            onSelect={handleMovieSelect}
-          />
-        </div>
         <RenamePreview
           originalName={currentFile?.name ?? ''}
           previewName={previewFilename}
           onRename={handleRename}
           onSkip={handleSkip}
         />
-      </div>
-      <div className="flex-1 flex flex-col">
-        {webviewPreloadPath && (
-          <webview
-            ref={(el: any) => { webviewRef.current = el; }}
-            data-testid="imdb-webview"
-            src="about:blank"
-            preload={webviewPreloadPath}
-            className="flex-1"
-          />
-        )}
       </div>
     </div>
   );

@@ -1,6 +1,9 @@
 // Electron webview tag type for React refs
 interface WebviewTag extends HTMLElement {
   loadURL(url: string): void;
+  getURL(): string;
+  goBack(): void;
+  canGoBack(): boolean;
   executeJavaScript(code: string): Promise<unknown>;
   addEventListener(event: string, handler: (...args: any[]) => void): void;
   removeEventListener(event: string, handler: (...args: any[]) => void): void;
