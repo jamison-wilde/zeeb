@@ -1,5 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import RNFS from 'react-native-fs';
+import type { FsAdapter } from '../adapters/fs';
 import type { UndoEntry, RenameTransaction } from '../types';
 
 interface UndoStoreState {
@@ -12,7 +12,7 @@ interface UndoStoreState {
   undoTransaction: (id: string) => Promise<void>;
 }
 
-export function createUndoStore(): StoreApi<UndoStoreState> {
+export function createUndoStore(fs: FsAdapter): StoreApi<UndoStoreState> {
   return createStore<UndoStoreState>((set, get) => ({
     transactions: [],
     pendingTransaction: null,
@@ -60,17 +60,15 @@ export function createUndoStore(): StoreApi<UndoStoreState> {
           switch (entry.type) {
             case 'rename':
               if (entry.destPath) {
-                await RNFS.moveFile(entry.destPath, entry.sourcePath);
+                await fs.rename(entry.destPath, entry.sourcePath);
               }
               break;
             case 'create':
               if (entry.destPath) {
-                await RNFS.unlink(entry.destPath);
+                await fs.unlink(entry.destPath);
               }
               break;
             case 'delete':
-              // Cannot undo a delete — file content is lost
-              // Entry stays recorded for audit trail
               break;
           }
         } catch (error) {
@@ -83,7 +81,6 @@ export function createUndoStore(): StoreApi<UndoStoreState> {
           transactions: state.transactions.filter((t) => t.id !== id),
         }));
       }
-      // If errors occurred, transaction stays in list for retry
       if (errors.length > 0) {
         throw new Error(
           `Undo partially failed: ${errors.length}/${reversed.length} entries failed`,
