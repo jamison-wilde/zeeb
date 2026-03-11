@@ -49,13 +49,13 @@ const ACTIVE_BUTTON_COLORS: Record<SearchPartState, string> = {
 export function SearchPartItem({ part, onStateChange, onTextChange }: SearchPartItemProps): React.JSX.Element {
   return (
     <div
-      className={`inline-flex flex-col mr-0.5 mb-0.5 border rounded ${CONTAINER_COLORS[part.state]}`}
+      className={`inline-flex flex-col shrink-0 mr-0.5 mb-0.5 border rounded ${CONTAINER_COLORS[part.state]}`}
     >
       <input
-        className={`px-1 pt-0.5 pb-0 text-center text-xs font-semibold bg-transparent border-none outline-none whitespace-nowrap ${INPUT_COLORS[part.state]}`}
+        className={`px-1 pt-0.5 pb-0 text-center text-xs font-semibold bg-transparent border-none outline-none ${INPUT_COLORS[part.state]}`}
         value={part.text}
         onChange={(e) => onTextChange(part.id, e.target.value)}
-        style={{ width: `${Math.max(part.text.length + 1, 2)}ch`, minWidth: '24px' }}
+        size={Math.max(part.text.length, 2)}
       />
       <div className="grid grid-cols-2 gap-px px-0.5 pb-0.5">
         {ACTION_BUTTONS.map((btn, i) =>

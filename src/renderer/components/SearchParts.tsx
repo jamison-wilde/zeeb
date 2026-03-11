@@ -16,7 +16,7 @@ export function SearchParts({
   onSearch,
 }: SearchPartsProps): React.JSX.Element {
   return (
-    <div data-testid="search-parts-row" className="flex flex-wrap px-1 py-1">
+    <div data-testid="search-parts-row" className="flex flex-nowrap px-1 py-1">
       {parts.map((part) => (
         <SearchPartItem
           key={part.id}

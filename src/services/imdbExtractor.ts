@@ -17,58 +17,51 @@ export function generateSearchExtractionScript(): string {
           var results = [];
           var seen = {};
 
-          // Modern IMDB: list items within the search results section
-          var items = document.querySelectorAll('[class*="ipc-metadata-list-summary-item"], .findResult, .find-result-item');
-          if (items.length > 0) {
-            for (var i = 0; i < items.length; i++) {
-              var link = items[i].querySelector('a[href*="/title/tt"]');
-              if (!link) continue;
-              var href = link.getAttribute('href') || '';
-              var m = href.match(/\\/title\\/(tt\\d+)/);
-              if (!m || seen[m[1]]) continue;
-              seen[m[1]] = true;
-              // Title is the link text
-              var title = link.textContent.trim();
-              // Year and other metadata are in sibling/child spans
-              var containerText = items[i].textContent || '';
-              var yearMatch = containerText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
-              var img = items[i].querySelector('img');
-              // Check for aka text
-              var akaEl = items[i].querySelector('[class*="aka"], .result_text i');
-              var aka = akaEl ? akaEl.textContent.trim() : null;
-              results.push({
-                tt: m[1],
-                title: title,
-                year: yearMatch ? parseInt(yearMatch[1], 10) : null,
-                aka: aka,
-                thumbnailUrl: img ? img.src : null,
-              });
-            }
-          }
+          // Find all links to title pages
+          var allLinks = document.querySelectorAll('a[href*="/title/tt"]');
+          for (var i = 0; i < allLinks.length; i++) {
+            var href = allLinks[i].getAttribute('href') || '';
+            var m = href.match(/\\/title\\/(tt\\d+)/);
+            if (!m || seen[m[1]]) continue;
 
-          // Fallback: scan all title links if structured selectors found nothing
-          if (results.length === 0) {
-            var links = document.querySelectorAll('a[href*="/title/tt"]');
-            for (var j = 0; j < links.length; j++) {
-              var h = links[j].getAttribute('href') || '';
-              var mt = h.match(/\\/title\\/(tt\\d+)/);
-              if (!mt || seen[mt[1]]) continue;
-              // Skip tiny nav/utility links
-              var linkText = links[j].textContent.trim();
-              if (!linkText || linkText.length < 2) continue;
-              seen[mt[1]] = true;
-              var parent = links[j].closest('li, [class*="list"], [class*="result"]') || links[j].parentElement;
-              var pText = parent ? parent.textContent : linkText;
-              var ym = pText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
-              var pImg = (parent || links[j]).querySelector('img');
-              results.push({
-                tt: mt[1],
-                title: linkText,
-                year: ym ? parseInt(ym[1], 10) : null,
-                aka: null,
-                thumbnailUrl: pImg ? pImg.src : null,
-              });
+            // Skip links that are just images, icons, or tiny UI elements
+            var linkText = allLinks[i].textContent.trim();
+            if (!linkText || linkText.length < 2) continue;
+            // Skip links whose text is just a tt number
+            if (/^tt\\d+$/.test(linkText)) continue;
+
+            seen[m[1]] = true;
+
+            // Find the closest result container (walk up the DOM)
+            var container = allLinks[i].closest('li, [class*="list-summary"], [class*="find-result"]');
+            if (!container) container = allLinks[i].parentElement;
+
+            // Extract year: look for a standalone 4-digit year in the container
+            // that is NOT part of the title link text (to avoid "2001" in "2001: A Space Odyssey")
+            var year = null;
+            if (container) {
+              // Get text outside the title link
+              var clone = container.cloneNode(true);
+              var titleLink = clone.querySelector('a[href*="/title/' + m[1] + '"]');
+              if (titleLink) titleLink.textContent = '';
+              var nonTitleText = clone.textContent || '';
+              var yearMatch = nonTitleText.match(/(?:^|\\D)((?:19|20)\\d{2})(?:\\D|$)/);
+              if (yearMatch) year = parseInt(yearMatch[1], 10);
             }
+
+            var img = (container || allLinks[i]).querySelector('img');
+            var thumbnailUrl = null;
+            if (img && img.src && !img.src.includes('nopicture')) {
+              thumbnailUrl = img.src;
+            }
+
+            results.push({
+              tt: m[1],
+              title: linkText,
+              year: year,
+              aka: null,
+              thumbnailUrl: thumbnailUrl,
+            });
           }
 
           if (results.length === 0 && attempts < 3) {

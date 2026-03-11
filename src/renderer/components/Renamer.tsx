@@ -353,24 +353,27 @@ export function Renamer({ instanceId, visible, files = [], fs, undoStore, onComp
         </div>
       </div>
 
-      {/* Bottom area: filename info + search parts + rename (full width) */}
-      <div className="border-t border-gray-300">
+      {/* Bottom area: fixed — filename info + search parts + rename (full width) */}
+      <div className="shrink-0 border-t border-gray-300">
         {currentFile && (
-          <div className="flex items-center px-2 py-0.5 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
-            <span className="flex-1 truncate">
-              Filename: {currentFile.name}
-              {currentFile.size > 0 && <span className="ml-3">Size: {Math.round(currentFile.size / 1024 / 1024)}MB</span>}
+          <div className="flex items-center gap-2 px-2 py-0.5 bg-gray-50 border-b border-gray-200">
+            <span className="text-xs text-gray-600 truncate">
+              {currentFile.name}
             </span>
+            <span className="text-xs text-gray-400 shrink-0">
+              {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : ''}
+            </span>
+            <span className="flex-1" />
             <button
               data-testid="search-button"
-              className="px-3 py-0.5 bg-blue-500 text-white text-xs font-bold rounded hover:bg-blue-600 shrink-0 ml-2"
+              className="px-2 py-0.5 bg-blue-500 text-white text-[11px] font-bold rounded hover:bg-blue-600 shrink-0"
               onClick={handleSearch}
             >
               Search
             </button>
           </div>
         )}
-        <div data-testid="search-parts">
+        <div data-testid="search-parts" className="overflow-x-auto">
           <SearchParts
             parts={searchParts}
             onPartStateChange={handlePartStateChange}
