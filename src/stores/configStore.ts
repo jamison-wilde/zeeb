@@ -23,8 +23,12 @@ export function createConfigStore(): StoreApi<ConfigStoreState> {
       const fileExists = await RNFS.exists(CONFIG_PATH);
       if (fileExists) {
         const json = await RNFS.readFile(CONFIG_PATH, 'utf8');
-        const saved = JSON.parse(json) as Partial<ZeebConfig>;
-        set({ config: { ...DEFAULT_CONFIG, ...saved } });
+        try {
+          const saved = JSON.parse(json) as Partial<ZeebConfig>;
+          set({ config: { ...DEFAULT_CONFIG, ...saved } });
+        } catch {
+          set({ config: { ...DEFAULT_CONFIG } });
+        }
       } else {
         set({ config: { ...DEFAULT_CONFIG } });
       }

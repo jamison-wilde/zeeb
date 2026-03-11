@@ -53,25 +53,38 @@ export function createUndoStore(): StoreApi<UndoStoreState> {
       const transaction = get().transactions.find((t) => t.id === id);
       if (!transaction) return;
 
+      const errors: Array<{ entry: UndoEntry; error: unknown }> = [];
       const reversed = [...transaction.entries].reverse();
       for (const entry of reversed) {
-        switch (entry.type) {
-          case 'rename':
-            if (entry.destPath) {
-              await RNFS.moveFile(entry.destPath, entry.sourcePath);
-            }
-            break;
-          case 'create':
-            if (entry.destPath) {
-              await RNFS.unlink(entry.destPath);
-            }
-            break;
+        try {
+          switch (entry.type) {
+            case 'rename':
+              if (entry.destPath) {
+                await RNFS.moveFile(entry.destPath, entry.sourcePath);
+              }
+              break;
+            case 'create':
+              if (entry.destPath) {
+                await RNFS.unlink(entry.destPath);
+              }
+              break;
+          }
+        } catch (error) {
+          errors.push({ entry, error });
         }
       }
 
-      set((state) => ({
-        transactions: state.transactions.filter((t) => t.id !== id),
-      }));
+      if (errors.length === 0) {
+        set((state) => ({
+          transactions: state.transactions.filter((t) => t.id !== id),
+        }));
+      }
+      // If errors occurred, transaction stays in list for retry
+      if (errors.length > 0) {
+        throw new Error(
+          `Undo partially failed: ${errors.length}/${reversed.length} entries failed`,
+        );
+      }
     },
   }));
 }

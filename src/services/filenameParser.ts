@@ -1,4 +1,4 @@
-import { SearchPart } from '../types';
+import type { SearchPart } from '../types';
 
 export function parseFilename(
   filename: string,
