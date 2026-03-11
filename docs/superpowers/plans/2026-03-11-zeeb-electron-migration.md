@@ -275,6 +275,7 @@ interface Window {
   zeebIpc: {
     sendToHost(data: string): void;
   };
+  WEBVIEW_PRELOAD_PATH: string;
 }
 ```
 
@@ -288,7 +289,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['__tests__/**/*.test.{ts,tsx}'],
-    setupFiles: [],
+    setupFiles: ['@testing-library/jest-dom/vitest'],
   },
 });
 ```
@@ -454,7 +455,7 @@ function createWindow(): void {
     width: 1024,
     height: 768,
     webPreferences: {
-      preload: path.join(__dirname, `../preload/index.js`),
+      preload: path.join(__dirname, 'main_preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       webviewTag: true,
@@ -520,8 +521,6 @@ vi.mock('node:path', () => ({
   default: { join: (...args: string[]) => args.join('/') },
   join: (...args: string[]) => args.join('/'),
 }));
-
-import { contextBridge } from 'electron';
 
 describe('main preload', () => {
   beforeEach(() => {
@@ -591,8 +590,9 @@ contextBridge.exposeInMainWorld('zeebApp', {
 
 // Expose the webview preload script path so the renderer can set it on <webview> tags.
 // __dirname is available in the preload script (it runs in Node.js context).
+// The file is named by the forge config `name: 'webview_preload'`.
 contextBridge.exposeInMainWorld('WEBVIEW_PRELOAD_PATH',
-  `file://${path.join(__dirname, 'webview.js')}`
+  `file://${path.join(__dirname, 'webview_preload.js')}`
 );
 ```
 
@@ -2699,15 +2699,6 @@ import {
 import { interpolateFormat } from '../../services/formatEngine';
 import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
 import { createLogger } from '../../services/logger';
-
-// Webview preload path — resolved at build time by electron-forge Vite plugin.
-// In dev, preload scripts are in .vite/build/; the main process knows the path.
-// We pass it from main → renderer via a global set in the main window preload.
-declare global {
-  interface Window {
-    WEBVIEW_PRELOAD_PATH?: string;
-  }
-}
 
 interface RenamerProps {
   instanceId: number;
