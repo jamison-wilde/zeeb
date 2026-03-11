@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import path from 'node:path';
 import { registerIpcHandlers } from './ipc';
 
@@ -24,6 +24,36 @@ function createWindow(): void {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Options',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => mainWindow.webContents.send('menu:options'),
+        },
+        {
+          label: 'Undo',
+          accelerator: 'CmdOrCtrl+Z',
+          click: () => mainWindow.webContents.send('menu:undo'),
+        },
+        { type: 'separator' },
+        {
+          label: 'Release Notes',
+          click: () => mainWindow.webContents.send('menu:release-notes'),
+        },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+    { label: 'Help', role: 'help' },
+  ]);
+  Menu.setApplicationMenu(menu);
 }
 
 app.whenReady().then(() => {

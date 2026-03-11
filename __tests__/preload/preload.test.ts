@@ -6,6 +6,7 @@ vi.mock('electron', () => ({
   },
   ipcRenderer: {
     invoke: vi.fn(),
+    on: vi.fn(),
     sendToHost: vi.fn(),
   },
 }));
@@ -22,14 +23,14 @@ describe('main preload', () => {
   });
 
   it('exposes zeebFs and zeebDialog APIs', async () => {
-    await import('../../src/preload/index');
+    await import('../../src/preload/main');
     const { contextBridge: cb } = await import('electron');
     const exposeMock = cb.exposeInMainWorld as ReturnType<typeof vi.fn>;
     const keys = exposeMock.mock.calls.map((c: unknown[]) => c[0]);
     expect(keys).toContain('zeebFs');
     expect(keys).toContain('zeebDialog');
     expect(keys).toContain('zeebApp');
-    expect(keys).toContain('WEBVIEW_PRELOAD_PATH');
+    expect(keys).toContain('zeebMenu');
   });
 });
 

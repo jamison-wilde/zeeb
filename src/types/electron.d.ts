@@ -29,4 +29,9 @@ interface Window {
   zeebIpc: {
     sendToHost(data: string): void;
   };
+  zeebMenu: {
+    onOptions(callback: () => void): void;
+    onUndo(callback: () => void): void;
+    onReleaseNotes(callback: () => void): void;
+  };
 }

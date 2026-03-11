@@ -41,6 +41,17 @@ function App({ fs }: AppProps): React.JSX.Element {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    window.zeebMenu.onOptions(() => setShowOptions(true));
+    window.zeebMenu.onUndo(() => {
+      const txns = undoStoreRef.current.getState().transactions;
+      if (txns.length > 0) {
+        void undoStoreRef.current.getState().undoTransaction(txns[txns.length - 1].id);
+      }
+    });
+    window.zeebMenu.onReleaseNotes(() => setShowReleaseNotes(true));
+  }, []);
+
   const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
 
   const handleFolderSelected = useCallback(
@@ -76,27 +87,6 @@ function App({ fs }: AppProps): React.JSX.Element {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-row p-2 bg-gray-100 gap-3">
-        <button
-          data-testid="options-button"
-          className="px-3 py-2 hover:bg-gray-200 rounded"
-          onClick={() => setShowOptions(true)}
-        >
-          Options
-        </button>
-        <button
-          data-testid="undo-button"
-          className="px-3 py-2 hover:bg-gray-200 rounded"
-          onClick={() => setShowUndo(true)}
-        >
-          Undo
-        </button>
-        <button
-          data-testid="release-notes-button"
-          className="px-3 py-2 hover:bg-gray-200 rounded"
-          onClick={() => setShowReleaseNotes(true)}
-        >
-          Release Notes
-        </button>
         {view === 'folderBrowser' && (
           <button
             data-testid="start-processing"

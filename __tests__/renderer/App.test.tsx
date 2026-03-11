@@ -6,15 +6,21 @@ import { initConfigStore } from '../../src/stores/configStore';
 
 const mockFs = createMockFsAdapter();
 
+const mockZeebMenu = {
+  onOptions: vi.fn(),
+  onUndo: vi.fn(),
+  onReleaseNotes: vi.fn(),
+};
+
 describe('App', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
+    Object.defineProperty(window, 'zeebMenu', { value: mockZeebMenu, writable: true, configurable: true });
   });
 
-  it('renders toolbar with Options and Undo buttons', () => {
+  it('renders toolbar with Start Processing button', () => {
     render(<App fs={mockFs} />);
-    expect(screen.getByText('Options')).toBeDefined();
-    expect(screen.getByText('Undo')).toBeDefined();
+    expect(screen.getByTestId('start-processing')).toBeDefined();
   });
 
   it('shows folder browser by default', () => {

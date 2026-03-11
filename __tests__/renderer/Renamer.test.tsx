@@ -26,6 +26,11 @@ const testFile: MovieFile = {
 describe('Renamer', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
+    Object.defineProperty(window, 'zeebApp', {
+      value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue('') },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('renders nothing when not visible', () => {

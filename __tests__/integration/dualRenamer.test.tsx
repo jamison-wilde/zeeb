@@ -10,6 +10,16 @@ const mockFs = createMockFsAdapter();
 describe('Dual Renamer integration', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
+    Object.defineProperty(window, 'zeebMenu', {
+      value: { onOptions: vi.fn(), onUndo: vi.fn(), onReleaseNotes: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'zeebApp', {
+      value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue('') },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('renders two Renamer instances in process view', () => {

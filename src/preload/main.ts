@@ -18,3 +18,9 @@ contextBridge.exposeInMainWorld('zeebApp', {
   getPath: (name: string) => ipcRenderer.invoke('app:getPath', name),
   getWebviewPreloadPath: () => ipcRenderer.invoke('app:getWebviewPreloadPath'),
 });
+
+contextBridge.exposeInMainWorld('zeebMenu', {
+  onOptions: (callback: () => void) => ipcRenderer.on('menu:options', callback),
+  onUndo: (callback: () => void) => ipcRenderer.on('menu:undo', callback),
+  onReleaseNotes: (callback: () => void) => ipcRenderer.on('menu:release-notes', callback),
+});
