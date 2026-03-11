@@ -1,12 +1,35 @@
-import { isWindows, isMacOS, urlShortcutExtension } from '../../src/utils/platform';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('platform utils', () => {
-  it('urlShortcutExtension returns .url or .webloc', () => {
-    const ext = urlShortcutExtension();
-    expect(['.url', '.webloc']).toContain(ext);
+  beforeEach(() => {
+    vi.resetModules();
   });
 
-  it('isWindows and isMacOS are mutually exclusive', () => {
-    expect(isWindows() && isMacOS()).toBe(false);
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('isWindows returns true on win32', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'win32' });
+    const { isWindows } = await import('../../src/utils/platform');
+    expect(isWindows()).toBe(true);
+  });
+
+  it('isMacOS returns true on darwin', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'darwin' });
+    const { isMacOS } = await import('../../src/utils/platform');
+    expect(isMacOS()).toBe(true);
+  });
+
+  it('urlShortcutExtension returns .webloc on macOS', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'darwin' });
+    const { urlShortcutExtension } = await import('../../src/utils/platform');
+    expect(urlShortcutExtension()).toBe('.webloc');
+  });
+
+  it('urlShortcutExtension returns .url on Windows', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'win32' });
+    const { urlShortcutExtension } = await import('../../src/utils/platform');
+    expect(urlShortcutExtension()).toBe('.url');
   });
 });
