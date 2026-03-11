@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Image xmlns:mx="http://www.adobe.com/2006/mxml" width="500" height="750"
+					implements="mx.core.IToolTip"
+					mouseEnabled="false" mouseChildren="false"
+>
+
+
+	<mx:Script>
+		<![CDATA[
+			
+			//  Implement required methods of the IToolTip interface; these
+			//  methods are not used though.
+			public var _text:String;
+			
+			[Bindable]
+			public function get text():String {
+				return _text;
+			}
+			public function set text(value:String):void {
+			} 			
+			
+		]]>
+	</mx:Script>
+
+
+</mx:Image>

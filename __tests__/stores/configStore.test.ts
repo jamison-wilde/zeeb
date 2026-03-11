@@ -38,7 +38,7 @@ describe('configStore', () => {
     await store.getState().save();
     expect(RNFS.writeFile).toHaveBeenCalledWith(
       expect.stringContaining('zeeb-config.json'),
-      expect.stringContaining('"removeThe":true'),
+      expect.stringContaining('"removeThe": true'),
       'utf8'
     );
   });

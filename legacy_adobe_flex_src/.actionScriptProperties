@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<actionScriptProperties analytics="false" mainApplicationPath="zeeb.mxml" projectUUID="6f176115-23d5-4ca0-9c54-d7ee7e04de66" version="10">
+  <compiler additionalCompilerArguments="-locale en_US" autoRSLOrdering="true" copyDependentFiles="true" flex3CompatMode="true" flexSDK="Flex 4.5" fteInMXComponents="false" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
+    <compilerSourcePath/>
+    <libraryPath defaultLinkType="1">
+      <libraryPathEntry kind="4" path=""/>
+      <libraryPathEntry kind="1" linkType="1" path="libs"/>
+    </libraryPath>
+    <sourceAttachmentPath/>
+  </compiler>
+  <applications>
+    <application path="zeeb.mxml">
+      <airExcludes>
+        <airExclude path="assets/icon/large png"/>
+        <airExclude path="assets/question.fla"/>
+        <airExclude path="assets/Gotham-Book.ttf"/>
+        <airExclude path="assets/icon/Icon Info.txt"/>
+        <airExclude path="assets/GOTHIC.TTF"/>
+        <airExclude path="assets/Renamer-Screenshot.jpg"/>
+        <airExclude path="assets/Options-Screenshot.jpg"/>
+        <airExclude path="assets/Folder-Chooser-Screenshot.jpg"/>
+        <airExclude path="assets/plus.fla"/>
+        <airExclude path="assets/icon/original vector"/>
+        <airExclude path="assets/minus.fla"/>
+        <airExclude path="zeeb-app.old.xml"/>
+        <airExclude path="assets/star.fla"/>
+        <airExclude path="assets/icon/icns (mac)"/>
+        <airExclude path="assets/icon/ico (windows)"/>
+        <airExclude path="mx"/>
+        <airExclude path="assets/x.fla"/>
+        <airExclude path="assets/badge"/>
+      </airExcludes>
+    </application>
+  </applications>
+  <modules/>
+  <buildCSSFiles/>
+  <flashCatalyst validateFlashCatalystCompatibility="false"/>
+  <buildTargets>
+    <buildTarget buildTargetName="default">
+      <airSettings airCertificatePath="C:/more/dev/_flex/zeeb/GlobalSignSlainJamisonWilde.p12" airTimestamp="true" version="1">
+        <airExcludes>
+          <pathEntry path="assets/Renamer-Screenshot.jpg"/>
+          <pathEntry path="assets/icon/Icon Info.txt"/>
+          <pathEntry path="assets/Options-Screenshot.jpg"/>
+          <pathEntry path="assets/icon/ico (windows)"/>
+          <pathEntry path="assets/icon/icns (mac)"/>
+          <pathEntry path="assets/Folder-Chooser-Screenshot.jpg"/>
+          <pathEntry path="assets/plus.fla"/>
+          <pathEntry path="assets/icon/large png"/>
+          <pathEntry path="assets/x.fla"/>
+          <pathEntry path="mx"/>
+          <pathEntry path="assets/icon/original vector"/>
+          <pathEntry path="assets/star.fla"/>
+          <pathEntry path="assets/minus.fla"/>
+          <pathEntry path="assets/question.fla"/>
+        </airExcludes>
+      </airSettings>
+      <actionScriptSettings version="1"/>
+    </buildTarget>
+  </buildTargets>
+</actionScriptProperties>

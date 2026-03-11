@@ -68,6 +68,10 @@ export function createUndoStore(): StoreApi<UndoStoreState> {
                 await RNFS.unlink(entry.destPath);
               }
               break;
+            case 'delete':
+              // Cannot undo a delete — file content is lost
+              // Entry stays recorded for audit trail
+              break;
           }
         } catch (error) {
           errors.push({ entry, error });

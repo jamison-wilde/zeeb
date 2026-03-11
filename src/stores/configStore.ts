@@ -35,7 +35,7 @@ export function createConfigStore(): StoreApi<ConfigStoreState> {
     },
 
     async save() {
-      const json = JSON.stringify(get().config);
+      const json = JSON.stringify(get().config, null, 2);
       await RNFS.writeFile(CONFIG_PATH, json, 'utf8');
     },
 

@@ -37,6 +37,7 @@
     "@rnx-kit/jest-preset": "^0.1.17",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.13",
+    "@types/node": "^25.4.0",
     "@types/react": "^19.2.14",
     "@types/react-test-renderer": "^19.1.0",
     "eslint": "^8.19.0",

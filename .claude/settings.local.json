@@ -1,0 +1,24 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Read(//c/Users/slain/claude/**)",
+      "Bash(npx @react-native-community/cli@15 init Zeeb --version 0.81.1 --directory zeeb-temp2 --skip-git-init --skip-install)",
+      "WebFetch(domain:microsoft.github.io)",
+      "Bash(npx react-native-macos-init:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx jest:*)",
+      "Bash(git -C /c/Users/slain/claude/zeeb status)",
+      "Bash(git -C /c/Users/slain/claude/zeeb log --oneline -5 2>/dev/null)",
+      "Bash(git -C /c/Users/slain/claude/zeeb show --stat HEAD 2>/dev/null | head -10)",
+      "Bash(git -C /c/Users/slain/claude/zeeb ls-tree -r HEAD --name-only)",
+      "Bash(git add:*)",
+      "Bash(head -20 /c/Users/slain/claude/zeeb/docs/plans/*.md 2>/dev/null)",
+      "Bash(ls C:/Users/slain/claude/zeeb/src/types* C:/Users/slain/claude/zeeb/src/utils/cp437* 2>/dev/null)"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+								width="890" height="650" creationComplete="onComp()" backgroundColor="#bbbbbb"
+								showCloseButton="true" close="PopUpManager.removePopUp(this)"
+								borderAlpha="0.9"
+								title="Release Notes"
+								horizontalScrollPolicy="off" verticalScrollPolicy="off"
+								>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			private function onComp():void {
+				PopUpManager.centerPopUp(this);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:TextArea id="msg" htmlText="{data}" width="100%" height="{this.height - 70}" paddingTop="20" paddingLeft="20" paddingRight="20" paddingBottom="20" backgroundColor="#dddddd" color="#000000" fontSize="15"/>
+	
+</mx:TitleWindow>

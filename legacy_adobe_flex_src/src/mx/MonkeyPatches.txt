@@ -1,0 +1,6 @@
+There are some FLEX SDK Monkey Patched here:
+
+1) Fix the TileList selection area: The selection wasn't properly selecting the entire area probably due to the verticalGap
+2) Fix the TileList selection alpha: There is no mechanism for setting the selection alpha in the SDK
+3) Disable the Button selected skin so the entire button doesn't change color when you click it 
+4) Prevent the scrollbar scrubber from resizing/stretching

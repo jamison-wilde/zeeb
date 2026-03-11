@@ -1,0 +1,868 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml"
+                        xmlns:local="*"
+                        xmlns:file1="com.slaingod.FastDirectorySystemTree.*"
+                        width="1024" height="768" backgroundColor="#f0f0f0" color="#000000"
+                        creationComplete="onComp()" layout="absolute" preinitialize="onPreInit()"
+                        showStatusBar="false" windowComplete="onWindowComp()">
+  
+  <mx:Style source="assets/style.css"/>
+  
+  <!-- ************PLEASE READ!******************* 
+  I am considering adding an *OPTIONAL &amp; FREE* web service to Zeeb that allows users to automatically send a 'hash' of the original filename and the file size, and the IMDB tt# that the user eventually chose for that file. This would allow the first few users who rename a particular file to help everyone else to rename their files. A 'hash' is a way of sending something that is essentially unique but that isn't the thing itself, meaning the service would only store the 'hash' and the tt# (and possibly the poster URL that was chosen to improve the poster results order). This would allow some interesting capabilities to be developed in the future, such as 'automatically rename/poster all known movie files'. 
+  Please go to the Zeeb SourceForge forum post if you wish to give feedback on this idea. Thanks!
+  <font color='#1111FF'><a href='https://sourceforge.net/projects/zeeb/forums/forum/1064112/topic/4404445'>Forum Post Link</a></font>
+-->
+  
+  <mx:String id="releaseMessage">
+<![CDATA[
+v3.10.2
+* Use the correct separators for directors, genres, stars, etc. from the Options tab with the new default JSON scrapping.
+
+v3.10.1
+* Scraping fixes for IMDB Web page redesign
+* Seems like the latest Imdb movie pages have a JSON object with many of the details that can be grabbed directly, so using that by default, but added an option to disable.
+* IMPORTANT: The duration was originally intended to show minutes, which is what IMDB showed years ago. That is now the default again. However it is bare minutes so if you want something like 110M you need to add the M to your format. I have also added support for things like &lt;H hr&gt; and &lt;Hh&gt; which would expand to "1 hr" and "1h" respectively, along with &lt;M mins&gt; for "15 mins". See the formatting options for more info. 
+* Fixed a bug in <saved> usage.
+    
+v3.10.0
+* Quick fix to deal with damaged installer issue due to cert rejection. Cert is no longer used for this version.
+* New Auto-updater location uses Sourceforge instead of Google code.
+* 3.9.26 was unavailable anywhere due to the loss of Google Code, so the TMDB poster popup fix on 404 is also fixed again.
+* Fixed bug with logfile selection.
+* Tweaked a couple of Regex's for perf, per some old forum posts that needed you to do it by hand in the settings.
+]]>
+  </mx:String>
+  
+  
+  <mx:Script>
+    <![CDATA[
+      import air.update.ApplicationUpdaterUI;
+      import air.update.events.StatusFileUpdateErrorEvent;
+      import air.update.events.StatusFileUpdateEvent;
+      import air.update.events.StatusUpdateErrorEvent;
+      import air.update.events.StatusUpdateEvent;
+      import air.update.events.UpdateEvent;
+      
+      import com.slaingod.bigregexp.BigRegExp;
+      import com.slaingod.config.Config;
+      import com.slaingod.events.GenericEvent;
+      import com.slaingod.util.PseudoThread;
+      
+      import flash.desktop.ClipboardFormats;
+      import flash.events.ErrorEvent;
+      import flash.events.NativeDragEvent;
+      import flash.filesystem.File;
+      import flash.filesystem.FileMode;
+      import flash.filesystem.FileStream;
+      import flash.net.navigateToURL;
+      import flash.utils.setTimeout;
+      
+      import mx.collections.Sort;
+      import mx.collections.SortField;
+      import mx.controls.Alert;
+      import mx.controls.TileList;
+      import mx.core.IUITextField;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.ListEvent;
+      import mx.managers.DragManager;
+      import mx.managers.PopUpManager;
+      import mx.utils.ObjectProxy;
+      import mx.utils.StringUtil;
+      
+      [Bindable]
+      public var config:Config;
+      
+      [Bindable]
+      public var files_to_process:TileList;
+      
+      [Bindable]
+      private var isDuplicating:Boolean = false;
+      
+      [Bindable]
+      private var cancelProcessing:Boolean = false;
+      
+      public var activeRenamer:Renamer;
+      
+      private var dirState:String = 'all';
+      
+      private var dirFolders:Array; 
+      
+      private var currentDirIsSubfolder:Boolean = false;
+      
+      private var appUpdater:ApplicationUpdaterUI;
+      
+      private var parentFolderFiles:Array; // used for finding poster/.url files in parent directory for DVD Folders.
+      private var parentItem:File; // used for finding poster/.url files in parent directory for DVD Folders.
+
+      // we use valueCommit events to know when the lastFolder is done being read at startup, but if there is no last Folder
+      // we only get one commit... AIR should provide a better way of knowing...
+      private var valueCommitsBeforeDirLoaded:int = 2;
+
+      private var dragDroppedFiles:Array = [];
+      
+      private function onPreInit():void {
+        //				URLRequestDefaults.userAgent = "Zeeb AIR App";
+        
+        addEventListener(Event.CLOSING, onClose);
+        
+        config = new Config();
+        config.load();
+        
+        // bug fix: remove next version or so
+        switch(config.recurseForMovies) {
+          case 'all':
+            config.recurseForMovies = 'full subfolders';
+            break;
+          case 'single':
+            config.recurseForMovies = 'subfolders';
+          case 'none':
+            config.recurseForMovies = 'only';
+        }
+      }
+      
+      private function onClose(event:Event):void
+      {
+        for each (var window:NativeWindow in nativeApplication.openedWindows)
+        {
+          window.close();
+        }
+      }
+      
+      private function onComp():void {
+        var version:String = getApplicationVersion();			
+        ver.text = version;
+        
+        if(!config.autoUpdateMessageShown) {
+          Alert.show("A *fixed* Auto Updating feature is now available, to ease the effort required to keep Zeeb current. The next time Zeeb starts, and one a week thereafter, Zeeb will check for an update and offer you the option to download and install it if available. If you do not want to use this feature, please uncheck the option in the Options."); 
+          config.autoUpdateMessageShown = true;
+        } else if(config.checkForUpdates == true)
+          checkForUpdate();
+        
+        if(version != config.releaseNotesShownForVersion) {
+          config.releaseNotesShownForVersion = version;
+          showReleaseNotes();
+        }
+        
+        if(!config.logfileLocation || config.logfileLocation == '') {
+          var logFile:File = File.applicationStorageDirectory;
+          logFile = logFile.resolvePath('zeeb.log');
+          config.logfileLocation = logFile.nativePath;
+        }
+        saveConfig();
+        nativeWindow.addEventListener(Event.CLOSING, windowClosing);
+
+        //register for the drag enter event
+        addEventListener(NativeDragEvent.NATIVE_DRAG_ENTER, onDragIn);
+        
+        //register for the drag drop event
+        addEventListener(NativeDragEvent.NATIVE_DRAG_DROP, onDragDrop);
+
+      }
+      
+      private function showReleaseNotes():void {
+        var r:ReleaseNotes = new ReleaseNotes();
+        r.initialize();
+        r.data = releaseMessage;
+        PopUpManager.addPopUp(r, this, true);
+      }
+      
+      
+      private var oneTimeWindowComplete:Boolean = false;
+      private function onWindowComp():void {
+        if(!oneTimeWindowComplete) {
+          // seeing a bunch of these calls...guessing maximize or something causes it.
+          oneTimeWindowComplete = true;
+          this.nativeWindow.height = config.height;
+          this.nativeWindow.width = config.width;
+          if(config.maximized) {
+            this.nativeWindow.maximize();
+          }
+          
+          if(config.lastFolder && config.lastFolder != "") {
+            tree.openSubdirectory(config.lastFolder);
+            tree.selectedPath = config.lastFolder;
+          } else {
+            reading.data = 0;					
+          }
+          
+          activeRenamer = renamer0;
+          activeRenamer.visible = true;
+        }
+      }
+      
+      public function windowClosing(e:Event):void {
+        config.height = this.nativeWindow.height;
+        config.width = this.nativeWindow.width;
+        config.maximized = (this.nativeWindow.displayState == NativeWindowDisplayState.MAXIMIZED);
+        
+        saveConfig();
+      }
+      
+      public function saveConfig():void {
+        config.save();
+        // if the logfile changed, make sure we update it
+        renamer0.changeLogLocation();
+        renamer1.changeLogLocation();
+      }
+
+      public function onRefresh():void {
+        tree.refresh();
+      }
+      
+      public function onProcess():void {
+        recent_folders.selectedIndex = -1;
+        if(tree.selectedIndex) {
+          
+          if(config.recentlyUsedFolders.indexOf(tree.selectedPath) > -1)
+            config.recentlyUsedFolders.splice(config.recentlyUsedFolders.indexOf(tree.selectedPath), 1);
+          config.recentlyUsedFolders.unshift(tree.selectedPath);
+          config.recentlyUsedFolders.splice(12); // only keep last 12 folders
+          
+          // remove all is giving me some errors, probably because of all the binds...
+          // files.removeAll();
+          if(isDuplicating) {
+            duplicationFiles = new ArrayCollection;
+          } else {
+            resetFiles();
+          }
+          
+          
+          dirState = 'all';
+          nfos.removeAll();
+          
+          dirFolders = [{item: tree.selectedItem as File, sub: false}];
+          readDirs();
+          
+        } else {
+          Alert.show('Please select a folder that contains movies.');
+          isDuplicating = false;
+        }
+      }
+      
+      private function onRecentlyUsedFolderSelected():void {
+        if(recent_folders.selectedItem && recent_folders.selectedItem != '') {
+          tree.addEventListener(FlexEvent.VALUE_COMMIT, onRecentFolderReady);
+          tree.openSubdirectory(recent_folders.selectedItem as String);
+          tree.selectedPath = recent_folders.selectedItem as String;
+        }
+      }
+      
+      private function onRecentFolderReady(e:Event):void {
+        trace(tree.selectedPath);
+        tree.removeEventListener(FlexEvent.VALUE_COMMIT, onRecentFolderReady);
+        onProcess();
+      }
+      
+      private function readDirs():void {
+        processing.visible = true;
+        processing_label.text = 'Processing Filenames...';
+
+        if(!cancelProcessing && dirFolders.length > 0) {
+          var obj:Object = dirFolders.shift(); 
+          var dir:File = obj.item;
+          currentDirIsSubfolder = obj.sub; // this is a bit ugly...would be nice if File had a 'data' field we could actually use.
+          parentFolderFiles = (obj.hasOwnProperty('parentFiles') ? obj.parentFiles : null); 
+          dir.getDirectoryListingAsync();
+          dir.addEventListener( FileListEvent.DIRECTORY_LISTING, handleDirectoryListing );
+          return;
+        }
+        if(!cancelProcessing && dirState == 'all' && config.nfoFolder && config.nfoFolder != '') {
+          dirState = 'nfo';
+          processing.visible = true;
+          processing_label.text = 'Reading NFO Folder(s)...';
+          
+          var f:File = new File(config.nfoFolder);
+          if(!f.exists || !f.isDirectory) {	
+            Alert.show('The NFO Folder is set incorrectly. Please correct this in the options.');
+          } else {
+            dirFolders = [{item: f, sub: false}];
+            readDirs();
+            return;
+          }
+        } 
+        
+        processing.visible = false;
+        if(cancelProcessing) {
+          cancelProcessing = false;
+          return;
+        }
+                
+        if(isDuplicating) {
+          isDuplicating = false;
+          duplicateFiles();
+          return;
+        }
+
+        files.refresh();
+
+        config.lastFolder = tree.selectedPath;
+        stack.selectedChild = process;
+        renamer0.visible = true;
+        renamer1.visible = false;
+        if(config.autoSelectFirstMovie && files.length > 0)
+          setTimeout(autoSelectFirstMovie, 200);
+      }
+      
+      private function autoSelectFirstMovie():void {
+        renamer0.autoSelectFirstMovie();
+      }
+      
+      private function handleDirectoryListing( event:FileListEvent ):void
+      {
+        var poster:String = null;
+        var url:String = null;
+        var testFile:File;
+        var item:File;
+        var baseName:String;
+        var jpg:String;
+        var urlName:String;
+        
+        
+        
+        if(!cancelProcessing && !isDuplicating && config.detectDVDs && dirState == 'all') {
+          // pre-check to see if this is a DVD folder. 
+          for each ( item in event.files ) {
+            if(cancelProcessing) 
+              return;
+            
+            if(dragDroppedFiles.length > 0 && dragDroppedFiles.indexOf(item.nativePath) == -1 )
+              continue;
+            
+            if(item.name.toUpperCase() == 'VIDEO_TS.IFO' || item.name.toUpperCase() == 'VIDEO_TS' || item.name.toUpperCase() == 'BDMV') {
+              // current target is the real item we want now, and we assume that we should not continue parsing subfolders.
+              item = event.currentTarget as File;
+              
+              if(hasTT(item)) {
+                baseName = item.name;
+                
+                // Look for a poster inside the dvd folder								 
+                if(config.downloadPosters == true) {
+                  jpg = baseName + '.jpg';
+                  for each ( testFile in event.files ) {
+                    if(testFile.name == jpg) {
+                      poster = testFile.nativePath;
+                      break;
+                    }
+                  }
+                  
+                  if(!poster) {
+                    // now check in the parent folder for a poster
+                    for each ( testFile in parentFolderFiles ) {
+                      if(testFile.name == jpg) {
+                        poster = testFile.nativePath;
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                if(config.createURLFile == true) {
+                  urlName = baseName + '.url';
+                  for each ( testFile in event.files ) {
+                    if(testFile.name == urlName) {
+                      url = testFile.nativePath;
+                      break;
+                    }
+                  }
+                  if(!url) {
+                    // now check in the parent folder for a .url
+                    for each ( testFile in parentFolderFiles ) {
+                      if(testFile.name == urlName) {
+                        url = testFile.nativePath;
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+              
+              
+              // using object for performance...passing the File object in as data was super slow in the file list
+              var o:ObjectProxy = new ObjectProxy({
+                folder: true,
+                name: item.name,
+                nativePath: item.nativePath,
+                poster: poster,
+                url: url
+              });
+              hasTT(o);
+              files.addItem(o);
+              
+              return readDirs();
+            }
+          }
+        }
+        
+        for each ( item in event.files )
+        {
+
+          if(dragDroppedFiles.length > 0 && dragDroppedFiles.indexOf(item.nativePath) == -1 )
+            continue;
+          
+          poster = null;
+          url = null;
+          
+          if(!cancelProcessing && dirState == 'all') {
+            if(isDuplicating || item.extension && config.movie_extensions.indexOf(item.extension.toLowerCase()) > -1) {
+              if(filterTTRegExp.exec(item.name)) {
+                baseName = item.name.substr(0, item.name.length - item.extension.length);
+                // so we already have a listing of the files, lets look for the
+                // poster and url if it is an already renamed (with tt######) file.
+                if(config.downloadPosters == true) {
+                  jpg = baseName + 'jpg';
+                  for each ( testFile in event.files ) {
+                    if(testFile.name == jpg) {
+                      poster = testFile.nativePath;
+                      break;
+                    }
+                  }
+                }
+                if(config.createURLFile == true) {
+                  urlName = baseName + 'url';
+                  for each ( testFile in event.files ) {
+                    if(testFile.name == urlName) {
+                      url = testFile.nativePath;
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              
+              if(isDuplicating) {
+                duplicationFiles.addItem(item);
+              } else {
+                var p:ObjectProxy = new ObjectProxy({
+                  folder: false,
+                  name: item.name,
+                  nativePath: item.nativePath,
+                  poster: poster,
+                  url: url,
+                  size: item.size
+                });
+                hasTT(p);
+                hasSample(p);
+                // using object for performance...passing the File object in as data was super slow in the file list
+                files.addItem(p);
+              }
+            }
+          }
+          
+          // load up any nfo files while we are here so we can search them later
+          if(!cancelProcessing && !isDuplicating && item.extension && item.extension.toLowerCase() == "nfo") {
+            nfos.addItem(new ObjectProxy({
+              full: item.nativePath,
+              file: item.name
+            }));
+          }
+          
+          if(!cancelProcessing && item.isDirectory) {
+            if( 
+              (dirState == 'all' && (config.recurseForMovies == 'full subfolders' || (config.recurseForMovies == 'subfolders' && !currentDirIsSubfolder))) 
+              || 
+              (dirState == 'nfo' && config.nfoFolderRecurse)
+            ) {	
+              dirFolders.push({item: item, sub: true, parentFiles: event.files});
+            }
+          }
+        }
+        readDirs();
+      }			
+      
+      private function hasTT(s:Object):Boolean {
+        if(!s.hasOwnProperty('tt')) {
+          s.tt = filterTTRegExp.exec(s.name);
+        }
+        return s.tt;
+      }
+
+      private function hasSample(s:Object):Boolean {
+        if(!s.hasOwnProperty('sample'))
+          s.sample = filterSampleRegExp.exec(s.name);
+        return s.sample;
+      }
+
+      // NOTE: _? in the match below is a personal hack I use when movies
+      // have multiple files, like extras or episodes. I rename the files t_t#######
+      // so that I can look for duplicate movies without having to check these
+      private var filterTTRegExp:RegExp = new RegExp(/t\_?t\d\d\d\d+/); 
+      private var filterSampleRegExp:RegExp = new RegExp(/sample/i); 
+      public function onFilterFiles(item:Object):Boolean {
+        if(config.showTTFile == false && hasTT(item)) {
+          return false;
+        }
+        if(config.showSampleFile == false && hasSample(item)) {
+          return false;
+        }
+        
+        return true;
+      }
+      
+      public function flipVisible():void {
+        var nextRenamer:Renamer = process.getChildAt(0) as Renamer;
+        var selectNext:Boolean = false;
+        for each (var renamer:Renamer in process.getChildren()) {
+          if(selectNext) {
+            nextRenamer = renamer;
+            selectNext = false;						
+          }
+          if(renamer == activeRenamer) {
+            selectNext = true;
+          }
+          renamer.visible = false;
+        }
+        activeRenamer = nextRenamer;
+        activeRenamer.visible = true;
+      }
+      
+      public function updateFile(reload:Boolean, permanentChange:Boolean = false):void {
+        if(permanentChange) // write on the preferences on a permanent change
+          saveConfig();
+        for each (var renamer:Renamer in process.getChildren()) {
+          if(permanentChange || renamer == activeRenamer) 
+            renamer.updateFile(reload);
+        }
+      }
+      
+      public function scrollToIndex(index:int):void {
+        if(index < 0)
+          index = 0;
+        var vsp:int = -1;
+        for each (var renamer:Renamer in process.getChildren()) {
+          renamer.files_to_process.scrollToIndex(index);
+          if(vsp == -1) {
+            vsp = renamer.files_to_process.verticalScrollPosition;
+          } else {
+            // if they manually change the scroll position, then it won't sync even with scrolltoIndex...
+            renamer.files_to_process.verticalScrollPosition = vsp;
+          }
+        }
+      }
+      
+      private var currentUndo:Array;
+      
+      public function beginUndoTransaction():void {
+        currentUndo = [];
+      }
+      
+      // action looks like:
+      // ['rename', new, orig]
+      // ['delete', name]
+      
+      public function addUndoAction(action:Array):void {
+        currentUndo.push(action);
+      }
+      
+      public function commitUndoTransaction():void {
+        if(currentUndo && currentUndo.length > 0) {
+          if(config.undoList == null) {
+            config.undoList = []; // Why is this happening? Is the config file bad?
+          }
+          config.undoList.unshift(currentUndo);
+          // only reemeber the last XX renames
+          if(config.undoList.length > config.maxUndos) {
+            while(config.undoList.length > config.maxUndos) {
+              config.undoList.pop();
+            }
+          }
+        }
+        currentUndo = [];
+        undos.refresh();
+      }
+      
+      private var optionsPopup:Options;
+      private function onOptions():void {
+        optionsPopup = new Options();
+        optionsPopup.config = config;
+        optionsPopup.renamer = renamer0;
+        optionsPopup.addEventListener(CloseEvent.CLOSE, onOptionsSave); 
+        PopUpManager.addPopUp(optionsPopup, this, true);
+      }
+      
+      private function onOptionsSave(e:Event):void {
+        saveConfig();
+        renamer0.initBigRegExps(true);
+        renamer1.initBigRegExps(true);
+      } 
+      
+      private var showUpdateResults:Boolean = false;
+      private function checkForUpdate(showResults:Boolean = false):void {
+        showUpdateResults = showResults;
+        
+        appUpdater= new ApplicationUpdaterUI();
+        appUpdater.updateURL = "https://zeeb.sourceforge.io/update.xml"; // Server-side XML file describing update
+        appUpdater.delay = 7;
+        appUpdater.isCheckForUpdateVisible = false; // We won't ask permission to check for an update
+        appUpdater.addEventListener(UpdateEvent.INITIALIZED, onUpdate); // Once initialized, run onUpdate
+        appUpdater.addEventListener(ErrorEvent.ERROR, onError); // If something goes wrong, run onError
+        appUpdater.addEventListener(StatusUpdateEvent.UPDATE_STATUS,onUpdateStatus);
+        appUpdater.addEventListener(StatusUpdateErrorEvent.UPDATE_ERROR, onError);
+        appUpdater.addEventListener(StatusFileUpdateEvent.FILE_UPDATE_STATUS, onError);
+        appUpdater.addEventListener(StatusFileUpdateErrorEvent.FILE_UPDATE_ERROR, onError);
+        appUpdater.initialize(); // Initialize the update framework
+      }
+      
+      private function onError(event:Event):void {
+        Alert.show(event.toString());
+      }
+      
+      private function onUpdateStatus(event:StatusUpdateEvent):void {
+        if (event.available) {
+        } else {
+          if(showUpdateResults) 
+            Alert.show("No updates are available at this time","No Updates Available");
+        }
+      }
+      
+      private function onUpdate(event:UpdateEvent):void {
+        appUpdater.checkNow(); // Go check for an update now
+      }
+      
+      // Find the current version for our Label below
+      private function getApplicationVersion():String {
+        var appXML:XML = NativeApplication.nativeApplication.applicationDescriptor;
+        var ns:Namespace = appXML.namespace();
+        return "Zeeb v" + appXML.ns::versionNumber;
+      }
+      
+      public function showFolders():void {
+        stack.selectedChild = folder_select;
+        forceCleanUp();
+        setTimeout(refreshFolders, 50);
+      }
+      
+      private function refreshFolders():void {
+        tree.refresh();
+      }
+      
+      public function forceCleanUp():void {
+        trace('Force Cleanup');
+        files.refresh();
+        renamer0.cleanUp(true);				
+        renamer1.cleanUp(true);
+      }
+      
+      private function onDuplicateDirectory():void {
+        isDuplicating = true; 	
+        onProcess();
+      }
+      
+      private function duplicateFiles():void {
+        var file:File = new File();
+        file.addEventListener(Event.SELECT, duplicateFilesProcessPsuedoThread);
+        file.browseForDirectory("Select empty destination directory");
+        processing.visible = true;
+      }
+
+      private var excludeFiles:Array = [
+        '$RECYCLE.BIN',
+        'System Volume Information',
+        '.git',
+        '.svn',
+        '.DS_Store',
+        '.Trashes',
+        '.Trash'
+      ];
+  
+      private var duplicationPsuedoThread:PseudoThread;
+
+      private var reSource:RegExp;
+      
+      private function duplicateFilesProcessPsuedoThread(e:Event):void {
+
+        var target:File = e.target as File;
+        if(target.nativePath == (tree.selectedItem as File).nativePath) {
+          duplicationFiles.removeAll();
+          Alert.show("You cannot copy the test files to the same location! You should preferably select or create an empty folder.");
+          return;
+        }
+        
+        reSource = new RegExp("^" + (tree.selectedItem as File).nativePath.replace(/\\/g,"\\\\") + "(.*)");
+
+        duplicationPsuedoThread = new PseudoThread(systemManager, duplicateFilesProcess, {files: duplicationFiles, target: target});
+        duplicationPsuedoThread.addEventListener("threadComplete", duplicationPsuedoThreadComplete);
+      }
+      
+      private function duplicationPsuedoThreadComplete(e:Event):void {
+        duplicationFiles.removeAll();
+        processing.visible = false;
+      }
+      
+      
+      private function duplicateFilesProcess(obj:Object):Boolean {
+
+        processing_label.text = 'Duplicating Files/Structure...' + (obj.files as ArrayCollection).length + ' files remaining.';
+
+        if((obj.files as ArrayCollection) == null || (obj.files as ArrayCollection).length < 1)
+          return false;
+        
+        var f:File = (obj.files as ArrayCollection).removeItemAt(0) as File;
+        if(excludeFiles.indexOf(f.name) > -1)
+          return true;
+        
+        if(cancelProcessing) {
+          cancelProcessing = false;
+          processing.visible = false;
+          Alert.show("Duplication cancelled! Some files may have already been created in the destination folder.");
+          return false;
+        }
+        
+        var match:Array = reSource.exec(f.nativePath);
+        if(match) {
+          var dest:String = obj.target.nativePath + match[1];
+          var ff:File = f.resolvePath(dest);
+          if(ff.exists)
+            return true;
+          if(f.isDirectory) {
+            ff.createDirectory();
+          } else if(f.isSymbolicLink) {
+            // do nothing? Not sure what would happen so just ignore for now
+          } else {
+            if(f.size < config.smallFileCopyLimit * 1024) {
+              f.copyTo(ff);
+            } else {
+              var fileStream:FileStream = new FileStream();
+              fileStream.open(ff, FileMode.WRITE);
+              fileStream.close();	    
+            }
+          }
+        } else {
+          trace("Couldn't match the native path of the source for replacement!");
+        }
+        
+        return true;
+      }
+
+      private function onDragIn(e:NativeDragEvent):void
+      {
+        if(e.clipboard.hasFormat(ClipboardFormats.FILE_LIST_FORMAT))
+        {
+          DragManager.acceptDragDrop(this);
+        }
+      }
+      
+      private function onDragDrop(e:NativeDragEvent):void
+      {
+        var files:Array = e.clipboard.getData(ClipboardFormats.FILE_LIST_FORMAT) as Array;
+        
+        resetFiles();
+        isDuplicating = false;
+        dirState = 'all';
+        nfos.removeAll();
+
+        var tempParentsNativePaths:Array = [];
+        dirFolders = [];
+        for each(var file:File in files) {
+          dragDroppedFiles.push(file.nativePath);
+          if(tempParentsNativePaths.indexOf(file.parent.nativePath) == -1) {
+            tempParentsNativePaths.push(file.parent.nativePath);
+            dirFolders.push({item: file.parent, sub:false});
+          }
+        }
+        readDirs();
+      }
+
+      private function resetFiles():void {
+        files = new ArrayCollection;
+        files.filterFunction = onFilterFiles;
+        
+        var sort:Sort = new Sort();
+        sort.fields = [ new SortField('name', true)] ;	
+        files.sort = sort;
+
+        dragDroppedFiles = [];
+      }
+      
+      
+    ]]>
+  </mx:Script>
+  
+  <mx:ArrayCollection id="files" filterFunction="onFilterFiles"/>
+  <mx:ArrayCollection id="duplicationFiles"/>
+  <mx:ArrayCollection id="nfos"/>
+  <mx:ArrayCollection id="undos" source="{config.undoList}"/> 
+  
+  <mx:ViewStack id="stack" width="100%" height="100%" creationPolicy="all" fontThickness="120"
+                paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10">
+    <mx:Canvas id="folder_select" width="100%" height="100%">
+      <mx:VBox width="100%" height="100%" verticalGap="3">
+        <mx:HBox width="100%">
+          <mx:Button id="process_btn" label="List Movies from Selected Folder" click="onProcess();"
+                     styleName="btn"/>
+          <mx:Spacer width="15"/>
+          <mx:ComboBox id="recent_folders" visible="{config.recentlyUsedFolders.length &gt; 0}"
+                       change="onRecentlyUsedFolderSelected()"
+                       dataProvider="{config.recentlyUsedFolders}" prompt="Recently Used Folders"/>
+          <mx:Button id="refresh_btn" label="Refresh" click="onRefresh();" styleName="btn"/>
+          <mx:Spacer width="100%"/>
+          <mx:Label id="ver" buttonMode="true"
+                    click="navigateToURL(new URLRequest('http://sourceforge.net/projects/zeeb/files/'))"
+                    color="#999999" fontSize="10" mouseChildren="false" paddingTop="5"
+                    toolTip="Click to go to the Zeeb SourceForge page" useHandCursor="true"/>
+          <mx:Label id="notes" buttonMode="true" click="showReleaseNotes()" color="#999999"
+                    fontSize="10" mouseChildren="false" paddingTop="5" text="notes"
+                    toolTip="Click to show the release notes" useHandCursor="true"/>
+          <mx:Button id="options_btn" label="Options" click="onOptions()" styleName="btn"/>
+          <mx:Button id="check_update" label="Check for Updates" click="checkForUpdate(true)"
+                     styleName="btn"/>
+          <mx:Spacer width="15"/>
+        </mx:HBox>
+        <mx:VBox width="100%" height="100%" borderStyle="solid" borderThickness="3" cornerRadius="3"
+                 paddingBottom="10" paddingRight="15" paddingTop="10">
+          <file1:FastDirectorySystemTree id="tree" width="100%" height="100%" backgroundAlpha="0.3"
+                                         backgroundImage="@Embed('/assets/icon/zeeb512.png')"
+                                         borderStyle="none"
+                                         directoryChange="reading.data = valueCommitsBeforeDirLoaded;"
+                                         enumerationMode="directoriesOnly" fontSize="14"
+                                         paddingBottom="0" paddingTop="0" rollOverColor="0xcccccc"
+                                         selectionColor="0xbbbbbb"
+                                         showHidden="{config.showHiddenFiles}" showRoot="true"
+                                         valueCommit="reading.data = int(reading.data) - 1;"/>
+        </mx:VBox>
+        <mx:HBox>
+          <mx:Label paddingTop="5" text="Directory Search Style:"/>
+          <mx:RadioButtonGroup id="recursion_type"
+                               change="config.recurseForMovies = String(recursion_type.selectedValue);"
+                               selectedValue="{config.recurseForMovies}"/>
+          <mx:RadioButton label="only" groupName="recursion_type" paddingTop="4"
+                          toolTip="Only look in this directory, not in subfolders."/>
+          <mx:RadioButton label="subfolders" groupName="recursion_type" paddingTop="4"
+                          toolTip="Look in folders of this directory, but not in subfolders inside each folder."/>
+          <mx:RadioButton label="full subfolders" groupName="recursion_type" paddingTop="4"
+                          toolTip="Look in folders of this directory, and in subfolders inside each folder."/>
+          <mx:Button label="Duplicate for Testing" click="onDuplicateDirectory()" styleName="btn"
+                     toolTip="Make a copy of the selected folder's contents to a destination you specify, so that you can test that your customized naming formats work as expected before renaming the original files. Files over {config.smallFileCopyLimit} Kilobytes will be zero sized in the test directory, which allows NFO and other processing to work as expected without having to copy huge media files."/> 
+        </mx:HBox>
+        <mx:Text fontSize="12" paddingTop="-8"
+                 text="(Note: Opening folders and listing movies can take several seconds or more, especially on network shares or WiFi or when listing movies in subfolders.)"/>
+      </mx:VBox>
+      <mx:Canvas id="reading" visible="{reading.data &gt; 0}" backgroundColor="#444444"
+                 horizontalCenter="0" includeInLayout="false" mouseEnabled="false"
+                 verticalCenter="0">
+        <mx:Label id="reading_label" color="#FFFFFF" paddingBottom="5" paddingLeft="5"
+                  paddingRight="5" paddingTop="5" text="Reading Directory..."/>
+      </mx:Canvas>
+      <mx:Canvas id="processing" visible="false" backgroundColor="#444444" horizontalCenter="0"
+                 horizontalScrollPolicy="off" includeInLayout="false" mouseEnabled="false"
+                 verticalCenter="0" verticalScrollPolicy="off">
+        <mx:HBox paddingBottom="20" paddingLeft="20" paddingRight="20" paddingTop="20">
+          <mx:Label id="processing_label" color="#FFFFFF" paddingBottom="5" paddingLeft="5"
+                    paddingRight="5" paddingTop="5" text="Reading Filenames...({files.length})"/>
+          <mx:Button label="cancel" click="cancelProcessing = true;" paddingTop="5" styleName="btn"/>					
+        </mx:HBox>
+      </mx:Canvas>
+    </mx:Canvas>
+    
+    <mx:Canvas id="process" width="100%" height="100%" horizontalScrollPolicy="off"
+               verticalScrollPolicy="off">
+      <local:Renamer id="renamer0" visible="false" data="{this}"/>
+      <local:Renamer id="renamer1" visible="false" data="{this}"/>
+    </mx:Canvas>
+  </mx:ViewStack>
+  
+  <!--		<mx:Script> <![CDATA[ import com.flexspy.FlexSpy;  ]]>	</mx:Script>
+  <mx:Button id="btnFlexSpy" label="Debug" click="FlexSpy.show()" color="#000000"/>
+  -->
+</mx:WindowedApplication>
