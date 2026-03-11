@@ -1,4 +1,4 @@
-import RNFS from 'react-native-fs';
+import type { FsAdapter, DirEntry } from '../adapters/fs';
 import { MovieFile } from '../types';
 
 type RecursionMode = 'none' | 'subfolders' | 'full';
@@ -25,12 +25,12 @@ function getFolder(filepath: string): string {
   return sep >= 0 ? filepath.substring(0, sep) : '';
 }
 
-async function isDvdOrBluray(dirPath: string): Promise<boolean> {
+async function isDvdOrBluray(fs: FsAdapter, dirPath: string): Promise<boolean> {
   try {
-    const contents = await RNFS.readDir(dirPath);
+    const contents = await fs.readdir(dirPath);
     return contents.some(
       (item) =>
-        item.isFile() &&
+        item.isFile &&
         (item.name.toUpperCase() === 'VIDEO_TS.IFO' ||
           item.name.toUpperCase() === 'INDEX.BDMV'),
     );
@@ -40,40 +40,37 @@ async function isDvdOrBluray(dirPath: string): Promise<boolean> {
 }
 
 async function checkAssociatedFile(
+  fs: FsAdapter,
   dirPath: string,
   baseName: string,
   ext: string,
 ): Promise<string | null> {
   const candidate = `${dirPath}/${baseName}.${ext}`;
-  const exists = await RNFS.exists(candidate);
+  const exists = await fs.exists(candidate);
   return exists ? candidate : null;
 }
 
-/**
- * Scans a directory for movie files matching the given extensions.
- * Detects associated NFO, URL, and poster files.
- * Detects DVD/Blu-ray folder structures.
- */
 export async function scanDirectory(
+  fs: FsAdapter,
   path: string,
   extensions: string[],
   recursionMode: RecursionMode,
 ): Promise<MovieFile[]> {
   const results: MovieFile[] = [];
-  const entries = await RNFS.readDir(path);
+  const entries = await fs.readdir(path);
   const extSet = new Set(extensions.map((e) => e.toLowerCase()));
 
   for (const entry of entries) {
-    if (entry.isFile()) {
+    if (entry.isFile) {
       const ext = getExtension(entry.name);
       if (!extSet.has(ext)) continue;
 
       const baseName = getBaseName(entry.name);
       const folder = getFolder(entry.path);
 
-      const nfoPath = await checkAssociatedFile(folder, baseName, 'nfo');
-      const urlPath = await checkAssociatedFile(folder, baseName, 'url');
-      const posterPath = await checkAssociatedFile(folder, baseName, 'jpg');
+      const nfoPath = await checkAssociatedFile(fs, folder, baseName, 'nfo');
+      const urlPath = await checkAssociatedFile(fs, folder, baseName, 'url');
+      const posterPath = await checkAssociatedFile(fs, folder, baseName, 'jpg');
 
       results.push({
         id: generateId(),
@@ -81,7 +78,7 @@ export async function scanDirectory(
         nativePath: entry.path,
         folder,
         extension: ext,
-        size: entry.size,
+        size: entry.size ?? 0,
         isDvdFolder: false,
         hasNfo: nfoPath !== null,
         hasUrl: urlPath !== null,
@@ -90,14 +87,14 @@ export async function scanDirectory(
         urlPath,
         posterPath,
       });
-    } else if (entry.isDirectory()) {
-      const dvd = await isDvdOrBluray(entry.path);
+    } else if (entry.isDirectory) {
+      const dvd = await isDvdOrBluray(fs, entry.path);
       if (dvd) {
         const baseName = entry.name;
         const folder = getFolder(entry.path);
-        const nfoPath = await checkAssociatedFile(folder, baseName, 'nfo');
-        const urlPath = await checkAssociatedFile(folder, baseName, 'url');
-        const posterPath = await checkAssociatedFile(folder, baseName, 'jpg');
+        const nfoPath = await checkAssociatedFile(fs, folder, baseName, 'nfo');
+        const urlPath = await checkAssociatedFile(fs, folder, baseName, 'url');
+        const posterPath = await checkAssociatedFile(fs, folder, baseName, 'jpg');
 
         results.push({
           id: generateId(),
@@ -105,7 +102,7 @@ export async function scanDirectory(
           nativePath: entry.path,
           folder,
           extension: '',
-          size: entry.size,
+          size: entry.size ?? 0,
           isDvdFolder: true,
           hasNfo: nfoPath !== null,
           hasUrl: urlPath !== null,
@@ -116,6 +113,7 @@ export async function scanDirectory(
         });
       } else if (recursionMode === 'subfolders' || recursionMode === 'full') {
         const subResults = await scanDirectory(
+          fs,
           entry.path,
           extensions,
           recursionMode === 'full' ? 'full' : 'none',
