@@ -72,4 +72,15 @@ describe('interpolateFormat', () => {
     const noYear = { ...meta, year: null };
     expect(interpolateFormat('<year>', noYear, { saved: '' })).toBe('');
   });
+
+  it('sanitizes illegal filename characters', () => {
+    const colonTitle = { ...meta, title: '2001: A Space Odyssey' };
+    const result = interpolateFormat('<title> (<year>)', colonTitle, { saved: '' });
+    expect(result).toBe('2001 - A Space Odyssey (1994)');
+  });
+
+  it('removes question marks and asterisks from filenames', () => {
+    const weirdTitle = { ...meta, title: 'What If...?' };
+    expect(interpolateFormat('<title>', weirdTitle, { saved: '' })).toBe('What If..');
+  });
 });

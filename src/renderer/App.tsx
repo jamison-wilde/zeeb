@@ -23,6 +23,8 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showOptions, setShowOptions] = useState(false);
   const [showUndo, setShowUndo] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [showTt, setShowTt] = useState(false);
+  const [showSample, setShowSample] = useState(false);
 
   // Each renamer gets its own file index; they interleave (0,2,4... and 1,3,5...)
   const [fileIndex0, setFileIndex0] = useState(0);
@@ -33,6 +35,15 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   const files = useStore(fileStoreRef.current, (s) => s.files);
   const setFiles = useStore(fileStoreRef.current, (s) => s.setFiles);
+  const updateFile = useStore(fileStoreRef.current, (s) => s.updateFile);
+
+  const filteredFiles = useMemo(() => {
+    return files.filter((f) => {
+      if (!showSample && /sample/i.test(f.name)) return false;
+      if (!showTt && /tt\d{5,}/.test(f.name)) return false;
+      return true;
+    });
+  }, [files, showTt, showSample]);
 
   const transactions = useStore(undoStoreRef.current, (s) => s.transactions);
   const undoTransaction = useStore(undoStoreRef.current, (s) => s.undoTransaction);
@@ -87,6 +98,16 @@ function App({ fs }: AppProps): React.JSX.Element {
     setActiveRenamer(0);
   }, []);
 
+  const handleFileRenamed = useCallback(
+    (fileId: string, newName: string, newPath: string) => {
+      const ext = newName.includes('.') ? newName.substring(newName.lastIndexOf('.') + 1).toLowerCase() : '';
+      const sep = newPath.includes('\\') ? '\\' : '/';
+      const folder = newPath.substring(0, newPath.lastIndexOf(sep));
+      updateFile(fileId, { name: newName, nativePath: newPath, extension: ext, folder });
+    },
+    [updateFile],
+  );
+
   const handleOptionsClose = useCallback(() => {
     setShowOptions(false);
     void save();
@@ -129,10 +150,15 @@ function App({ fs }: AppProps): React.JSX.Element {
               instanceId={0}
               visible={activeRenamer === 0}
               fileIndex={fileIndex0}
-              files={files}
+              files={filteredFiles}
               fs={fs}
               undoStore={undoStoreRef.current}
+              onFileRenamed={handleFileRenamed}
               onComplete={handleComplete0}
+              showTt={showTt}
+              onShowTtChange={setShowTt}
+              showSample={showSample}
+              onShowSampleChange={setShowSample}
             />
           </div>
           <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 1 ? '' : 'hidden'}`}>
@@ -140,10 +166,15 @@ function App({ fs }: AppProps): React.JSX.Element {
               instanceId={1}
               visible={activeRenamer === 1}
               fileIndex={fileIndex1}
-              files={files}
+              files={filteredFiles}
               fs={fs}
               undoStore={undoStoreRef.current}
+              onFileRenamed={handleFileRenamed}
               onComplete={handleComplete1}
+              showTt={showTt}
+              onShowTtChange={setShowTt}
+              showSample={showSample}
+              onShowSampleChange={setShowSample}
             />
           </div>
         </div>

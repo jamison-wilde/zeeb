@@ -4,26 +4,26 @@ import type { MovieFile } from '../types';
 interface FileStoreState {
   files: MovieFile[];
   setFiles: (files: MovieFile[]) => void;
+  updateFile: (id: string, updates: Partial<MovieFile>) => void;
   clear: () => void;
-  getFilteredFiles: (showSamples: boolean) => MovieFile[];
 }
 
 export function createFileStore(): StoreApi<FileStoreState> {
-  return createStore<FileStoreState>((set, get) => ({
+  return createStore<FileStoreState>((set) => ({
     files: [],
 
     setFiles(files: MovieFile[]) {
       set({ files });
     },
 
-    clear() {
-      set({ files: [] });
+    updateFile(id: string, updates: Partial<MovieFile>) {
+      set((state) => ({
+        files: state.files.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+      }));
     },
 
-    getFilteredFiles(showSamples: boolean): MovieFile[] {
-      const { files } = get();
-      if (showSamples) return files;
-      return files.filter((f) => !f.name.toLowerCase().includes('.sample.'));
+    clear() {
+      set({ files: [] });
     },
   }));
 }

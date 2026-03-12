@@ -29,10 +29,15 @@ interface RenamerProps {
     addEntry: (entry: UndoEntry) => void;
     commitTransaction: () => void;
   }>;
+  onFileRenamed?: (fileId: string, newName: string, newPath: string) => void;
   onComplete?: () => void;
+  showTt?: boolean;
+  onShowTtChange?: (v: boolean) => void;
+  showSample?: boolean;
+  onShowSampleChange?: (v: boolean) => void;
 }
 
-export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
+export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onFileRenamed, onComplete, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
@@ -274,7 +279,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     undoStore?.getState().beginTransaction();
 
     try {
-      const newPath = `${currentFile.folder}/${previewFilename}`;
+      const sep = currentFile.nativePath.includes('\\') ? '\\' : '/';
+      const newPath = `${currentFile.folder}${sep}${previewFilename}`;
       const entry = await renameFile(fs, currentFile.nativePath, newPath);
       undoStore?.getState().addEntry(entry);
 
@@ -289,6 +295,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       }
 
       undoStore?.getState().commitTransaction();
+      onFileRenamed?.(currentFile.id, previewFilename, newPath);
 
       if (config.logFilePath) {
         const logger = createLogger(fs, config.logFilePath);
@@ -299,7 +306,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     }
 
     advance();
-  }, [currentFile, previewFilename, fs, undoStore, config.subtitleExtensions, config.logFilePath, advance]);
+  }, [currentFile, previewFilename, fs, undoStore, onFileRenamed, config.subtitleExtensions, config.logFilePath, advance]);
 
   const handleSkip = useCallback(() => {
     advance();
@@ -311,7 +318,18 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       <div className="flex-1 flex flex-row min-h-0">
         {/* Left panel: file list + search results */}
         <div className="w-[420px] flex flex-col border-r border-gray-300 shrink-0">
-          <div className="px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600 border-b border-gray-300 shrink-0">Movie Files</div>
+          <div className="flex items-center px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600 border-b border-gray-300 shrink-0">
+            <span>Movie Files</span>
+            <span className="flex-1" />
+            <label className="flex items-center gap-0.5 font-normal text-gray-500 mr-2">
+              <input type="checkbox" checked={showTt ?? false} onChange={(e) => onShowTtChange?.(e.target.checked)} className="w-3 h-3" />
+              TT?
+            </label>
+            <label className="flex items-center gap-0.5 font-normal text-gray-500">
+              <input type="checkbox" checked={showSample ?? false} onChange={(e) => onShowSampleChange?.(e.target.checked)} className="w-3 h-3" />
+              Sample?
+            </label>
+          </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <FileList
               files={files}
