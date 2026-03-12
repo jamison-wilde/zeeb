@@ -43,7 +43,15 @@ function getTokenValue(token: string, meta: NonNullable<ReturnType<typeof useTes
     case 'duration': return meta.duration?.toString() ?? '(unavailable)';
     case 'H': return Math.floor(dur / 60).toString();
     case 'M': return (dur % 60).toString();
-    case 'mpaa': return meta.mpaa ?? '(unavailable)';
+    case 'mpaa': {
+      const raw = meta.mpaa;
+      if (raw == null) {
+        const nf = config.mpaaMap.find(([m]) => m === 'NF');
+        return nf ? nf[1] : '(unavailable)';
+      }
+      const entry = config.mpaaMap.find(([m]) => m === raw);
+      return entry ? entry[1] : raw;
+    }
     case 'aka': return meta.aka[0] ?? '(unavailable)';
     default: return '';
   }

@@ -81,7 +81,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
 
   const autoSearchRef = useRef(false);
   const nfoAutoSelectedRef = useRef(false);
-  const testerClaimedRef = useRef(false);
 
   useEffect(() => {
     if (!currentFile) return;
@@ -148,11 +147,9 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       setPreviewFilename('');
       return;
     }
-    const format = currentFile.isDvdFolder
-      ? config.formatDvd
-      : useAka && selectedAka
-        ? config.formatAka
-        : config.formatStandard;
+    const format = currentFile.isDvdFolder && config.separateDvdFormat
+      ? (useAka && selectedAka ? config.formatDvdAka : config.formatDvd)
+      : (useAka && selectedAka ? config.formatAka : config.formatStandard);
     const ext = currentFile.isDvdFolder ? '' : `.${currentFile.extension}`;
     const keepParts = searchParts
       .filter((p) => p.state === 'keep' || p.state === 'keepAlways')
@@ -257,7 +254,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   // Handle Format Tester requests — only first Renamer instance responds
   useEffect(() => {
     if (!testerRequest || !webviewEl || instanceId !== 0) return;
-    testerClaimedRef.current = true;
     navigationMode.current = 'tester';
     const url = `${config.urlImdbTT}${testerRequest.tt}/`;
     webviewEl.loadURL(url);
