@@ -1,5 +1,5 @@
 // src/renderer/components/options/ImdbSection.tsx
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import type { ZeebConfig } from '../../../types';
 import { KeyValueTable } from './KeyValueTable';
 
@@ -17,19 +17,9 @@ export function ImdbSection({ config, updateConfig }: ImdbSectionProps): React.J
     [updateConfig],
   );
 
-  // Convert mpaaMap Record to pairs for KeyValueTable
-  const mpaaPairs = useMemo(
-    () => Object.entries(config.mpaaMap) as Array<[string, string]>,
-    [config.mpaaMap],
-  );
-
   const handleMpaaChange = useCallback(
     (pairs: Array<[string, string]>) => {
-      const map: Record<string, string> = {};
-      for (const [k, v] of pairs) {
-        if (k) map[k] = v;
-      }
-      updateConfig({ mpaaMap: map });
+      updateConfig({ mpaaMap: pairs });
     },
     [updateConfig],
   );
@@ -92,7 +82,7 @@ export function ImdbSection({ config, updateConfig }: ImdbSectionProps): React.J
         <h3 className="text-sm font-bold text-gray-700 mb-3">MPAA Mapping</h3>
         <p className="text-xs text-gray-500 mb-2">Map IMDB ratings to custom output strings.</p>
         <KeyValueTable
-          values={mpaaPairs}
+          values={config.mpaaMap}
           onChange={handleMpaaChange}
           leftHeader="IMDB Rating"
           rightHeader="Output"

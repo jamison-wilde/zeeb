@@ -65,7 +65,7 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
       if (!input) return;
       const start = input.selectionStart ?? input.value.length;
       const end = input.selectionEnd ?? start;
-      const current = (config as Record<string, unknown>)[focusedField] as string;
+      const current = (config as unknown as Record<string, unknown>)[focusedField] as string;
       const newValue = current.slice(0, start) + token + current.slice(end);
       updateConfig({ [focusedField]: newValue });
       // Restore cursor after React re-render
@@ -110,7 +110,7 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
               ref={(el) => { inputRefs.current[f.key] = el; }}
               data-testid={f.testId}
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono"
-              value={(config as Record<string, unknown>)[f.key] as string}
+              value={(config as unknown as Record<string, unknown>)[f.key] as string}
               onChange={(e) => updateConfig({ [f.key]: e.target.value })}
               onFocus={() => setFocusedField(f.key as FormatKey)}
             />

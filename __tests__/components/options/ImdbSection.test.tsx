@@ -17,7 +17,7 @@ describe('ImdbSection', () => {
   });
 
   it('renders MPAA mapping table', () => {
-    const config = { ...DEFAULT_CONFIG, mpaaMap: { 'R': 'R', 'PG-13': 'PG13' } };
+    const config = { ...DEFAULT_CONFIG, mpaaMap: [['R', 'R'], ['PG-13', 'PG13']] as Array<[string, string]> };
     render(<ImdbSection config={config} updateConfig={vi.fn()} />);
     expect(screen.getByText('IMDB Rating')).toBeDefined();
     expect(screen.getByText('Output')).toBeDefined();
