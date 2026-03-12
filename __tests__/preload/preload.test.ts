@@ -40,9 +40,11 @@ describe('webview preload', () => {
     vi.resetModules();
   });
 
-  it('exposes sendToHost API on window', async () => {
+  it('registers ipcRenderer.on listener for extraction patterns', async () => {
     await import('../../src/preload/webview');
-    expect((window as any).zeebIpc).toBeDefined();
-    expect((window as any).zeebIpc.sendToHost).toBeDefined();
+    const { ipcRenderer } = await import('electron');
+    const onMock = ipcRenderer.on as ReturnType<typeof vi.fn>;
+    const channels = onMock.mock.calls.map((c: unknown[]) => c[0]);
+    expect(channels).toContain('set-extraction-patterns');
   });
 });

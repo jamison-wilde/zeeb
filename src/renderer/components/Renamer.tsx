@@ -13,8 +13,6 @@ import { parseFilename } from '../../services/filenameParser';
 import {
   buildSearchUrl,
   buildTitleUrl,
-  generateSearchExtractionScript,
-  generateTitleExtractionScript,
   parseSearchResults,
   parseTitleData,
 } from '../../services/imdbExtractor';
@@ -134,63 +132,17 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     }
   }, [movieMatches]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const pollRef = useRef<{ cancel: () => void } | null>(null);
+  // Send extraction patterns to webview preload whenever they change
+  useEffect(() => {
+    if (!webviewEl) return;
+    try {
+      webviewEl.send('set-extraction-patterns', config.extractionPatterns);
+    } catch { /* webview not ready yet — patterns will be sent on next nav */ }
+  }, [webviewEl, config.extractionPatterns]);
 
   useEffect(() => {
     if (!webviewEl) return;
     const webview = webviewEl;
-
-    const stopPolling = () => {
-      if (pollRef.current) {
-        pollRef.current.cancel();
-        pollRef.current = null;
-      }
-    };
-
-    const startPolling = () => {
-      stopPolling();
-      const mode = navigationMode.current;
-      if (mode === 'idle') return;
-
-      const script = mode === 'search'
-        ? generateSearchExtractionScript()
-        : generateTitleExtractionScript(config.extractionPatterns);
-
-      let cancelled = false;
-      // Store cancel function so stopPolling can abort
-      pollRef.current = { cancel: () => { cancelled = true; } };
-
-      let attempts = 0;
-      const maxAttempts = 60;
-
-      const poll = () => {
-        if (cancelled) return;
-        attempts++;
-        webview.executeJavaScript(script)
-          .then((result: string | null) => {
-            if (cancelled) return;
-            if (!result) {
-              if (attempts < maxAttempts) setTimeout(poll, 250);
-              return;
-            }
-
-            stopPolling();
-            const searchResults = parseSearchResults(result);
-            if (searchResults.length > 0) {
-              setMovieMatches(searchResults);
-              return;
-            }
-            const titleData = parseTitleData(result);
-            if (titleData) {
-              setMetadata(titleData);
-            }
-          })
-          .catch(() => {
-            if (!cancelled && attempts < maxAttempts) setTimeout(poll, 250);
-          });
-      };
-      poll();
-    };
 
     const handleDomReady = () => {
       setWebviewReady(true);
@@ -198,29 +150,46 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
         const url = webview.getURL();
         setUrlInput(url);
       } catch { /* ignore */ }
+      // Send extraction patterns to the newly loaded preload context
+      try {
+        webview.send('set-extraction-patterns', config.extractionPatterns);
+      } catch { /* ignore */ }
     };
 
     const handleNavigate = (_event: any) => {
-      let url = '';
       try {
-        url = webview.getURL();
-        setUrlInput(url);
+        setUrlInput(webview.getURL());
       } catch { /* ignore */ }
-      // Start polling as soon as navigation begins
-      startPolling();
+    };
+
+    const handleIpcMessage = (event: any) => {
+      if (event.channel !== 'extraction-result') return;
+      const message = event.args?.[0];
+      if (!message) return;
+
+      console.log(`[zeeb:${instanceId}] ipc extraction-result received, mode=${navigationMode.current}`);
+
+      const searchResults = parseSearchResults(message);
+      if (searchResults.length > 0 && navigationMode.current === 'search') {
+        setMovieMatches(searchResults);
+        return;
+      }
+      const titleData = parseTitleData(message);
+      if (titleData && navigationMode.current === 'title') {
+        setMetadata(titleData);
+      }
     };
 
     webview.addEventListener('dom-ready', handleDomReady);
     webview.addEventListener('did-navigate', handleNavigate);
-    webview.addEventListener('did-navigate-in-page', handleNavigate);
+    webview.addEventListener('ipc-message', handleIpcMessage);
 
     return () => {
-      stopPolling();
       webview.removeEventListener('dom-ready', handleDomReady);
       webview.removeEventListener('did-navigate', handleNavigate);
-      webview.removeEventListener('did-navigate-in-page', handleNavigate);
+      webview.removeEventListener('ipc-message', handleIpcMessage);
     };
-  }, [webviewEl, config.extractionPatterns, setMovieMatches, setMetadata]);
+  }, [webviewEl, instanceId, config.extractionPatterns, setMovieMatches, setMetadata]);
 
   const handleFileSelect = useCallback(
     (_index: number) => {
