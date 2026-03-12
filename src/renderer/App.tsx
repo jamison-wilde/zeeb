@@ -37,13 +37,20 @@ function App({ fs }: AppProps): React.JSX.Element {
   const setFiles = useStore(fileStoreRef.current, (s) => s.setFiles);
   const updateFile = useStore(fileStoreRef.current, (s) => s.updateFile);
 
-  const filteredFiles = useMemo(() => {
-    return files.filter((f) => {
-      if (!showSample && /sample/i.test(f.name)) return false;
-      if (!showTt && /tt\d{5,}/.test(f.name)) return false;
-      return true;
-    });
-  }, [files, showTt, showSample]);
+  const isFileVisible = useCallback((f: { name: string }) => {
+    if (!showSample && /sample/i.test(f.name)) return false;
+    if (!showTt && /tt\d{5,}/.test(f.name)) return false;
+    return true;
+  }, [showTt, showSample]);
+
+  const findNextVisible = useCallback((fromIndex: number, step: number): number => {
+    let idx = fromIndex;
+    const allFiles = fileStoreRef.current.getState().files;
+    while (idx < allFiles.length && !isFileVisible(allFiles[idx])) {
+      idx += step;
+    }
+    return idx;
+  }, [isFileVisible]);
 
   const transactions = useStore(undoStoreRef.current, (s) => s.transactions);
   const undoTransaction = useStore(undoStoreRef.current, (s) => s.undoTransaction);
@@ -88,8 +95,13 @@ function App({ fs }: AppProps): React.JSX.Element {
         recursionMode as 'none' | 'subfolders' | 'full',
       );
       setFiles(results);
-      setFileIndex0(0);
-      setFileIndex1(1);
+      // Find first two visible files for the interleaved renamers
+      let idx0 = 0;
+      while (idx0 < results.length && !isFileVisible(results[idx0])) idx0++;
+      let idx1 = idx0 + 1;
+      while (idx1 < results.length && !isFileVisible(results[idx1])) idx1++;
+      setFileIndex0(idx0);
+      setFileIndex1(idx1);
       setActiveRenamer(0);
       setView('process');
     },
@@ -97,16 +109,14 @@ function App({ fs }: AppProps): React.JSX.Element {
   );
 
   const handleComplete0 = useCallback(() => {
-    // Renamer 0 done — advance its index by 2, flip to renamer 1
-    setFileIndex0((prev) => prev + 2);
+    setFileIndex0((prev) => findNextVisible(prev + 2, 1));
     setActiveRenamer(1);
-  }, []);
+  }, [findNextVisible]);
 
   const handleComplete1 = useCallback(() => {
-    // Renamer 1 done — advance its index by 2, flip to renamer 0
-    setFileIndex1((prev) => prev + 2);
+    setFileIndex1((prev) => findNextVisible(prev + 2, 1));
     setActiveRenamer(0);
-  }, []);
+  }, [findNextVisible]);
 
   const handleFileRenamed = useCallback(
     (fileId: string, newName: string, newPath: string) => {
@@ -161,7 +171,8 @@ function App({ fs }: AppProps): React.JSX.Element {
               instanceId={0}
               visible={activeRenamer === 0}
               fileIndex={fileIndex0}
-              files={filteredFiles}
+              files={files}
+              isFileVisible={isFileVisible}
               fs={fs}
               undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
@@ -177,7 +188,8 @@ function App({ fs }: AppProps): React.JSX.Element {
               instanceId={1}
               visible={activeRenamer === 1}
               fileIndex={fileIndex1}
-              files={filteredFiles}
+              files={files}
+              isFileVisible={isFileVisible}
               fs={fs}
               undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}

@@ -23,6 +23,7 @@ interface RenamerProps {
   visible: boolean;
   fileIndex: number;
   files?: MovieFile[];
+  isFileVisible?: (file: MovieFile) => boolean;
   fs: FsAdapter;
   undoStore?: StoreApi<{
     beginTransaction: () => void;
@@ -37,7 +38,7 @@ interface RenamerProps {
   onShowSampleChange?: (v: boolean) => void;
 }
 
-export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onFileRenamed, onComplete, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
+export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
@@ -335,6 +336,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
               files={files}
               selectedIndex={fileIndex}
               onSelect={handleFileSelect}
+              isFileVisible={isFileVisible}
             />
           </div>
           <div className="border-t border-gray-300 shrink-0">
