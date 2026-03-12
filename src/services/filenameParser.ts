@@ -64,7 +64,7 @@ export function parseFilename(
       state = 'keep';
     }
 
-    // Detect 4-digit year: exclude from search, used for result matching
+    // Detect 4-digit year candidates — mark tentatively, resolve after loop
     if (/^\d{4}$/.test(token)) {
       const num = parseInt(token, 10);
       if (num > 1900 && num <= new Date().getFullYear() + 1) {
@@ -81,6 +81,19 @@ export function parseFilename(
     });
 
     i++;
+  }
+
+  // Only treat the LAST year-like 'remove' part as the actual year.
+  // Earlier ones (e.g. "2001" in "2001 A Space Odyssey 1968") are part of the title.
+  const yearIndices = parts
+    .map((p, idx) => ({ p, idx }))
+    .filter(({ p }) => p.state === 'remove' && /^\d{4}$/.test(p.text) && parseInt(p.text, 10) > 1900)
+    .map(({ idx }) => idx);
+
+  if (yearIndices.length > 1) {
+    for (const idx of yearIndices.slice(0, -1)) {
+      parts[idx].state = 'search';
+    }
   }
 
   return parts;

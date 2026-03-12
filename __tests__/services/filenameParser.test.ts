@@ -58,4 +58,12 @@ describe('parseFilename', () => {
   it('returns empty array for empty input', () => {
     expect(parseFilename('', removeTerms, keepTerms)).toEqual([]);
   });
+
+  it('only marks the last year-like token as remove when title contains a year', () => {
+    const parts = parseFilename('2001.A.Space.Odyssey.1968.mkv', removeTerms, keepTerms);
+    const p2001 = parts.find(p => p.text === '2001');
+    const p1968 = parts.find(p => p.text === '1968');
+    expect(p2001?.state).toBe('search');
+    expect(p1968?.state).toBe('remove');
+  });
 });

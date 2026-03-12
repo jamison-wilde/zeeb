@@ -122,9 +122,10 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
   // Auto-select a search result whose year matches the year detected in the filename
   useEffect(() => {
     if (movieMatches.length === 0) return;
-    const yearPart = searchParts.find(
+    const yearCandidates = searchParts.filter(
       (p) => p.state === 'remove' && /^\d{4}$/.test(p.text) && parseInt(p.text, 10) > 1900,
     );
+    const yearPart = yearCandidates[yearCandidates.length - 1] ?? null;
     if (!yearPart) return;
     const match = movieMatches.slice(0, 8).find((m) => m.year === parseInt(yearPart.text, 10));
     if (match) {
