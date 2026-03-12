@@ -108,24 +108,40 @@ function App({ fs }: AppProps): React.JSX.Element {
     [fs, config.movieExtensions, config.recentFolders, setFiles, updateConfig, save],
   );
 
+  // After the active renamer completes (rename/skip), advance it past the
+  // other renamer's file so both always point at distinct visible files.
   const handleComplete0 = useCallback(() => {
-    setFileIndex0((prev) => findNextVisible(prev + 2, 1));
+    setFileIndex0((prev) => {
+      // Advance past current file, then skip any invisible files and also
+      // skip the file that renamer 1 is sitting on
+      const otherIdx = fileIndex1;
+      let next = findNextVisible(prev + 1, 1);
+      if (next === otherIdx) next = findNextVisible(next + 1, 1);
+      return next;
+    });
     setActiveRenamer(1);
-  }, [findNextVisible]);
+  }, [findNextVisible, fileIndex1]);
 
   const handleComplete1 = useCallback(() => {
-    setFileIndex1((prev) => findNextVisible(prev + 2, 1));
+    setFileIndex1((prev) => {
+      const otherIdx = fileIndex0;
+      let next = findNextVisible(prev + 1, 1);
+      if (next === otherIdx) next = findNextVisible(next + 1, 1);
+      return next;
+    });
     setActiveRenamer(0);
-  }, [findNextVisible]);
+  }, [findNextVisible, fileIndex0]);
 
   const handleFileSelect0 = useCallback((clickedIndex: number) => {
     setFileIndex0(clickedIndex);
-    setFileIndex1(findNextVisible(clickedIndex + 1, 1));
+    const next1 = findNextVisible(clickedIndex + 1, 1);
+    setFileIndex1(next1);
   }, [findNextVisible]);
 
   const handleFileSelect1 = useCallback((clickedIndex: number) => {
     setFileIndex1(clickedIndex);
-    setFileIndex0(findNextVisible(clickedIndex + 1, 1));
+    const next0 = findNextVisible(clickedIndex + 1, 1);
+    setFileIndex0(next0);
   }, [findNextVisible]);
 
   const handleFileRenamed = useCallback(
