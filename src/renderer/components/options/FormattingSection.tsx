@@ -7,13 +7,29 @@ interface FormattingSectionProps {
   updateConfig: (partial: Partial<ZeebConfig>) => void;
 }
 
-const FORMAT_FIELDS = [
-  { key: 'formatStandard', label: 'Standard Format', testId: 'format-standard-input' },
-  { key: 'formatAka', label: 'AKA Format', testId: 'format-aka-input' },
-  { key: 'formatDvd', label: 'DVD Folder Format', testId: 'format-dvd-input' },
-  { key: 'formatPoster', label: 'Poster Format', testId: 'format-poster-input' },
-  { key: 'formatUrl', label: 'URL File Format', testId: 'format-url-input' },
-] as const;
+type FormatKey = 'formatStandard' | 'formatAka' | 'formatDvd' | 'formatDvdAka' | 'formatPoster' | 'formatUrl';
+
+type FormatFieldDef = { key: string; label: string; testId: string };
+
+function getVisibleFields(config: ZeebConfig): FormatFieldDef[] {
+  const fields: FormatFieldDef[] = [
+    { key: 'formatStandard', label: 'Standard Format', testId: 'format-standard-input' },
+    { key: 'formatAka', label: 'AKA Format', testId: 'format-aka-input' },
+  ];
+  if (config.separateDvdFormat) {
+    fields.push(
+      { key: 'formatDvd', label: 'DVD Folder Format', testId: 'format-dvd-input' },
+      { key: 'formatDvdAka', label: 'DVD AKA Format', testId: 'format-dvd-aka-input' },
+    );
+  }
+  if (config.separatePosterFormat) {
+    fields.push({ key: 'formatPoster', label: 'Poster Format', testId: 'format-poster-input' });
+  }
+  if (config.separateUrlFormat) {
+    fields.push({ key: 'formatUrl', label: 'URL File Format', testId: 'format-url-input' });
+  }
+  return fields;
+}
 
 const TOKENS = [
   { token: '<title>', short: '<t>', desc: 'Movie title', testId: 'token-title' },
@@ -38,8 +54,6 @@ const TOKENS = [
   { token: '<original>', short: '<o>', desc: 'Original filename', testId: 'token-original' },
 ] as const;
 
-type FormatKey = (typeof FORMAT_FIELDS)[number]['key'];
-
 export function FormattingSection({ config, updateConfig }: FormattingSectionProps): React.JSX.Element {
   const [focusedField, setFocusedField] = useState<FormatKey | null>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -51,7 +65,7 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
       if (!input) return;
       const start = input.selectionStart ?? input.value.length;
       const end = input.selectionEnd ?? start;
-      const current = config[focusedField] as string;
+      const current = (config as Record<string, unknown>)[focusedField] as string;
       const newValue = current.slice(0, start) + token + current.slice(end);
       updateConfig({ [focusedField]: newValue });
       // Restore cursor after React re-render
@@ -64,22 +78,41 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
     [focusedField, config, updateConfig],
   );
 
+  const visibleFields = getVisibleFields(config);
+
   return (
     <div className="flex gap-6">
       <div className="flex-1 space-y-3">
         <p className="text-xs text-gray-500 mb-3">
           Use <code>/</code> in format strings to create subfolders.
         </p>
-        {FORMAT_FIELDS.map((f) => (
+        <div className="space-y-1 mb-3">
+          <label className="flex items-center gap-2 text-xs text-gray-600">
+            <input type="checkbox" checked={config.separateDvdFormat}
+              onChange={(e) => updateConfig({ separateDvdFormat: e.target.checked })} />
+            Use separate DVD folder format
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-600">
+            <input type="checkbox" checked={config.separatePosterFormat}
+              onChange={(e) => updateConfig({ separatePosterFormat: e.target.checked })} />
+            Use separate poster format
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-600">
+            <input type="checkbox" checked={config.separateUrlFormat}
+              onChange={(e) => updateConfig({ separateUrlFormat: e.target.checked })} />
+            Use separate URL file format
+          </label>
+        </div>
+        {visibleFields.map((f) => (
           <div key={f.key}>
             <label className="block text-xs font-semibold text-gray-600 mb-1">{f.label}</label>
             <input
               ref={(el) => { inputRefs.current[f.key] = el; }}
               data-testid={f.testId}
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono"
-              value={config[f.key] as string}
+              value={(config as Record<string, unknown>)[f.key] as string}
               onChange={(e) => updateConfig({ [f.key]: e.target.value })}
-              onFocus={() => setFocusedField(f.key)}
+              onFocus={() => setFocusedField(f.key as FormatKey)}
             />
           </div>
         ))}
