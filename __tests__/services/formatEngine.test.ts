@@ -25,9 +25,9 @@ describe('interpolateFormat', () => {
   });
 
   it('replaces <rating100> with rating on 0-100 scale', () => {
-    // 9.3 out of 10 → round(9.3 * 10.75) capped at 100 → 100
+    // 9.3 out of 10 → round(9.3 * 10) = 93
     const result = interpolateFormat('<rating100>', meta, { saved: '' });
-    expect(result).toBe('100');
+    expect(result).toBe('93');
   });
 
   it('replaces <rating10> with rating', () => {
@@ -49,7 +49,7 @@ describe('interpolateFormat', () => {
   it('handles compound format string', () => {
     const fmt = '<title> (<year>).<imdb>(<rating100>).<saved>';
     const result = interpolateFormat(fmt, meta, { saved: '720p' });
-    expect(result).toBe('The Shawshank Redemption (1994).tt0111161(100).720p');
+    expect(result).toBe('The Shawshank Redemption (1994).tt0111161(93).720p');
   });
 
   it('replaces <H> and <M> for duration', () => {

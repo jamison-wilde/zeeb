@@ -39,7 +39,7 @@ export function interpolateFormat(
     '<title>': applyTheHandling(metadata.title, options),
     '<year>': metadata.year?.toString() ?? '',
     '<imdb>': metadata.tt,
-    '<rating100>': Math.min(100, Math.round((metadata.rating ?? 0) * 10.75)).toString(),
+    '<rating100>': Math.min(100, Math.round((metadata.rating ?? 0) * 10)).toString(),
     '<rating10>': metadata.rating?.toString() ?? '',
     '<directors>': metadata.directors.join(dirSep),
     '<director>': metadata.directors[0] ?? '',

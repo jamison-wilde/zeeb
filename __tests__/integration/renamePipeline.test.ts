@@ -36,7 +36,7 @@ describe('Full rename pipeline', () => {
       meta,
       { saved: '720p' }
     );
-    expect(newName).toBe('The Shawshank Redemption (1994).tt0111161(100).720p');
+    expect(newName).toBe('The Shawshank Redemption (1994).tt0111161(93).720p');
 
     undoStore.getState().beginTransaction();
     const entry = await renameFile(fs, '/movies/old.mkv', `/movies/${newName}.mkv`);

@@ -32,7 +32,7 @@ function getTokenValue(token: string, meta: NonNullable<ReturnType<typeof useTes
     case 'title': return meta.title;
     case 'year': return meta.year?.toString() ?? '';
     case 'tt': return meta.tt;
-    case 'rating': return meta.rating != null ? Math.min(100, Math.round(meta.rating * 10.75)).toString() : '(unavailable)';
+    case 'rating': return meta.rating != null ? Math.min(100, Math.round(meta.rating * 10)).toString() : '(unavailable)';
     case 'rating10': return meta.rating?.toString() ?? '(unavailable)';
     case 'directors': return meta.directors.join(config.directorSeparator) || '(unavailable)';
     case 'director': return meta.directors[0] ?? '(unavailable)';
@@ -58,13 +58,14 @@ function getTokenValue(token: string, meta: NonNullable<ReturnType<typeof useTes
 }
 
 export function FormatTesterSection({ config }: FormatTesterSectionProps): React.JSX.Element {
-  const [ttInput, setTtInput] = useState('');
-  const [localError, setLocalError] = useState('');
-
   const testerRequest = useTesterStore((s) => s.testerRequest);
   const testerResult = useTesterStore((s) => s.testerResult);
   const testerError = useTesterStore((s) => s.testerError);
+  const currentTt = useTesterStore((s) => s.currentTt);
   const setRequest = useTesterStore((s) => s.setRequest);
+
+  const [ttInput, setTtInput] = useState(currentTt ?? '');
+  const [localError, setLocalError] = useState('');
 
   const isLoading = testerRequest !== null && testerResult === null && testerError === null;
 
@@ -98,11 +99,18 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
       <div className="flex gap-2">
         <input
           className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm"
-          placeholder="Enter tt# (e.g., tt0068646)"
+          placeholder="Enter tt#"
           value={ttInput}
           onChange={(e) => setTtInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleTest()}
         />
+        <button
+          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+          onClick={() => setTtInput('tt0068646')}
+          title="The Godfather (tt0068646)"
+        >
+          Godfather
+        </button>
         <button
           className="px-4 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
           onClick={handleTest}
