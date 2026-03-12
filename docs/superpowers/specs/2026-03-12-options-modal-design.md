@@ -78,7 +78,11 @@ Permanently visible scrollable panel listing all tokens with short descriptions.
 
 **Remove terms** — Tag-input component. Terms that get auto-marked as "remove" when parsing filenames.
 
-**Keep terms** — Tag-input component. Terms that get auto-marked as "keep."
+**Keep terms** — Two-column editable table. Each row maps a match token to a display label for normalization (e.g., `720` → `720p`, `dc` → `Director's Cut`, `hdr10` → `HDR`). When parsing filenames, matched tokens are auto-marked as "keep" and the display label replaces the raw token in `<saved>` output.
+
+**Layout:** Two column headers ("Match" and "Display") with rows beneath. Each row has a text input for match, a text input for display, and an × button to remove. An "+ Add Term" button appends a blank row. Match column is narrower (~30%), display column is wider (~60%).
+
+**Data shape:** `keepTerms: Array<[string, string]>` — preserves the legacy `[matchToken, displayLabel]` pair structure from the Flex app.
 
 ### 5. Companions
 
@@ -136,11 +140,19 @@ Below the token table, a preview of the current standard format string with all 
 
 ### TagInput
 
-Used for: movie extensions, subtitle extensions, remove terms, keep terms.
+Used for: movie extensions, subtitle extensions, remove terms.
 
 **Props:** `values: string[]`, `onChange: (values: string[]) => void`, `placeholder: string`
 
 **Behavior:** Renders each value as a pill with an 'x' button. A text input at the end. Pressing Enter or comma adds the current text as a new tag. Clicking 'x' removes a tag.
+
+### KeyValueTable
+
+Used for: keep terms, MPAA mapping.
+
+**Props:** `values: Array<[string, string]>`, `onChange: (values: Array<[string, string]>) => void`, `leftHeader: string`, `rightHeader: string`, `leftPlaceholder: string`, `rightPlaceholder: string`
+
+**Behavior:** Renders a two-column table with headers. Each row has two text inputs and an × remove button. An "+ Add" button at the bottom appends a blank `['', '']` row. Editing either field calls `onChange` with the updated array.
 
 ### BrowseInput
 
@@ -162,6 +174,8 @@ New fields to add to `ZeebConfig` (in `src/types/index.ts`) and `DEFAULT_CONFIG`
 - `maxUndos: number` (default `100`)
 - `theWord: string` (default `'The'`)
 
+**Type change:** `keepTerms` changes from `string[]` to `Array<[string, string]>` (match/display pairs). Migration: on config load, if an element is a plain string (not an array), convert it to `[value, value]` (identity mapping). This preserves existing user configs.
+
 Existing fields that gain UI but already exist in `ZeebConfig`: `renameFolder`, `createUrlFile`, `createPoster`, `nfoFolder`, `scanNfo`, `logFilePath`, `urlImdbSearch`, `urlImdbTT`, `htmlZoom`, `mpaaMap`, `removeThe`, `swapThe`, `titleSpaceChar`, `formatPoster`, `formatUrl`, `savedPartSeparator`, `directorSeparator`, `genreSeparator`, `starSeparator`, `movieExtensions`, `subtitleExtensions`, `removeTerms`, `keepTerms`, `formatStandard`, `formatAka`, `formatDvd`.
 
 ## File Structure
@@ -173,12 +187,13 @@ src/renderer/components/
     FormattingSection.tsx   — Format inputs + token reference panel
     GeneralSection.tsx      — The handling, separators, behavior toggles
     FileTypesSection.tsx    — Movie/subtitle extensions (TagInput)
-    SearchTermsSection.tsx  — Remove/keep terms (TagInput)
+    SearchTermsSection.tsx  — Remove terms (TagInput) + keep terms (KeyValueTable)
     CompanionsSection.tsx   — URL file, poster, NFO toggles
     LoggingSection.tsx      — Log file, max undos
     ImdbSection.tsx         — URL overrides, zoom, MPAA map
     FormatTesterSection.tsx — Live token preview
     TagInput.tsx            — Reusable tag/pill input
+    KeyValueTable.tsx       — Reusable two-column editable table
     BrowseInput.tsx         — Text input + native browse button
 ```
 
