@@ -4,6 +4,7 @@ import {
   DEFAULT_KEEP_TERMS,
   DEFAULT_MOVIE_EXTENSIONS,
   DEFAULT_SUBTITLE_EXTENSIONS,
+  DEFAULT_MPAA_MAP,
 } from '../utils/defaultTerms';
 
 export const DEFAULT_CONFIG: ZeebConfig = {
@@ -14,10 +15,11 @@ export const DEFAULT_CONFIG: ZeebConfig = {
 
   // Format strings
   formatStandard: '<title> (<year>).<imdb>(<rating100>).<saved>',
-  formatAka: '<title> (<year>).<imdb>(<rating100>).<aka>.<saved>',
-  formatDvd: '<title> (<year>).<imdb>(<rating100>)',
-  formatPoster: '<title> (<year>).<imdb>(<rating100>)',
-  formatUrl: '<title> (<year>).<imdb>(<rating100>)',
+  formatAka: '<aka> (<title>) (<year>).<imdb>(<rating100>).<saved>',
+  formatDvd: '<title> (<year>).<imdb>(<rating100>).<saved>',
+  formatDvdAka: '<aka> (<title>) (<year>).<imdb>(<rating100>).<saved>',
+  formatPoster: '',
+  formatUrl: '',
 
   // File handling
   movieExtensions: DEFAULT_MOVIE_EXTENSIONS,
@@ -56,13 +58,16 @@ export const DEFAULT_CONFIG: ZeebConfig = {
   detectDvd: true,
   maxUndos: 100,
   theWord: 'The',
+  separateDvdFormat: false,
+  separatePosterFormat: false,
+  separateUrlFormat: false,
 
   // NFO
   nfoFolder: '',
   scanNfo: false,
 
   // MPAA mapping
-  mpaaMap: {},
+  mpaaMap: DEFAULT_MPAA_MAP,
 
   // Recent folders
   recentFolders: [],

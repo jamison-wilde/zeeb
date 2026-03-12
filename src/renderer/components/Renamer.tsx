@@ -161,6 +161,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       removeThe: config.removeThe,
       swapThe: config.swapThe,
       titleSpaceChar: config.titleSpaceChar,
+      mpaaMap: config.mpaaMap,
     });
     setPreviewFilename(formatted + ext);
   }, [metadata, currentFile, config, searchParts, useAka, selectedAka, setPreviewFilename]);

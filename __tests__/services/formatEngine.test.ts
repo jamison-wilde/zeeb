@@ -84,3 +84,34 @@ describe('interpolateFormat', () => {
     expect(interpolateFormat('<title>', weirdTitle, { saved: '' })).toBe('What If..');
   });
 });
+
+describe('interpolateFormat mpaaMap', () => {
+  const mpaaMap: Array<[string, string]> = [
+    ['NF', 'NR'],
+    ['R', 'Restricted'],
+    ['PG', 'PG'],
+    ['PG_13', 'PG-13'],
+  ];
+
+  it('applies mpaaMap when raw value has a mapping', () => {
+    const result = interpolateFormat('<mpaa>', meta, { saved: '', mpaaMap });
+    expect(result).toBe('Restricted');
+  });
+
+  it('passes through raw value when no mapping found', () => {
+    const unknownMpaa = { ...meta, mpaa: 'UNKNOWN' };
+    const result = interpolateFormat('<mpaa>', unknownMpaa, { saved: '', mpaaMap });
+    expect(result).toBe('UNKNOWN');
+  });
+
+  it('uses NF fallback when mpaa is null', () => {
+    const noMpaa = { ...meta, mpaa: null };
+    const result = interpolateFormat('<mpaa>', noMpaa, { saved: '', mpaaMap });
+    expect(result).toBe('NR');
+  });
+
+  it('works with empty mpaaMap', () => {
+    const result = interpolateFormat('<mpaa>', meta, { saved: '', mpaaMap: [] });
+    expect(result).toBe('R');
+  });
+});

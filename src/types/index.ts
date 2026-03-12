@@ -104,6 +104,7 @@ export interface ZeebConfig {
   formatStandard: string;
   formatAka: string;
   formatDvd: string;
+  formatDvdAka: string;
   formatPoster: string;
   formatUrl: string;
 
@@ -144,13 +145,16 @@ export interface ZeebConfig {
   detectDvd: boolean;
   maxUndos: number;
   theWord: string;
+  separateDvdFormat: boolean;
+  separatePosterFormat: boolean;
+  separateUrlFormat: boolean;
 
   // NFO
   nfoFolder: string;
   scanNfo: boolean;
 
   // MPAA mapping
-  mpaaMap: Record<string, string>;
+  mpaaMap: Array<[string, string]>;
 
   // Recent folders
   recentFolders: string[];

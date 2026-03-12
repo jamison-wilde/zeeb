@@ -51,6 +51,63 @@ describe('configStore', () => {
   });
 });
 
+describe('mpaaMap migration', () => {
+  it('migrates legacy Record<string,string> mpaaMap to Array<[string,string]>', async () => {
+    const legacyConfig = {
+      mpaaMap: { R: 'R', PG: 'PG', 'PG-13': 'PG-13' },
+    };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
+    });
+    const store = createConfigStore(fs);
+    await store.getState().load();
+    expect(Array.isArray(store.getState().config.mpaaMap)).toBe(true);
+    expect(store.getState().config.mpaaMap).toContainEqual(['R', 'R']);
+    expect(store.getState().config.mpaaMap).toContainEqual(['PG', 'PG']);
+  });
+
+  it('falls back to DEFAULT_MPAA_MAP when legacy mpaaMap is empty object', async () => {
+    const legacyConfig = { mpaaMap: {} };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
+    });
+    const store = createConfigStore(fs);
+    await store.getState().load();
+    expect(store.getState().config.mpaaMap).toHaveLength(16);
+    expect(store.getState().config.mpaaMap[0]).toEqual(['NF', 'NR']);
+  });
+
+  it('falls back to DEFAULT_MPAA_MAP when mpaaMap is empty array', async () => {
+    const legacyConfig = { mpaaMap: [] };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
+    });
+    const store = createConfigStore(fs);
+    await store.getState().load();
+    expect(store.getState().config.mpaaMap).toHaveLength(16);
+    expect(store.getState().config.mpaaMap[0]).toEqual(['NF', 'NR']);
+  });
+
+  it('preserves non-empty Array<[string,string]> mpaaMap', async () => {
+    const migratedConfig = {
+      mpaaMap: [['R', 'Restricted'], ['PG', 'Parental Guidance']],
+    };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(migratedConfig)),
+    });
+    const store = createConfigStore(fs);
+    await store.getState().load();
+    expect(store.getState().config.mpaaMap).toEqual([
+      ['R', 'Restricted'],
+      ['PG', 'Parental Guidance'],
+    ]);
+  });
+});
+
 describe('keepTerms migration', () => {
   it('converts legacy string[] keepTerms to [string, string][] on load', async () => {
     const legacyConfig = {

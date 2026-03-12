@@ -9,6 +9,7 @@ export interface FormatOptions {
   removeThe?: boolean;
   swapThe?: boolean;
   titleSpaceChar?: string;
+  mpaaMap?: Array<[string, string]>;
 }
 
 function applyTheHandling(title: string, options: FormatOptions): string {
@@ -49,7 +50,16 @@ export function interpolateFormat(
     '<stars2>': metadata.actors.slice(0, 2).join(starSep),
     '<stars3>': metadata.actors.slice(0, 3).join(starSep),
     '<duration>': metadata.duration?.toString() ?? '',
-    '<mpaa>': metadata.mpaa ?? '',
+    '<mpaa>': (() => {
+      const raw = metadata.mpaa;
+      const map = options.mpaaMap ?? [];
+      if (raw == null) {
+        const nf = map.find(([m]) => m === 'NF');
+        return nf ? nf[1] : '';
+      }
+      const entry = map.find(([m]) => m === raw);
+      return entry ? entry[1] : raw;
+    })(),
     '<H>': Math.floor(dur / 60).toString(),
     '<M>': (dur % 60).toString(),
     '<aka>': options.selectedAka ?? metadata.aka[0] ?? '',

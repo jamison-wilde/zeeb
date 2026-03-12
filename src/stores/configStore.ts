@@ -3,6 +3,7 @@ import { useStore } from 'zustand';
 import type { FsAdapter } from '../adapters/fs';
 import type { ZeebConfig } from '../types';
 import { DEFAULT_CONFIG } from '../services/configDefaults';
+import { DEFAULT_MPAA_MAP } from '../utils/defaultTerms';
 
 export { DEFAULT_CONFIG };
 
@@ -41,6 +42,13 @@ export function createConfigStore(fs: FsAdapter): StoreApi<ConfigStoreState> {
             saved.keepTerms = (saved.keepTerms as unknown[]).map((t) =>
               Array.isArray(t) ? t : [t, t],
             );
+          }
+          // Migrate legacy mpaaMap: Record<string, string> → Array<[string, string]>
+          if (saved.mpaaMap && !Array.isArray(saved.mpaaMap)) {
+            const entries = Object.entries(saved.mpaaMap as Record<string, string>);
+            saved.mpaaMap = entries.length > 0 ? entries : DEFAULT_MPAA_MAP;
+          } else if (Array.isArray(saved.mpaaMap) && (saved.mpaaMap as unknown[]).length === 0) {
+            saved.mpaaMap = DEFAULT_MPAA_MAP;
           }
           set({ config: { ...DEFAULT_CONFIG, ...(saved as Partial<ZeebConfig>) } });
         } catch {
