@@ -235,8 +235,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
         if (navigationMode.current === 'tester') {
           setTesterResult(titleData);
           navigationMode.current = 'idle';
-          // Clear the request so the effect doesn't re-trigger
-          useTesterStore.getState().clear();
+          // Clear only the request so the effect doesn't re-trigger (preserve result)
+          useTesterStore.setState({ testerRequest: null });
         } else {
           setMetadata(titleData);
         }
