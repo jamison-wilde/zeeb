@@ -20,6 +20,11 @@ describe('Dual Renamer integration', () => {
       writable: true,
       configurable: true,
     });
+    Object.defineProperty(window, 'zeebImdb', {
+      value: { suggest: vi.fn().mockResolvedValue([]) },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('renders two Renamer instances in process view', () => {

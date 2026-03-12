@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('zeebApp', {
   getWebviewPreloadPath: () => ipcRenderer.invoke('app:getWebviewPreloadPath'),
 });
 
+contextBridge.exposeInMainWorld('zeebImdb', {
+  suggest: (query: string) => ipcRenderer.invoke('imdb:suggest', query),
+});
+
 contextBridge.exposeInMainWorld('zeebMenu', {
   onOptions: (callback: () => void) => ipcRenderer.on('menu:options', callback),
   onUndo: (callback: () => void) => ipcRenderer.on('menu:undo', callback),

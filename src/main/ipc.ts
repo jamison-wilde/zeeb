@@ -58,4 +58,24 @@ export function registerIpcHandlers(): void {
     const p = path.join(__dirname, 'webview.js').replace(/\\/g, '/');
     return `file:///${p}`;
   });
+
+  ipcMain.handle('imdb:suggest', async (_event, query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const firstChar = q[0];
+    const url = `https://v3.sg.media-imdb.com/suggestion/${encodeURIComponent(firstChar)}/${encodeURIComponent(q)}.json`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const json = await res.json();
+    if (!Array.isArray(json.d)) return [];
+    return json.d
+      .filter((item: any) => item.id?.startsWith('tt'))
+      .map((item: any) => ({
+        tt: item.id,
+        title: item.l || '',
+        year: item.y ?? null,
+        aka: null,
+        thumbnailUrl: item.i?.imageUrl ?? null,
+      }));
+  });
 }

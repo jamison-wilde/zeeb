@@ -30,6 +30,7 @@ describe('main preload', () => {
     expect(keys).toContain('zeebFs');
     expect(keys).toContain('zeebDialog');
     expect(keys).toContain('zeebApp');
+    expect(keys).toContain('zeebImdb');
     expect(keys).toContain('zeebMenu');
   });
 });

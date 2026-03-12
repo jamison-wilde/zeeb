@@ -11,9 +11,7 @@ import { useConfigStore } from '../../stores/configStore';
 import type { MovieFile, SearchPartState, UndoEntry } from '../../types';
 import { parseFilename } from '../../services/filenameParser';
 import {
-  buildSearchUrl,
   buildTitleUrl,
-  parseSearchResults,
   parseTitleData,
 } from '../../services/imdbExtractor';
 import { interpolateFormat } from '../../services/formatEngine';
@@ -37,7 +35,6 @@ interface RenamerProps {
 export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoStore, onComplete }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
-  const [webviewReady, setWebviewReady] = useState(false);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [selectedTt, setSelectedTt] = useState('');
@@ -60,7 +57,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
 
   const currentFile = useMemo(() => files[fileIndex] ?? null, [files, fileIndex]);
 
-  const navigationMode = useRef<'search' | 'title' | 'idle'>('idle');
+  const navigationMode = useRef<'title' | 'idle'>('idle');
 
   useEffect(() => {
     window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
@@ -78,19 +75,22 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     autoSearchRef.current = true;
   }, [currentFile, config.removeTerms, config.keepTerms, setSearchParts, setMovieMatches, setMetadata, setPreviewFilename]);
 
+  const doSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+    const results = await window.zeebImdb.suggest(query);
+    setMovieMatches(results);
+  }, [setMovieMatches]);
+
   // Auto-trigger search when parts are set from a new file
   useEffect(() => {
-    if (!autoSearchRef.current || searchParts.length === 0 || !webviewEl || !webviewReady) return;
+    if (!autoSearchRef.current || searchParts.length === 0) return;
     autoSearchRef.current = false;
     const query = searchParts
       .filter((p) => p.state === 'search')
       .map((p) => p.text)
       .join(' ');
-    if (!query.trim()) return;
-    const url = buildSearchUrl(query, config.urlImdbSearch);
-    navigationMode.current = 'search';
-    webviewEl.loadURL(url);
-  }, [searchParts, webviewEl, webviewReady, config.urlImdbSearch]);
+    void doSearch(query);
+  }, [searchParts, doSearch]);
 
   useEffect(() => {
     if (!metadata || !currentFile) {
@@ -145,7 +145,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
     const webview = webviewEl;
 
     const handleDomReady = () => {
-      setWebviewReady(true);
       try {
         const url = webview.getURL();
         setUrlInput(url);
@@ -167,15 +166,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       const message = event.args?.[0];
       if (!message) return;
 
-      console.log(`[zeeb:${instanceId}] ipc extraction-result received, mode=${navigationMode.current}`);
-
-      const searchResults = parseSearchResults(message);
-      if (searchResults.length > 0 && navigationMode.current === 'search') {
-        setMovieMatches(searchResults);
-        return;
-      }
       const titleData = parseTitleData(message);
-      if (titleData && navigationMode.current === 'title') {
+      if (titleData) {
         setMetadata(titleData);
       }
     };
@@ -235,11 +227,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], fs, undoSt
       .filter((p) => p.state === 'search')
       .map((p) => p.text)
       .join(' ');
-    if (!query.trim()) return;
-    const url = buildSearchUrl(query, config.urlImdbSearch);
-    navigationMode.current = 'search';
-    webviewEl?.loadURL(url);
-  }, [searchParts, webviewEl, config.urlImdbSearch]);
+    void doSearch(query);
+  }, [searchParts, doSearch]);
 
   const handleMovieSelect = useCallback(
     (tt: string) => {
