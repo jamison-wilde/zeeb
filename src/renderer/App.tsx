@@ -69,8 +69,18 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
 
+  const updateConfig = useConfigStore((s) => s.updateConfig);
+
   const handleFolderSelected = useCallback(
     async (path: string, recursionMode: string) => {
+      // Save folder and recursion mode to config
+      const recent = [path, ...config.recentFolders.filter((f) => f !== path)].slice(0, 10);
+      updateConfig({
+        recentFolders: recent,
+        recursionMode: recursionMode as 'none' | 'subfolders' | 'full',
+      });
+      void save();
+
       const results = await scanDirectory(
         fs,
         path,
@@ -83,7 +93,7 @@ function App({ fs }: AppProps): React.JSX.Element {
       setActiveRenamer(0);
       setView('process');
     },
-    [fs, config.movieExtensions, setFiles],
+    [fs, config.movieExtensions, config.recentFolders, setFiles, updateConfig, save],
   );
 
   const handleComplete0 = useCallback(() => {
@@ -139,6 +149,7 @@ function App({ fs }: AppProps): React.JSX.Element {
           <FolderBrowser
             onFolderSelected={handleFolderSelected}
             recentFolders={recentFolders}
+            initialRecursionMode={config.recursionMode}
           />
         </div>
       )}

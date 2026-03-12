@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 interface FolderBrowserProps {
   onFolderSelected: (path: string, recursionMode: string) => void;
   recentFolders: string[];
+  initialRecursionMode?: 'none' | 'subfolders' | 'full';
 }
 
 type RecursionMode = 'none' | 'subfolders' | 'full';
@@ -13,9 +14,9 @@ const RECURSION_OPTIONS: { label: string; value: RecursionMode }[] = [
   { label: 'Full', value: 'full' },
 ];
 
-export function FolderBrowser({ onFolderSelected, recentFolders }: FolderBrowserProps): React.JSX.Element {
-  const [folderPath, setFolderPath] = useState('');
-  const [recursionMode, setRecursionMode] = useState<RecursionMode>('none');
+export function FolderBrowser({ onFolderSelected, recentFolders, initialRecursionMode = 'none' }: FolderBrowserProps): React.JSX.Element {
+  const [folderPath, setFolderPath] = useState(recentFolders[0] ?? '');
+  const [recursionMode, setRecursionMode] = useState<RecursionMode>(initialRecursionMode);
 
   const handleBrowse = async (): Promise<void> => {
     const zeebDialog = (window as any).zeebDialog;
