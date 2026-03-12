@@ -8,7 +8,7 @@ Fix five issues in the recently implemented Options Modal: align default values 
 
 ### Keep Terms
 
-Replace DEFAULT_KEEP_TERMS with legacy entries plus sensible modern additions.
+Replace the entire DEFAULT_KEEP_TERMS array wholesale with legacy entries plus sensible modern additions. Delete all current entries and replace with the list below.
 
 **Legacy entries (25, reproduced exactly):**
 
@@ -84,9 +84,9 @@ Note: First entry (`NF→NR`) is the default "not found" fallback. Order matters
 
 ### Format Defaults
 
-- `formatStandard`: `<title> (<year>).<imdb>(<rating100>).<saved>` (already correct)
-- `formatAka`: `<aka> (<title>) (<year>).<imdb>(<rating100>).<saved>`
-- `formatDvd`: `<title> (<year>).<imdb>(<rating100>).<saved>`
+- `formatStandard`: `<title> (<year>).<imdb>(<rating100>).<saved>` (already correct in codebase)
+- `formatAka`: `<aka> (<title>) (<year>).<imdb>(<rating100>).<saved>` (BROKEN in codebase — currently `<title> (<year>).<imdb>(<rating100>).<aka>.<saved>`, needs fix)
+- `formatDvd`: `<title> (<year>).<imdb>(<rating100>).<saved>` (BROKEN in codebase — currently missing `.<saved>` suffix, needs fix)
 - `formatDvdAka`: `<aka> (<title>) (<year>).<imdb>(<rating100>).<saved>`
 - `formatPoster`: `''` (empty — user provides when enabled)
 - `formatUrl`: `''` (empty — user provides when enabled)
@@ -100,7 +100,7 @@ Note: First entry (`NF→NR`) is the default "not found" fallback. Order matters
 
 ### Config Migration
 
-On config load, if `mpaaMap` is a plain object (`Record<string, string>`), convert to `Array<[string, string]>` by mapping `Object.entries()`. If already an array, keep as-is.
+On config load, if `mpaaMap` is a plain object (`Record<string, string>`), convert to `Array<[string, string]>` by mapping `Object.entries()`. If already an array, keep as-is. **Important:** if the converted result is empty (either `{}` converted to `[]` or an already-empty array), fall back to `DEFAULT_MPAA_MAP` rather than persisting an empty array — otherwise existing users upgrading from `mpaaMap: {}` lose the defaults.
 
 ## 2. Keep Terms Filter
 
@@ -116,28 +116,40 @@ Add a text filter input above the KeyValueTable in SearchTermsSection. The filte
 
 Rewrite FormatTesterSection to use the Renamer's webview for real extraction instead of the suggestion API.
 
-### Store Additions (renamerStore)
+### New Shared Store: `testerStore`
+
+The per-instance `renamerStore` is local to each Renamer component — not accessible from outside. Create a new top-level `testerStore` (Zustand) with:
 
 - `testerRequest: { tt: string } | null` — set by Format Tester
 - `testerResult: MovieMetadata | null` — set by Renamer after extraction
 - `testerError: string | null` — set by Renamer on failure
+- `setRequest(tt: string): void`
+- `setResult(data: MovieMetadata): void`
+- `setError(msg: string): void`
+- `clear(): void`
+
+Both FormatTesterSection and Renamer import and subscribe to this shared store.
+
+### Renamer Navigation Mode
+
+The Renamer uses a `navigationMode` ref (`'title' | 'idle'`) to distinguish its own navigations from user browsing. Add a third mode: `'tester'`. When the Renamer detects a `testerRequest`, it sets `navigationMode = 'tester'`, navigates the webview, and when extraction completes, routes results to `testerStore.setResult()` instead of overwriting the current file's `setMetadata()`. This prevents the tester from corrupting the active file's metadata.
 
 ### Flow
 
 1. User enters tt# in Format Tester, clicks "Test"
-2. Format Tester sets `testerRequest = { tt }`, shows loading state
-3. Renamer watches `testerRequest`. On change, navigates webview to `https://www.imdb.com/title/{tt}/`
+2. Format Tester calls `testerStore.setRequest(tt)`, shows loading state
+3. Renamer watches `testerStore.testerRequest`. On change, sets `navigationMode = 'tester'`, navigates webview to `https://www.imdb.com/title/{tt}/`
 4. Page loads, existing `generateTitleExtractionScript()` runs
-5. Renamer receives extraction results through existing message handler, sets `testerResult`
-6. Format Tester watches `testerResult`, displays token table and format preview
-7. `testerRequest` is cleared after results are received
+5. Renamer's message handler checks `navigationMode`: if `'tester'`, calls `testerStore.setResult(data)` instead of `setMetadata(data)`
+6. Format Tester watches `testerStore.testerResult`, displays token table and format preview
+7. `testerRequest` is cleared after results are received, `navigationMode` resets to `'idle'`
 
 ### Edge Cases
 
 - Renamer is still mounted behind the OptionsModal overlay — webview stays functional
-- Use the first/active Renamer instance
-- Timeout after ~10 seconds → show error
-- If webview isn't mounted, show "Webview not available" error
+- The first Renamer that picks up the request handles it (use a guard to prevent both dual renamers from responding)
+- Timeout after ~10 seconds → `testerStore.setError(...)`, show error in UI
+- If no Renamer is mounted (shouldn't happen in normal use), show "Webview not available" error
 
 ### Token Table
 
@@ -164,16 +176,21 @@ Add checkboxes for separate DVD, poster, and URL formats in FormattingSection.
 - `src/services/configDefaults.ts` — Fix format defaults, add new fields, use DEFAULT_MPAA_MAP
 - `src/types/index.ts` — Add `separateDvdFormat`, `separatePosterFormat`, `separateUrlFormat`, `formatDvdAka`; change `mpaaMap` to `Array<[string, string]>`
 - `src/services/formatEngine.ts` — Apply mpaaMap lookup for `<mpaa>` token
-- `src/stores/renamerStore.ts` — Add `testerRequest`, `testerResult`, `testerError`
-- `src/renderer/components/Renamer.tsx` — Watch `testerRequest`, drive webview, set `testerResult`
-- `src/renderer/components/options/FormatTesterSection.tsx` — Rewrite to use renamerStore
-- `src/renderer/components/options/FormattingSection.tsx` — Add checkboxes, DVD AKA input, conditional visibility
+- `src/renderer/components/Renamer.tsx` — Watch `testerStore.testerRequest`, add `'tester'` navigation mode, route results to testerStore
+- `src/renderer/components/options/FormatTesterSection.tsx` — Rewrite to use testerStore
+- `src/renderer/components/options/FormattingSection.tsx` — Add checkboxes, DVD AKA input, conditional visibility, update FORMAT_FIELDS handling
+
+**New files:**
+- `src/stores/testerStore.ts` — Shared Zustand store for Format Tester ↔ Renamer communication
 - `src/renderer/components/options/SearchTermsSection.tsx` — Add filter input above keep terms table
 
 **Tests to update:**
 - `__tests__/utils/defaultTerms.test.ts`
-- `__tests__/services/formatEngine.test.ts`
-- `__tests__/stores/configStore.test.ts`
+- `__tests__/services/formatEngine.test.ts` (add mpaaMap lookup + fallback cases)
+- `__tests__/stores/configStore.test.ts` (mpaaMap migration from `{}` and from `Record`)
 - `__tests__/components/options/FormatTesterSection.test.tsx`
-- `__tests__/components/options/FormattingSection.test.tsx`
+- `__tests__/components/options/FormattingSection.test.tsx` (conditional format inputs)
 - `__tests__/components/options/SearchTermsSection.test.tsx`
+
+**New tests:**
+- `__tests__/stores/testerStore.test.ts`
