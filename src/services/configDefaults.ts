@@ -49,6 +49,13 @@ export const DEFAULT_CONFIG: ZeebConfig = {
   titleSpaceChar: ' ',
   htmlZoom: 100,
   showWebView: false,
+  includeOriginalInUrl: true,
+  includeNfoInUrl: false,
+  deleteNfoAfterInclude: false,
+  posterInDvdFolder: true,
+  detectDvd: true,
+  maxUndos: 100,
+  theWord: 'The',
 
   // NFO
   nfoFolder: '',

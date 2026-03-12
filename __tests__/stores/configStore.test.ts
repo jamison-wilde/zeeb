@@ -50,3 +50,38 @@ describe('configStore', () => {
     expect(store.getState().config.formatStandard).toBe(original);
   });
 });
+
+describe('keepTerms migration', () => {
+  it('converts legacy string[] keepTerms to [string, string][] on load', async () => {
+    const legacyConfig = {
+      keepTerms: ['720p', '1080p', "Director's Cut"],
+    };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
+    });
+    const store = createConfigStore(fs);
+    await store.getState().load();
+    expect(store.getState().config.keepTerms).toEqual([
+      ['720p', '720p'],
+      ['1080p', '1080p'],
+      ["Director's Cut", "Director's Cut"],
+    ]);
+  });
+
+  it('preserves already-migrated [string, string][] keepTerms', async () => {
+    const migratedConfig = {
+      keepTerms: [['720', '720p'], ['dc', "Director's Cut"]],
+    };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(migratedConfig)),
+    });
+    const store = createConfigStore(fs);
+    await store.getState().load();
+    expect(store.getState().config.keepTerms).toEqual([
+      ['720', '720p'],
+      ['dc', "Director's Cut"],
+    ]);
+  });
+});
