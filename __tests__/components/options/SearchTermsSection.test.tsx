@@ -32,4 +32,20 @@ describe('SearchTermsSection', () => {
     expect(screen.getAllByDisplayValue('720p').length).toBeGreaterThan(0);
     expect(screen.queryByDisplayValue("Director's Cut")).not.toBeInTheDocument();
   });
+
+  it('filters keep terms by display column', async () => {
+    const config = {
+      ...DEFAULT_CONFIG,
+      keepTerms: [['720p', '720p'], ['dc', "Director's Cut"], ['1080p', '1080p']] as Array<[string, string]>,
+    };
+    render(<SearchTermsSection config={config as ZeebConfig} updateConfig={vi.fn()} />);
+    const filterInput = screen.getByPlaceholderText('Filter terms...');
+    await userEvent.type(filterInput, 'director');
+    // Row with display "Director's Cut" should be visible (matched by display column)
+    expect(screen.getByDisplayValue("Director's Cut")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('dc')).toBeInTheDocument();
+    // Other rows should be hidden
+    expect(screen.queryByDisplayValue('720p')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('1080p')).not.toBeInTheDocument();
+  });
 });

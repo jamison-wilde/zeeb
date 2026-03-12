@@ -90,17 +90,17 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
           <label className="flex items-center gap-2 text-xs text-gray-600">
             <input type="checkbox" checked={config.separateDvdFormat}
               onChange={(e) => updateConfig({ separateDvdFormat: e.target.checked })} />
-            Use separate DVD folder format
+            Use separate DVD folder format.
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-600">
             <input type="checkbox" checked={config.separatePosterFormat}
               onChange={(e) => updateConfig({ separatePosterFormat: e.target.checked })} />
-            Use separate poster format
+            Use separate poster format.
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-600">
             <input type="checkbox" checked={config.separateUrlFormat}
               onChange={(e) => updateConfig({ separateUrlFormat: e.target.checked })} />
-            Use separate URL file format
+            Use separate URL file format.
           </label>
         </div>
         {visibleFields.map((f) => (
