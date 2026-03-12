@@ -15,6 +15,7 @@ interface RenamerStoreState {
   updatePartText: (id: string, text: string) => void;
   setMovieMatches: (matches: MovieMatch[]) => void;
   setMetadata: (metadata: MovieMetadata | null) => void;
+  appendAkas: (akas: string[]) => void;
   setPosterUrls: (urls: string[]) => void;
   setPreviewFilename: (filename: string) => void;
   reset: () => void;
@@ -63,6 +64,21 @@ export function createRenamerStore(): StoreApi<RenamerStoreState> {
 
     setMetadata(metadata: MovieMetadata | null) {
       set({ metadata });
+    },
+
+    appendAkas(akas: string[]) {
+      set((s) => {
+        if (!s.metadata) return s;
+        const existing = new Set(s.metadata.aka);
+        const merged = [...s.metadata.aka];
+        for (const a of akas) {
+          if (!existing.has(a)) {
+            existing.add(a);
+            merged.push(a);
+          }
+        }
+        return { metadata: { ...s.metadata, aka: merged } };
+      });
     },
 
     setPosterUrls(urls: string[]) {

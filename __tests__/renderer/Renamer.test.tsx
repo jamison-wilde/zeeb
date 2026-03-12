@@ -31,6 +31,11 @@ describe('Renamer', () => {
       writable: true,
       configurable: true,
     });
+    Object.defineProperty(window, 'zeebImdb', {
+      value: { suggest: vi.fn().mockResolvedValue([]) },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('always renders content (visibility controlled by parent CSS)', () => {

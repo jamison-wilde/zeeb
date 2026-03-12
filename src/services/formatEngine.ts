@@ -2,6 +2,7 @@ import type { MovieMetadata } from '../types';
 
 export interface FormatOptions {
   saved: string;
+  selectedAka?: string;
   directorSeparator?: string;
   genreSeparator?: string;
   starSeparator?: string;
@@ -51,7 +52,7 @@ export function interpolateFormat(
     '<mpaa>': metadata.mpaa ?? '',
     '<H>': Math.floor(dur / 60).toString(),
     '<M>': (dur % 60).toString(),
-    '<aka>': metadata.aka[0] ?? '',
+    '<aka>': options.selectedAka ?? metadata.aka[0] ?? '',
     '<original>': metadata.title,
     '<saved>': options.saved,
   };
@@ -60,5 +61,18 @@ export function interpolateFormat(
   for (const [token, value] of Object.entries(tokens)) {
     result = result.split(token).join(value);
   }
+
+  // Sanitize characters illegal in Windows/macOS filenames (matching legacy Flex behavior)
+  result = result.replace(/: ?/g, ' - ');
+  result = result.replace(/\?/g, '');
+  result = result.replace(/\*/g, '');
+  result = result.replace(/"/g, '');
+  result = result.replace(/</g, '');
+  result = result.replace(/>/g, '');
+  result = result.replace(/\|/g, '');
+  // Collapse double periods (not ellipses or folder separators)
+  result = result.replace(/([^.\\/])\.\.([^.\\/])/g, '$1.$2');
+  result = result.replace(/\.$/, '');
+
   return result;
 }

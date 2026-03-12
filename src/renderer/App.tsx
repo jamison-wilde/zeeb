@@ -23,6 +23,8 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showOptions, setShowOptions] = useState(false);
   const [showUndo, setShowUndo] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [showTt, setShowTt] = useState(false);
+  const [showSample, setShowSample] = useState(false);
 
   // Each renamer gets its own file index; they interleave (0,2,4... and 1,3,5...)
   const [fileIndex0, setFileIndex0] = useState(0);
@@ -33,6 +35,22 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   const files = useStore(fileStoreRef.current, (s) => s.files);
   const setFiles = useStore(fileStoreRef.current, (s) => s.setFiles);
+  const updateFile = useStore(fileStoreRef.current, (s) => s.updateFile);
+
+  const isFileVisible = useCallback((f: { name: string }) => {
+    if (!showSample && /sample/i.test(f.name)) return false;
+    if (!showTt && /tt\d{5,}/.test(f.name)) return false;
+    return true;
+  }, [showTt, showSample]);
+
+  const findNextVisible = useCallback((fromIndex: number, step: number): number => {
+    let idx = fromIndex;
+    const allFiles = fileStoreRef.current.getState().files;
+    while (idx < allFiles.length && !isFileVisible(allFiles[idx])) {
+      idx += step;
+    }
+    return idx;
+  }, [isFileVisible]);
 
   const transactions = useStore(undoStoreRef.current, (s) => s.transactions);
   const undoTransaction = useStore(undoStoreRef.current, (s) => s.undoTransaction);
@@ -58,8 +76,18 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
 
+  const updateConfig = useConfigStore((s) => s.updateConfig);
+
   const handleFolderSelected = useCallback(
     async (path: string, recursionMode: string) => {
+      // Save folder and recursion mode to config
+      const recent = [path, ...config.recentFolders.filter((f) => f !== path)].slice(0, 10);
+      updateConfig({
+        recentFolders: recent,
+        recursionMode: recursionMode as 'none' | 'subfolders' | 'full',
+      });
+      void save();
+
       const results = await scanDirectory(
         fs,
         path,
@@ -67,25 +95,72 @@ function App({ fs }: AppProps): React.JSX.Element {
         recursionMode as 'none' | 'subfolders' | 'full',
       );
       setFiles(results);
-      setFileIndex0(0);
-      setFileIndex1(1);
+      // Find first two visible files for the interleaved renamers
+      let idx0 = 0;
+      while (idx0 < results.length && !isFileVisible(results[idx0])) idx0++;
+      let idx1 = idx0 + 1;
+      while (idx1 < results.length && !isFileVisible(results[idx1])) idx1++;
+      setFileIndex0(idx0);
+      setFileIndex1(idx1);
       setActiveRenamer(0);
       setView('process');
     },
-    [fs, config.movieExtensions, setFiles],
+    [fs, config.movieExtensions, config.recentFolders, setFiles, updateConfig, save],
   );
 
+  // After the active renamer completes (rename/skip), advance it past the
+  // other renamer's file so both always point at distinct visible files.
   const handleComplete0 = useCallback(() => {
-    // Renamer 0 done — advance its index by 2, flip to renamer 1
-    setFileIndex0((prev) => prev + 2);
+    setFileIndex0((prev) => {
+      // Advance past current file, then skip any invisible files and also
+      // skip the file that renamer 1 is sitting on
+      const otherIdx = fileIndex1;
+      let next = findNextVisible(prev + 1, 1);
+      if (next === otherIdx) next = findNextVisible(next + 1, 1);
+      return next;
+    });
     setActiveRenamer(1);
-  }, []);
+  }, [findNextVisible, fileIndex1]);
 
   const handleComplete1 = useCallback(() => {
-    // Renamer 1 done — advance its index by 2, flip to renamer 0
-    setFileIndex1((prev) => prev + 2);
+    setFileIndex1((prev) => {
+      const otherIdx = fileIndex0;
+      let next = findNextVisible(prev + 1, 1);
+      if (next === otherIdx) next = findNextVisible(next + 1, 1);
+      return next;
+    });
     setActiveRenamer(0);
-  }, []);
+  }, [findNextVisible, fileIndex0]);
+
+  const handleFileSelect0 = useCallback((clickedIndex: number) => {
+    setFileIndex0(clickedIndex);
+    const next1 = findNextVisible(clickedIndex + 1, 1);
+    setFileIndex1(next1);
+  }, [findNextVisible]);
+
+  const handleFileSelect1 = useCallback((clickedIndex: number) => {
+    setFileIndex1(clickedIndex);
+    const next0 = findNextVisible(clickedIndex + 1, 1);
+    setFileIndex0(next0);
+  }, [findNextVisible]);
+
+  const handleFileRenamed = useCallback(
+    (fileId: string, newName: string, newPath: string) => {
+      const ext = newName.includes('.') ? newName.substring(newName.lastIndexOf('.') + 1).toLowerCase() : '';
+      const sep = newPath.includes('\\') ? '\\' : '/';
+      const folder = newPath.substring(0, newPath.lastIndexOf(sep));
+      updateFile(fileId, { name: newName, nativePath: newPath, extension: ext, folder });
+    },
+    [updateFile],
+  );
+
+  const handleRemoveRecentFolder = useCallback(
+    (folder: string) => {
+      updateConfig({ recentFolders: config.recentFolders.filter((f) => f !== folder) });
+      void save();
+    },
+    [config.recentFolders, updateConfig, save],
+  );
 
   const handleOptionsClose = useCallback(() => {
     setShowOptions(false);
@@ -118,6 +193,8 @@ function App({ fs }: AppProps): React.JSX.Element {
           <FolderBrowser
             onFolderSelected={handleFolderSelected}
             recentFolders={recentFolders}
+            onRemoveRecentFolder={handleRemoveRecentFolder}
+            initialRecursionMode={config.recursionMode}
           />
         </div>
       )}
@@ -130,9 +207,16 @@ function App({ fs }: AppProps): React.JSX.Element {
               visible={activeRenamer === 0}
               fileIndex={fileIndex0}
               files={files}
+              isFileVisible={isFileVisible}
               fs={fs}
               undoStore={undoStoreRef.current}
+              onFileRenamed={handleFileRenamed}
               onComplete={handleComplete0}
+              onFileSelect={handleFileSelect0}
+              showTt={showTt}
+              onShowTtChange={setShowTt}
+              showSample={showSample}
+              onShowSampleChange={setShowSample}
             />
           </div>
           <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 1 ? '' : 'hidden'}`}>
@@ -141,9 +225,16 @@ function App({ fs }: AppProps): React.JSX.Element {
               visible={activeRenamer === 1}
               fileIndex={fileIndex1}
               files={files}
+              isFileVisible={isFileVisible}
               fs={fs}
               undoStore={undoStoreRef.current}
+              onFileRenamed={handleFileRenamed}
               onComplete={handleComplete1}
+              onFileSelect={handleFileSelect1}
+              showTt={showTt}
+              onShowTtChange={setShowTt}
+              showSample={showSample}
+              onShowSampleChange={setShowSample}
             />
           </div>
         </div>

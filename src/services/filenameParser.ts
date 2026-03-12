@@ -3,68 +3,58 @@ import type { SearchPart } from '../types';
 export function parseFilename(
   filename: string,
   removeTerms: string[],
-  keepTerms: string[],
+  keepTerms: Array<[string, string]>,
 ): SearchPart[] {
   if (!filename) return [];
-
-  // 1. Strip file extension (last .xxx where xxx is 2-4 chars)
   const stripped = filename.replace(/\.[a-zA-Z0-9]{2,4}$/, '');
-
-  // 2. Split by dots, spaces, underscores, and dashes
   const tokens = stripped.split(/[.\s_-]+/).filter(Boolean);
-
   if (tokens.length === 0) return [];
 
-  // Normalize term lists for case-insensitive comparison
   const removeLower = removeTerms.map(t => t.toLowerCase());
-  const keepLower = keepTerms.map(t => t.toLowerCase());
+  const keepMap = new Map<string, string>();
+  for (const [match, display] of keepTerms) {
+    keepMap.set(match.toLowerCase(), display);
+  }
 
-  // 3. Check for multi-word keep terms by joining adjacent tokens
   const parts: SearchPart[] = [];
   let i = 0;
   let idCounter = 0;
 
   while (i < tokens.length) {
     let matched = false;
-
-    // Try matching multi-word keep terms (longest first)
-    for (const term of keepTerms) {
-      const termWords = term.split(/\s+/);
+    for (const [match, display] of keepTerms) {
+      const termWords = match.split(/\s+/);
       if (termWords.length <= 1) continue;
-
       const slice = tokens.slice(i, i + termWords.length);
       if (slice.length < termWords.length) continue;
-
       const sliceJoined = slice.join(' ').toLowerCase();
-      if (sliceJoined === term.toLowerCase()) {
-        parts.push({
-          id: String(idCounter++),
-          text: term,
-          originalText: term,
-          state: 'keep',
-          editable: true,
-        });
+      if (sliceJoined === match.toLowerCase()) {
+        parts.push({ id: String(idCounter++), text: display, originalText: match, state: 'keep', editable: true });
         i += termWords.length;
         matched = true;
         break;
       }
     }
-
     if (matched) continue;
 
     const token = tokens[i];
     const tokenLower = token.toLowerCase();
-
-    // 4. Classify token
     let state: SearchPart['state'] = 'search';
+    let text = token;
 
     if (removeLower.includes(tokenLower)) {
       state = 'remove';
-    } else if (keepLower.includes(tokenLower)) {
-      state = 'keep';
+    } else {
+      for (const [matchKey, displayVal] of keepMap.entries()) {
+        const re = new RegExp(`^${matchKey}[a-z]*$`, 'i');
+        if (re.test(tokenLower)) {
+          state = 'keep';
+          text = displayVal;
+          break;
+        }
+      }
     }
 
-    // Detect 4-digit year: exclude from search, used for result matching
     if (/^\d{4}$/.test(token)) {
       const num = parseInt(token, 10);
       if (num > 1900 && num <= new Date().getFullYear() + 1) {
@@ -72,15 +62,19 @@ export function parseFilename(
       }
     }
 
-    parts.push({
-      id: String(idCounter++),
-      text: token,
-      originalText: token,
-      state,
-      editable: true,
-    });
-
+    parts.push({ id: String(idCounter++), text, originalText: token, state, editable: true });
     i++;
+  }
+
+  const yearIndices = parts
+    .map((p, idx) => ({ p, idx }))
+    .filter(({ p }) => p.state === 'remove' && /^\d{4}$/.test(p.originalText) && parseInt(p.originalText, 10) > 1900)
+    .map(({ idx }) => idx);
+
+  if (yearIndices.length > 1) {
+    for (const idx of yearIndices.slice(0, -1)) {
+      parts[idx].state = 'search';
+    }
   }
 
   return parts;

@@ -11,50 +11,50 @@ const OUTPUT_DIR = path.join(__dirname, '..', 'test-data');
 
 const movies = [
   // Classics
-  { title: 'The Godfather', year: 1972 },
-  { title: 'Blade Runner', year: 1982 },
-  { title: 'Apocalypse Now', year: 1979 },
-  { title: 'Schindler\'s List', year: 1993 },
-  { title: 'Goodfellas', year: 1990 },
-  { title: 'The Silence of the Lambs', year: 1991 },
-  { title: 'Pulp Fiction', year: 1994 },
-  { title: '2001 A Space Odyssey', year: 1968 },
-  { title: 'Chinatown', year: 1974 },
-  { title: 'Taxi Driver', year: 1976 },
+  { title: 'The Godfather', year: 1972, tt: 'tt0068646' },
+  { title: 'Blade Runner', year: 1982, tt: 'tt0083658' },
+  { title: 'Apocalypse Now', year: 1979, tt: 'tt0078788' },
+  { title: 'Schindler\'s List', year: 1993, tt: 'tt0108052' },
+  { title: 'Goodfellas', year: 1990, tt: 'tt0099685' },
+  { title: 'The Silence of the Lambs', year: 1991, tt: 'tt0102926' },
+  { title: 'Pulp Fiction', year: 1994, tt: 'tt0110912' },
+  { title: '2001 A Space Odyssey', year: 1968, tt: 'tt0062622' },
+  { title: 'Chinatown', year: 1974, tt: 'tt0071315' },
+  { title: 'Taxi Driver', year: 1976, tt: 'tt0075314' },
   // Modern blockbusters
-  { title: 'Dune', year: 2021 },
-  { title: 'Dune Part Two', year: 2024 },
-  { title: 'Oppenheimer', year: 2023 },
-  { title: 'The Batman', year: 2022 },
-  { title: 'Top Gun Maverick', year: 2022 },
-  { title: 'Everything Everywhere All at Once', year: 2022 },
-  { title: 'Avatar The Way of Water', year: 2022 },
-  { title: 'Mission Impossible Dead Reckoning', year: 2023 },
-  { title: 'Killers of the Flower Moon', year: 2023 },
-  { title: 'Poor Things', year: 2023 },
+  { title: 'Dune', year: 2021, tt: 'tt1160419' },
+  { title: 'Dune Part Two', year: 2024, tt: 'tt15239678' },
+  { title: 'Oppenheimer', year: 2023, tt: 'tt15398776' },
+  { title: 'The Batman', year: 2022, tt: 'tt1877830' },
+  { title: 'Top Gun Maverick', year: 2022, tt: 'tt1745960' },
+  { title: 'Everything Everywhere All at Once', year: 2022, tt: 'tt6710474' },
+  { title: 'Avatar The Way of Water', year: 2022, tt: 'tt1630029' },
+  { title: 'Mission Impossible Dead Reckoning', year: 2023, tt: 'tt9603212' },
+  { title: 'Killers of the Flower Moon', year: 2023, tt: 'tt5906664' },
+  { title: 'Poor Things', year: 2023, tt: 'tt14230458' },
   // Indie / foreign
-  { title: 'Parasite', year: 2019 },
-  { title: 'Drive', year: 2011 },
-  { title: 'Whiplash', year: 2014 },
-  { title: 'Moon', year: 2009 },
-  { title: 'Ex Machina', year: 2014 },
-  { title: 'A Separation', year: 2011 },
-  { title: 'The Hunt', year: 2012 },
-  { title: 'Oldboy', year: 2003 },
-  { title: 'Pan\'s Labyrinth', year: 2006 },
-  { title: 'Amelie', year: 2001 },
+  { title: 'Parasite', year: 2019, tt: 'tt6751668' },
+  { title: 'Drive', year: 2011, tt: 'tt0780504' },
+  { title: 'Whiplash', year: 2014, tt: 'tt2582802' },
+  { title: 'Moon', year: 2009, tt: 'tt1182345' },
+  { title: 'Ex Machina', year: 2014, tt: 'tt0470752' },
+  { title: 'A Separation', year: 2011, tt: 'tt1832382' },
+  { title: 'The Hunt', year: 2012, tt: 'tt2106476' },
+  { title: 'Oldboy', year: 2003, tt: 'tt0364569' },
+  { title: 'Pan\'s Labyrinth', year: 2006, tt: 'tt0457430' },
+  { title: 'Amelie', year: 2001, tt: 'tt0211915' },
   // Sci-fi / action
-  { title: 'Interstellar', year: 2014 },
-  { title: 'Arrival', year: 2016 },
-  { title: 'Mad Max Fury Road', year: 2015 },
-  { title: 'The Matrix', year: 1999 },
-  { title: 'Inception', year: 2010 },
-  { title: 'Blade Runner 2049', year: 2017 },
+  { title: 'Interstellar', year: 2014, tt: 'tt0816692' },
+  { title: 'Arrival', year: 2016, tt: 'tt2543164' },
+  { title: 'Mad Max Fury Road', year: 2015, tt: 'tt1392190' },
+  { title: 'The Matrix', year: 1999, tt: 'tt0133093' },
+  { title: 'Inception', year: 2010, tt: 'tt1375666' },
+  { title: 'Blade Runner 2049', year: 2017, tt: 'tt1856101' },
   // Misc
-  { title: 'The Grand Budapest Hotel', year: 2014 },
-  { title: 'Once Upon a Time in Hollywood', year: 2019 },
-  { title: 'Joker', year: 2019 },
-  { title: 'Tenet', year: 2020 },
+  { title: 'The Grand Budapest Hotel', year: 2014, tt: 'tt2278388' },
+  { title: 'Once Upon a Time in Hollywood', year: 2019, tt: 'tt7131622' },
+  { title: 'Joker', year: 2019, tt: 'tt7286456' },
+  { title: 'Tenet', year: 2020, tt: 'tt6723592' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -161,9 +161,14 @@ function withProper(name) {
 // Companion file creators
 // ---------------------------------------------------------------------------
 
-function addCompanions(baseNoExt, dir, flags) {
+function addCompanions(baseNoExt, dir, flags, movie) {
   if (flags.nfo) {
-    writeSmall(path.join(dir, `${baseNoExt}.nfo`), `[NFO]\nTitle: ${baseNoExt}\n`);
+    let nfoContent = `[NFO]\nTitle: ${baseNoExt}\n`;
+    // Most NFOs include the real IMDB URL; ~15% omit it to simulate incomplete data
+    if (movie && movie.tt && Math.random() > 0.15) {
+      nfoContent += `https://www.imdb.com/title/${movie.tt}/\n`;
+    }
+    writeSmall(path.join(dir, `${baseNoExt}.nfo`), nfoContent);
   }
   if (flags.srt) {
     touch(path.join(dir, `${baseNoExt}.srt`));
@@ -198,7 +203,11 @@ function createDvdFolder(movie, parentDir) {
   touch(path.join(vtsDir, 'VTS_01_0.BUP'));
   // Optional companion at root
   if (Math.random() > 0.5) {
-    writeSmall(path.join(folderPath, `${d}.nfo`), `[NFO]\n${movie.title} (${movie.year})\n`);
+    let dvdNfo = `[NFO]\n${movie.title} (${movie.year})\n`;
+    if (movie.tt && Math.random() > 0.15) {
+      dvdNfo += `https://www.imdb.com/title/${movie.tt}/\n`;
+    }
+    writeSmall(path.join(folderPath, `${d}.nfo`), dvdNfo);
   }
   console.log(`  [DVD]  ${folderName}/`);
 }
@@ -253,7 +262,7 @@ function generate() {
       jpg: Math.random() > 0.65,
       url: Math.random() > 0.85,
     };
-    addCompanions(baseNoExt, dirs.movies, companions);
+    addCompanions(baseNoExt, dirs.movies, companions, movie);
     created++;
   }
 
@@ -277,7 +286,7 @@ function generate() {
       nfo: Math.random() > 0.4,
       jpg: Math.random() > 0.5,
       srt: Math.random() > 0.7,
-    });
+    }, movie);
     created++;
   }
 
@@ -305,7 +314,7 @@ function generate() {
       addCompanions(baseNoExt, dirs.dvd, {
         nfo: Math.random() > 0.4,
         srt: Math.random() > 0.7,
-      });
+      }, movie);
       created++;
     }
   }
@@ -335,7 +344,7 @@ function generate() {
       srt: Math.random() > 0.55,
       jpg: Math.random() > 0.8,
       url: Math.random() > 0.9,
-    });
+    }, movie);
     created++;
   }
 

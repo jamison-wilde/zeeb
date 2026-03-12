@@ -133,6 +133,21 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
           }
         }
 
+        var akas = [];
+        if (ld.alternateName) {
+          akas.push(ld.alternateName);
+        }
+        var akaLi = document.querySelector('li[data-testid="title-details-aka"]');
+        if (akaLi) {
+          var akaSpans = akaLi.querySelectorAll('span');
+          for (var si = 0; si < akaSpans.length; si++) {
+            var akaText = akaSpans[si].textContent.trim();
+            if (akaText && akaText !== 'Also Known As' && akas.indexOf(akaText) === -1) {
+              akas.push(akaText);
+            }
+          }
+        }
+
         return JSON.stringify({
           type: 'titleData',
           data: {
@@ -145,7 +160,7 @@ export function generateTitleExtractionScript(patterns: ExtractionPattern[]): st
             actors: actors,
             duration: duration,
             mpaa: ld.contentRating || null,
-            aka: [],
+            aka: akas,
             posterUrl: ld.image || null,
           }
         });

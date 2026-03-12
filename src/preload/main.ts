@@ -12,11 +12,16 @@ contextBridge.exposeInMainWorld('zeebFs', {
 
 contextBridge.exposeInMainWorld('zeebDialog', {
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
+  openFile: () => ipcRenderer.invoke('dialog:openFile'),
 });
 
 contextBridge.exposeInMainWorld('zeebApp', {
   getPath: (name: string) => ipcRenderer.invoke('app:getPath', name),
   getWebviewPreloadPath: () => ipcRenderer.invoke('app:getWebviewPreloadPath'),
+});
+
+contextBridge.exposeInMainWorld('zeebImdb', {
+  suggest: (query: string) => ipcRenderer.invoke('imdb:suggest', query),
 });
 
 contextBridge.exposeInMainWorld('zeebMenu', {

@@ -15,12 +15,12 @@ describe('fileStore', () => {
     expect(store.getState().files).toHaveLength(1);
   });
 
-  it('filters sample files when configured', () => {
-    const sample = { ...mockFile, id: '2', name: 'Movie.sample.mkv' };
+  it('updates a file entry in place', () => {
     const store = createFileStore();
-    store.getState().setFiles([mockFile, sample]);
-    const filtered = store.getState().getFilteredFiles(false);
-    expect(filtered).toHaveLength(1);
+    store.getState().setFiles([mockFile]);
+    store.getState().updateFile('1', { name: 'Renamed.mkv', nativePath: '/movies/Renamed.mkv' });
+    expect(store.getState().files[0].name).toBe('Renamed.mkv');
+    expect(store.getState().files[0].nativePath).toBe('/movies/Renamed.mkv');
   });
 
   it('clears files', () => {

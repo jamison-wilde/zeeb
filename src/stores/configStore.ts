@@ -35,8 +35,14 @@ export function createConfigStore(fs: FsAdapter): StoreApi<ConfigStoreState> {
       if (fileExists) {
         const json = await fs.readFile(path, 'utf8');
         try {
-          const saved = JSON.parse(json) as Partial<ZeebConfig>;
-          set({ config: { ...DEFAULT_CONFIG, ...saved } });
+          const saved = JSON.parse(json) as Record<string, unknown>;
+          // Migrate legacy keepTerms: string[] → Array<[string, string]>
+          if (Array.isArray(saved.keepTerms)) {
+            saved.keepTerms = (saved.keepTerms as unknown[]).map((t) =>
+              Array.isArray(t) ? t : [t, t],
+            );
+          }
+          set({ config: { ...DEFAULT_CONFIG, ...(saved as Partial<ZeebConfig>) } });
         } catch {
           set({ config: { ...DEFAULT_CONFIG } });
         }

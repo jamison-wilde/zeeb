@@ -42,7 +42,7 @@ export interface LegacyCustomizations {
 
 export function detectCustomizations(parsed: Record<string, string>): LegacyCustomizations {
   const defaultRemoveSet = new Set(DEFAULT_REMOVE_TERMS.map(t => t.toLowerCase()));
-  const defaultKeepSet = new Set(DEFAULT_KEEP_TERMS.map(t => t.toLowerCase()));
+  const defaultKeepSet = new Set(DEFAULT_KEEP_TERMS.map(([m]) => m.toLowerCase()));
 
   const removeTerms = parsed.removeTerms
     ? parsed.removeTerms.split(',').map(t => t.trim()).filter(Boolean)
@@ -91,8 +91,10 @@ export function migrateLegacyConfig(parsed: Record<string, string>): Partial<Zee
 
   if (parsed.keepTerms) {
     const legacyTerms = parsed.keepTerms.split(',').map(t => t.trim()).filter(Boolean);
-    const defaultSet = new Set(DEFAULT_KEEP_TERMS.map(t => t.toLowerCase()));
-    const customTerms = legacyTerms.filter(t => !defaultSet.has(t.toLowerCase()));
+    const defaultSet = new Set(DEFAULT_KEEP_TERMS.map(([m]) => m.toLowerCase()));
+    const customTerms: Array<[string, string]> = legacyTerms
+      .filter(t => !defaultSet.has(t.toLowerCase()))
+      .map(t => [t, t] as [string, string]);
     config.keepTerms = [...DEFAULT_KEEP_TERMS, ...customTerms];
   }
 

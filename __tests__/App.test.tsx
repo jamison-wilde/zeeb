@@ -26,6 +26,11 @@ describe('App', () => {
       writable: true,
       configurable: true,
     });
+    Object.defineProperty(window, 'zeebImdb', {
+      value: { suggest: vi.fn().mockResolvedValue([]) },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('renders folder browser view by default', () => {

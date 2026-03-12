@@ -111,7 +111,7 @@ export interface ZeebConfig {
   movieExtensions: string[];
   subtitleExtensions: string[];
   removeTerms: string[];
-  keepTerms: string[];
+  keepTerms: Array<[string, string]>;
 
   // IMDB/TMDB
   urlImdbSearch: string;
@@ -137,6 +137,13 @@ export interface ZeebConfig {
   titleSpaceChar: string;
   htmlZoom: number;
   showWebView: boolean;
+  includeOriginalInUrl: boolean;
+  includeNfoInUrl: boolean;
+  deleteNfoAfterInclude: boolean;
+  posterInDvdFolder: boolean;
+  detectDvd: boolean;
+  maxUndos: number;
+  theWord: string;
 
   // NFO
   nfoFolder: string;

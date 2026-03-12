@@ -1,7 +1,7 @@
 import { parseFilename } from '../../src/services/filenameParser';
 
 const removeTerms = ['BluRay', 'x264', 'YIFY', '720p', 'DTS'];
-const keepTerms = ['Directors Cut', 'Extended'];
+const keepTerms: Array<[string, string]> = [['Directors Cut', 'Directors Cut'], ['Extended', 'Extended']];
 
 describe('parseFilename', () => {
   it('splits filename into parts by common separators', () => {
@@ -57,5 +57,35 @@ describe('parseFilename', () => {
 
   it('returns empty array for empty input', () => {
     expect(parseFilename('', removeTerms, keepTerms)).toEqual([]);
+  });
+
+  it('only marks the last year-like token as remove when title contains a year', () => {
+    const parts = parseFilename('2001.A.Space.Odyssey.1968.mkv', removeTerms, keepTerms);
+    const p2001 = parts.find(p => p.text === '2001');
+    const p1968 = parts.find(p => p.text === '1968');
+    expect(p2001?.state).toBe('search');
+    expect(p1968?.state).toBe('remove');
+  });
+
+  it('uses match token from keepTerms pairs for matching', () => {
+    const result = parseFilename(
+      'Movie.720p.BluRay.mkv',
+      ['BluRay'],
+      [['720', '720p'], ['dc', "Director's Cut"]],
+    );
+    const kept = result.find(p => p.state === 'keep');
+    expect(kept).toBeDefined();
+    expect(kept!.text).toBe('720p'); // display label replaces raw token
+  });
+
+  it('matches multi-word keep term pairs', () => {
+    const result = parseFilename(
+      'Movie.Directors.Cut.1080p.mkv',
+      [],
+      [["Director's Cut", "Director's Cut"], ['1080', '1080p']],
+    );
+    const kept1080 = result.find(p => p.state === 'keep');
+    expect(kept1080).toBeDefined();
+    expect(kept1080!.text).toBe('1080p');
   });
 });

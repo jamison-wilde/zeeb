@@ -5,6 +5,7 @@ interface WebviewTag extends HTMLElement {
   goBack(): void;
   canGoBack(): boolean;
   executeJavaScript(code: string): Promise<unknown>;
+  send(channel: string, ...args: any[]): void;
   addEventListener(event: string, handler: (...args: any[]) => void): void;
   removeEventListener(event: string, handler: (...args: any[]) => void): void;
   src: string;
@@ -24,13 +25,14 @@ interface Window {
   };
   zeebDialog: {
     openDirectory(): Promise<string | null>;
+    openFile(): Promise<string | null>;
   };
   zeebApp: {
     getPath(name: string): Promise<string>;
     getWebviewPreloadPath(): Promise<string>;
   };
-  zeebIpc: {
-    sendToHost(data: string): void;
+  zeebImdb: {
+    suggest(query: string): Promise<import('../types').MovieMatch[]>;
   };
   zeebMenu: {
     onOptions(callback: () => void): void;

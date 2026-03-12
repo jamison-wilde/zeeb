@@ -21,7 +21,7 @@ function getBaseName(filename: string): string {
 }
 
 function getFolder(filepath: string): string {
-  const sep = filepath.lastIndexOf('/');
+  const sep = Math.max(filepath.lastIndexOf('/'), filepath.lastIndexOf('\\'));
   return sep >= 0 ? filepath.substring(0, sep) : '';
 }
 
