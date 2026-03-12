@@ -1,5 +1,27 @@
-import React, { useCallback } from 'react';
+// src/renderer/components/OptionsModal.tsx
+import React, { useState } from 'react';
 import { useConfigStore } from '../../stores/configStore';
+import { FormattingSection } from './options/FormattingSection';
+import { GeneralSection } from './options/GeneralSection';
+import { FileTypesSection } from './options/FileTypesSection';
+import { SearchTermsSection } from './options/SearchTermsSection';
+import { CompanionsSection } from './options/CompanionsSection';
+import { LoggingSection } from './options/LoggingSection';
+import { ImdbSection } from './options/ImdbSection';
+import { FormatTesterSection } from './options/FormatTesterSection';
+
+const SECTIONS = [
+  { id: 'formatting', label: 'Formatting' },
+  { id: 'general', label: 'General' },
+  { id: 'file-types', label: 'File Types' },
+  { id: 'search-terms', label: 'Search Terms' },
+  { id: 'companions', label: 'Companions' },
+  { id: 'logging', label: 'Logging' },
+  { id: 'imdb', label: 'IMDB' },
+  { id: 'format-tester', label: 'Format Tester' },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]['id'];
 
 interface OptionsModalProps {
   visible: boolean;
@@ -7,94 +29,78 @@ interface OptionsModalProps {
 }
 
 export function OptionsModal({ visible, onClose }: OptionsModalProps): React.JSX.Element | null {
+  const [activeSection, setActiveSection] = useState<SectionId>('formatting');
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
-
-  const handleChange = useCallback(
-    (field: string, value: string) => {
-      updateConfig({ [field]: value });
-    },
-    [updateConfig],
-  );
 
   if (!visible) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col" data-testid="options-modal">
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-bold">Options</h2>
-        <button data-testid="close-options" className="text-blue-500" onClick={onClose}>
+        <button data-testid="close-options" className="text-blue-500 hover:text-blue-700" onClick={onClose}>
           Close
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
-        <h3 className="text-sm font-bold mt-4 mb-2 text-gray-700">Format Strings</h3>
-        <input
-          data-testid="format-standard-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="Standard format"
-          value={config.formatStandard}
-          onChange={(e) => handleChange('formatStandard', e.target.value)}
-        />
-        <input
-          data-testid="format-aka-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="AKA format"
-          value={config.formatAka}
-          onChange={(e) => handleChange('formatAka', e.target.value)}
-        />
-        <input
-          data-testid="format-dvd-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="DVD format"
-          value={config.formatDvd}
-          onChange={(e) => handleChange('formatDvd', e.target.value)}
-        />
-
-        <h3 className="text-sm font-bold mt-4 mb-2 text-gray-700">Remove Terms</h3>
-        <input
-          data-testid="remove-terms-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="Terms to remove"
-          value={config.removeTerms.join(', ')}
-          onChange={(e) =>
-            updateConfig({ removeTerms: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })
-          }
-        />
-
-        <h3 className="text-sm font-bold mt-4 mb-2 text-gray-700">Keep Terms</h3>
-        <input
-          data-testid="keep-terms-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="Terms to keep"
-          value={config.keepTerms.join(', ')}
-          onChange={(e) =>
-            updateConfig({ keepTerms: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })
-          }
-        />
-
-        <h3 className="text-sm font-bold mt-4 mb-2 text-gray-700">Separators</h3>
-        <input
-          data-testid="director-separator-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="Director separator"
-          value={config.directorSeparator}
-          onChange={(e) => handleChange('directorSeparator', e.target.value)}
-        />
-        <input
-          data-testid="genre-separator-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="Genre separator"
-          value={config.genreSeparator}
-          onChange={(e) => handleChange('genreSeparator', e.target.value)}
-        />
-        <input
-          data-testid="star-separator-input"
-          className="w-full border border-gray-300 rounded px-2 py-1.5 mb-2"
-          placeholder="Star separator"
-          value={config.starSeparator}
-          onChange={(e) => handleChange('starSeparator', e.target.value)}
-        />
+      <div className="flex flex-1 min-h-0">
+        <nav className="w-48 border-r border-gray-200 bg-gray-50 overflow-y-auto">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              className={`w-full text-left px-4 py-2.5 text-sm ${
+                activeSection === s.id
+                  ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-500'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              onClick={() => setActiveSection(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </nav>
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeSection === 'formatting' && (
+            <div data-testid="section-formatting">
+              <FormattingSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'general' && (
+            <div data-testid="section-general">
+              <GeneralSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'file-types' && (
+            <div data-testid="section-file-types">
+              <FileTypesSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'search-terms' && (
+            <div data-testid="section-search-terms">
+              <SearchTermsSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'companions' && (
+            <div data-testid="section-companions">
+              <CompanionsSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'logging' && (
+            <div data-testid="section-logging">
+              <LoggingSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'imdb' && (
+            <div data-testid="section-imdb">
+              <ImdbSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'format-tester' && (
+            <div data-testid="section-format-tester">
+              <FormatTesterSection config={config} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
