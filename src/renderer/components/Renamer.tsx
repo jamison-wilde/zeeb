@@ -8,6 +8,7 @@ import { MovieResults } from './MovieResults';
 import { RenamePreview } from './RenamePreview';
 import { createRenamerStore } from '../../stores/renamerStore';
 import { useConfigStore } from '../../stores/configStore';
+import { useTesterStore } from '../../stores/testerStore';
 import type { MovieFile, SearchPartState, UndoEntry } from '../../types';
 import { parseFilename } from '../../services/filenameParser';
 import {
@@ -66,9 +67,13 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const saveConfig = useConfigStore((s) => s.save);
 
+  const testerRequest = useTesterStore((s) => s.testerRequest);
+  const setTesterResult = useTesterStore((s) => s.setResult);
+  const setTesterError = useTesterStore((s) => s.setError);
+
   const currentFile = useMemo(() => files[fileIndex] ?? null, [files, fileIndex]);
 
-  const navigationMode = useRef<'title' | 'idle'>('idle');
+  const navigationMode = useRef<'title' | 'idle' | 'tester'>('idle');
 
   useEffect(() => {
     window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
@@ -76,6 +81,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
 
   const autoSearchRef = useRef(false);
   const nfoAutoSelectedRef = useRef(false);
+  const testerClaimedRef = useRef(false);
 
   useEffect(() => {
     if (!currentFile) return;
@@ -226,7 +232,14 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
 
       const titleData = parseTitleData(message);
       if (titleData) {
-        setMetadata(titleData);
+        if (navigationMode.current === 'tester') {
+          setTesterResult(titleData);
+          navigationMode.current = 'idle';
+          // Clear the request so the effect doesn't re-trigger
+          useTesterStore.getState().clear();
+        } else {
+          setMetadata(titleData);
+        }
       }
     };
 
@@ -239,7 +252,26 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('ipc-message', handleIpcMessage);
     };
-  }, [webviewEl, instanceId, config.extractionPatterns, setMovieMatches, setMetadata]);
+  }, [webviewEl, instanceId, config.extractionPatterns, setMovieMatches, setMetadata, setTesterResult]);
+
+  // Handle Format Tester requests — only first Renamer instance responds
+  useEffect(() => {
+    if (!testerRequest || !webviewEl || instanceId !== 0) return;
+    testerClaimedRef.current = true;
+    navigationMode.current = 'tester';
+    const url = `${config.urlImdbTT}${testerRequest.tt}/`;
+    webviewEl.loadURL(url);
+
+    // Timeout after 10 seconds
+    const timer = setTimeout(() => {
+      if (navigationMode.current === 'tester') {
+        setTesterError(`Timed out fetching data for ${testerRequest.tt}`);
+        navigationMode.current = 'idle';
+      }
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [testerRequest, webviewEl, instanceId, config.urlImdbTT, setTesterError]);
 
   const handleFileSelect = useCallback(
     (index: number) => {
