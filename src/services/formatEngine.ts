@@ -2,6 +2,7 @@ import type { MovieMetadata } from '../types';
 
 export interface FormatOptions {
   saved: string;
+  selectedAka?: string;
   directorSeparator?: string;
   genreSeparator?: string;
   starSeparator?: string;
@@ -51,7 +52,7 @@ export function interpolateFormat(
     '<mpaa>': metadata.mpaa ?? '',
     '<H>': Math.floor(dur / 60).toString(),
     '<M>': (dur % 60).toString(),
-    '<aka>': metadata.aka[0] ?? '',
+    '<aka>': options.selectedAka ?? metadata.aka[0] ?? '',
     '<original>': metadata.title,
     '<saved>': options.saved,
   };

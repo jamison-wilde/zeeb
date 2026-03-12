@@ -14,6 +14,7 @@ import {
   buildTitleUrl,
   parseTitleData,
 } from '../../services/imdbExtractor';
+import { extractImdbFromNfo } from '../../services/nfoParser';
 import { interpolateFormat } from '../../services/formatEngine';
 import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
 import { createLogger } from '../../services/logger';
@@ -32,18 +33,21 @@ interface RenamerProps {
   }>;
   onFileRenamed?: (fileId: string, newName: string, newPath: string) => void;
   onComplete?: () => void;
+  onFileSelect?: (index: number) => void;
   showTt?: boolean;
   onShowTtChange?: (v: boolean) => void;
   showSample?: boolean;
   onShowSampleChange?: (v: boolean) => void;
 }
 
-export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
+export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [selectedTt, setSelectedTt] = useState('');
+  const [useAka, setUseAka] = useState(false);
+  const [selectedAka, setSelectedAka] = useState('');
 
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
   const movieMatches = useStore(storeRef.current, (s) => s.movieMatches);
@@ -54,6 +58,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const updatePartText = useStore(storeRef.current, (s) => s.updatePartText);
   const setMovieMatches = useStore(storeRef.current, (s) => s.setMovieMatches);
   const setMetadata = useStore(storeRef.current, (s) => s.setMetadata);
+  const appendAkas = useStore(storeRef.current, (s) => s.appendAkas);
   const setPreviewFilename = useStore(storeRef.current, (s) => s.setPreviewFilename);
   const reset = useStore(storeRef.current, (s) => s.reset);
 
@@ -70,6 +75,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   }, []);
 
   const autoSearchRef = useRef(false);
+  const nfoAutoSelectedRef = useRef(false);
 
   useEffect(() => {
     if (!currentFile) return;
@@ -78,8 +84,31 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     setMovieMatches([]);
     setMetadata(null);
     setPreviewFilename('');
+    setUseAka(false);
+    setSelectedAka('');
     autoSearchRef.current = true;
+    nfoAutoSelectedRef.current = false;
   }, [currentFile, config.removeTerms, config.keepTerms, setSearchParts, setMovieMatches, setMetadata, setPreviewFilename]);
+
+  // Auto-navigate to IMDB title page if NFO contains a tt#
+  useEffect(() => {
+    if (!currentFile?.nfoPath || !webviewEl) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const content = await fs.readFile(currentFile.nfoPath!, 'utf-8');
+        const tt = extractImdbFromNfo(content);
+        if (tt && !cancelled) {
+          nfoAutoSelectedRef.current = true;
+          setSelectedTt(tt);
+          const url = buildTitleUrl(tt, config.urlImdbTT);
+          navigationMode.current = 'title';
+          webviewEl.loadURL(url);
+        }
+      } catch { /* NFO read failed — fall through to year-based auto-select */ }
+    })();
+    return () => { cancelled = true; };
+  }, [currentFile, webviewEl, fs, config.urlImdbTT]);
 
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
@@ -98,6 +127,16 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     void doSearch(query);
   }, [searchParts, doSearch]);
 
+  // Auto-populate selectedAka when metadata with AKAs arrives
+  useEffect(() => {
+    if (metadata && metadata.aka.length > 0) {
+      setSelectedAka(metadata.aka[0]);
+    } else {
+      setSelectedAka('');
+      setUseAka(false);
+    }
+  }, [metadata]);
+
   useEffect(() => {
     if (!metadata || !currentFile) {
       setPreviewFilename('');
@@ -105,7 +144,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     }
     const format = currentFile.isDvdFolder
       ? config.formatDvd
-      : metadata.aka.length > 0
+      : useAka && selectedAka
         ? config.formatAka
         : config.formatStandard;
     const ext = currentFile.isDvdFolder ? '' : `.${currentFile.extension}`;
@@ -115,6 +154,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     const saved = keepParts.join(config.savedPartSeparator ?? ' ');
     const formatted = interpolateFormat(format, metadata, {
       saved,
+      selectedAka: useAka ? selectedAka : undefined,
       directorSeparator: config.directorSeparator,
       genreSeparator: config.genreSeparator,
       starSeparator: config.starSeparator,
@@ -123,11 +163,12 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       titleSpaceChar: config.titleSpaceChar,
     });
     setPreviewFilename(formatted + ext);
-  }, [metadata, currentFile, config, searchParts, setPreviewFilename]);
+  }, [metadata, currentFile, config, searchParts, useAka, selectedAka, setPreviewFilename]);
 
   // Auto-select a search result whose year matches the year detected in the filename
+  // Skip if NFO already auto-selected a title
   useEffect(() => {
-    if (movieMatches.length === 0) return;
+    if (movieMatches.length === 0 || nfoAutoSelectedRef.current) return;
     const yearCandidates = searchParts.filter(
       (p) => p.state === 'remove' && /^\d{4}$/.test(p.text) && parseInt(p.text, 10) > 1900,
     );
@@ -173,6 +214,15 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       const message = event.args?.[0];
       if (!message) return;
 
+      // Handle "moreAkas" — append full AKA list from /releaseinfo
+      try {
+        const parsed = JSON.parse(message);
+        if (parsed.type === 'moreAkas' && Array.isArray(parsed.akas)) {
+          appendAkas(parsed.akas);
+          return;
+        }
+      } catch { /* not JSON or not moreAkas — fall through */ }
+
       const titleData = parseTitleData(message);
       if (titleData) {
         setMetadata(titleData);
@@ -191,11 +241,10 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   }, [webviewEl, instanceId, config.extractionPatterns, setMovieMatches, setMetadata]);
 
   const handleFileSelect = useCallback(
-    (_index: number) => {
-      // File selection is managed by parent via fileIndex prop
-      // Manual selection from file list is ignored in dual-renamer mode
+    (index: number) => {
+      onFileSelect?.(index);
     },
-    [],
+    [onFileSelect],
   );
 
   const handlePartStateChange = useCallback(
@@ -342,7 +391,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
           <div className="border-t border-gray-300 shrink-0">
             <div className="px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600">Search Results</div>
           </div>
-          <div data-testid="movie-results" className="overflow-y-auto min-h-[80px] max-h-48">
+          <div data-testid="movie-results" className="overflow-y-auto min-h-[80px] max-h-[30%]">
             <MovieResults
               matches={movieMatches}
               onSelect={handleMovieSelect}
@@ -411,6 +460,33 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
             onSearch={handleSearch}
           />
         </div>
+        {metadata && metadata.aka.length > 0 && (
+          <div className="flex items-center gap-2 px-2 py-0.5 border-b border-gray-200 bg-gray-50">
+            <button
+              className={`px-2 py-0.5 text-[11px] font-bold rounded shrink-0 ${
+                useAka
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+              }`}
+              onClick={() => setUseAka(!useAka)}
+            >
+              Use AKA
+            </button>
+            <span className="text-[11px] text-gray-500 shrink-0">Also Known As</span>
+            <select
+              className="flex-1 px-1 py-0.5 text-xs border border-gray-300 rounded bg-white"
+              value={selectedAka}
+              onChange={(e) => {
+                setSelectedAka(e.target.value);
+                if (!useAka) setUseAka(true);
+              }}
+            >
+              {metadata.aka.map((a, i) => (
+                <option key={i} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <RenamePreview
           originalName={currentFile?.name ?? ''}
           previewName={previewFilename}

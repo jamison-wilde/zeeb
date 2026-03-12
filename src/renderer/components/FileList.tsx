@@ -10,7 +10,7 @@ interface FileListProps {
 
 export function FileList({ files, selectedIndex, onSelect, isFileVisible }: FileListProps): React.JSX.Element {
   return (
-    <div data-testid="file-list" className="overflow-y-auto max-h-48">
+    <div data-testid="file-list" className="overflow-y-auto">
       {files.map((file, index) => {
         const visible = isFileVisible ? isFileVisible(file) : true;
         return (

@@ -118,6 +118,16 @@ function App({ fs }: AppProps): React.JSX.Element {
     setActiveRenamer(0);
   }, [findNextVisible]);
 
+  const handleFileSelect0 = useCallback((clickedIndex: number) => {
+    setFileIndex0(clickedIndex);
+    setFileIndex1(findNextVisible(clickedIndex + 1, 1));
+  }, [findNextVisible]);
+
+  const handleFileSelect1 = useCallback((clickedIndex: number) => {
+    setFileIndex1(clickedIndex);
+    setFileIndex0(findNextVisible(clickedIndex + 1, 1));
+  }, [findNextVisible]);
+
   const handleFileRenamed = useCallback(
     (fileId: string, newName: string, newPath: string) => {
       const ext = newName.includes('.') ? newName.substring(newName.lastIndexOf('.') + 1).toLowerCase() : '';
@@ -186,6 +196,7 @@ function App({ fs }: AppProps): React.JSX.Element {
               undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
               onComplete={handleComplete0}
+              onFileSelect={handleFileSelect0}
               showTt={showTt}
               onShowTtChange={setShowTt}
               showSample={showSample}
@@ -203,6 +214,7 @@ function App({ fs }: AppProps): React.JSX.Element {
               undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
               onComplete={handleComplete1}
+              onFileSelect={handleFileSelect1}
               showTt={showTt}
               onShowTtChange={setShowTt}
               showSample={showSample}

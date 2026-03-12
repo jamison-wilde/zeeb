@@ -132,6 +132,36 @@ function extractTitleData(): string | null {
       }
     }
 
+    // AKA extraction: JSON-LD alternateName + DOM scrape
+    const akas: string[] = [];
+    if (ld.alternateName) {
+      akas.push(ld.alternateName);
+    }
+
+    // Scrape inline "Also Known As" from details section
+    const akaLi = document.querySelector('li[data-testid="title-details-aka"]');
+    if (akaLi) {
+      // The value is typically in a span/div after the label
+      const spans = akaLi.querySelectorAll('span');
+      for (const span of spans) {
+        const text = (span.textContent || '').trim();
+        if (text && text !== 'Also Known As' && !akas.includes(text)) {
+          akas.push(text);
+        }
+      }
+    }
+
+    // Fallback: regex search for "Also Known As" followed by text
+    if (akas.length === 0) {
+      const html = document.documentElement.innerHTML;
+      const akaMatch = html.match(/Also Known As<\/h4>\s*([^<(]*)/i)
+        || html.match(/Also Known As<\/[^>]+>\s*<[^>]+>([^<]+)/i);
+      if (akaMatch) {
+        const text = akaMatch[1].trim();
+        if (text) akas.push(text);
+      }
+    }
+
     return JSON.stringify({
       type: 'titleData',
       data: {
@@ -144,13 +174,47 @@ function extractTitleData(): string | null {
         actors,
         duration,
         mpaa: ld.contentRating || null,
-        aka: [],
+        aka: akas,
         posterUrl: ld.image || null,
       },
     });
   } catch {
     return null;
   }
+}
+
+// Fetch full AKA list from /releaseinfo page (lazy, after title data sent)
+async function fetchMoreAkas(tt: string): Promise<void> {
+  if (!tt) return;
+  try {
+    const res = await fetch(`https://www.imdb.com/title/${tt}/releaseinfo`);
+    if (!res.ok) return;
+    const html = await res.text();
+
+    // Find the AKA table: rows with <td> pairs (country, title)
+    const akaEntries: string[] = [];
+    // Match table rows containing AKA data
+    const rowRe = /<td[^>]*>(.*?)<\/td>\s*<td[^>]*>(.*?)<\/td>/gs;
+    // Find the AKA section first
+    const akaSection = html.match(/<a[^>]*id="akas"[^>]*>.*?<table[^>]*>([\s\S]*?)<\/table>/i);
+    if (akaSection) {
+      let match;
+      while ((match = rowRe.exec(akaSection[1])) !== null) {
+        const country = match[1].replace(/<[^>]+>/g, '').trim();
+        const title = match[2].replace(/<[^>]+>/g, '').trim();
+        if (title && country) {
+          akaEntries.push(`${title} *${country}*`);
+        }
+      }
+    }
+
+    if (akaEntries.length > 0) {
+      ipcRenderer.sendToHost('extraction-result', JSON.stringify({
+        type: 'moreAkas',
+        akas: akaEntries,
+      }));
+    }
+  } catch { /* /releaseinfo fetch failed — not critical */ }
 }
 
 function stopPolling() {
@@ -184,6 +248,11 @@ function startPolling() {
       if (titleResult) {
         sentTitle = true;
         ipcRenderer.sendToHost('extraction-result', titleResult);
+        // Kick off lazy fetch of full AKA list from /releaseinfo
+        const urlMatch = window.location.href.match(/title\/(tt\d+)/);
+        if (urlMatch) {
+          void fetchMoreAkas(urlMatch[1]);
+        }
       }
     }
 
