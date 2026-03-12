@@ -2,7 +2,7 @@
 
 ## Goal
 
-Connect 14 config fields that currently exist as UI-only controls to their backing application logic. After this work, every option in the Options Modal (except TMDB API and poster download) will have real effects.
+Connect 13 config fields that currently exist as UI-only controls to their backing application logic. After this work, every option in the Options Modal (except TMDB API and poster download) will have real effects.
 
 ## Scope
 
@@ -26,15 +26,15 @@ After subtitle renames and before `commitTransaction()`:
 
 1. If `config.createUrlFile` is true:
    - Determine URL file path: same folder/base name as the renamed file, with `.url` extension (or `.webloc` on macOS)
-   - Build IMDB URL from `metadata.tt` using `config.urlImdbTT`
+   - Build IMDB URL using the existing `buildTitleUrl(metadata.tt, config.urlImdbTT)` helper
    - If `config.includeNfoInUrl` is true and `currentFile.nfoPath` exists, read NFO content via `fs.readFile()`
    - If `config.includeOriginalInUrl` is true, pass `currentFile.nativePath` as `originalPath`
    - Call `generateUrlFileContent()` (or `generateWeblocContent()` on macOS) with the appropriate options
    - Write the file via `fs.writeFile()`
    - Add an undo entry (type: `'create'`) so undo deletes the URL file
 2. If `config.deleteNfoAfterInclude` is true and NFO was included:
-   - Delete the NFO file via `fs.unlink()` (new method on FsAdapter)
-   - Add an undo entry to restore the NFO file (need to stash the content)
+   - Delete the NFO file via `fs.unlink()` (already exists on FsAdapter)
+   - Add an undo entry (type: `'delete'`, with `content` field containing the NFO text) to restore the NFO file on undo
 
 ### urlFileWriter.ts — fix NFO key format
 
@@ -48,19 +48,17 @@ LINE1=second line of NFO
 
 ### urlFileWriter.ts — gate `[OriginalFilename]` section
 
-Add `includeOriginal: boolean` to `UrlFileOptions`. Only emit the `[OriginalFilename]` section when true.
+Add `includeOriginal: boolean` to `UrlFileOptions`. Make `originalPath` optional. Only emit the `[OriginalFilename]` section when `includeOriginal` is true and `originalPath` is provided.
 
 ### urlFileWriter.ts — extend webloc format
 
 Add optional `originalPath` and `nfoContent` parameters to `generateWeblocContent()`. Emit as extra plist `<key>`/`<string>` pairs when provided. macOS ignores unknown keys.
 
-### undoStore — new entry type
+### undoStore — implement `'delete'` undo handler
 
-Add `type: 'create'` to `UndoEntry` for files created during rename. Undo action: delete the created file. Add `type: 'delete'` for NFO deletions. Undo action: recreate the file with stashed content.
+`UndoEntry` already has types `'rename'`, `'create'`, and `'delete'`, and a `content?: string` field. The `'create'` undo (delete the file) is already implemented. However, the `'delete'` case in `undoTransaction()` currently does nothing (`break`). Implement it: `await fs.writeFile(entry.sourcePath, entry.content!, 'utf-8')` to restore the deleted file.
 
-### FsAdapter — add missing methods
-
-Add `unlink(path: string): Promise<void>` for file deletion. Add corresponding IPC handler and preload bridge method.
+`FsAdapter.unlink()` already exists and is wired through IPC — no new adapter methods needed.
 
 ---
 
@@ -99,9 +97,10 @@ Add `unlink(path: string): Promise<void>` for file deletion. Add corresponding I
 
 ### Renamer.tsx
 
+- Track webview readiness with a `webviewReady` ref, set to `true` on `dom-ready` event
 - Add a `useEffect` that watches `webviewEl` and `config.htmlZoom`
-- On the webview's `dom-ready` event, call `webviewEl.setZoomFactor(config.htmlZoom / 100)`
-- When `config.htmlZoom` changes (e.g., user updates in Options), re-apply `setZoomFactor()` if webview is ready
+- On the webview's `dom-ready` event, call `webviewEl.setZoomFactor(config.htmlZoom / 100)` and set `webviewReady.current = true`
+- When `config.htmlZoom` changes while `webviewReady` is true, re-apply `setZoomFactor()` immediately
 
 ---
 
@@ -134,18 +133,18 @@ Add `unlink(path: string): Promise<void>` for file deletion. Add corresponding I
 
 ### Renamer.tsx — `handleRename()`
 
-After the main file rename, if `config.renameFolder` is true:
+After the main file rename and subtitle renames, if `config.renameFolder` is true:
 
 1. Compute target folder name: new file base name (without extension) becomes the folder name
 2. Skip if folder is a root/drive path (e.g., `C:\` or `/`)
 3. Skip if folder already has the target name
 4. Rename the folder via `fs.rename(oldFolder, newFolder)`
 5. Add an undo entry for the folder rename
-6. Update all subsequent paths (for subtitle renames, URL file creation) to use the new folder path
+6. Update the working folder path so subsequent operations (URL file creation) use the new folder
 
 ### Ordering
 
-Folder rename must happen **after** all file operations inside the folder complete (file rename, subtitle renames). URL file creation uses the new folder path.
+Exact sequence: file rename → subtitle renames → folder rename → URL file creation → commit transaction.
 
 ---
 
@@ -195,31 +194,32 @@ Folder rename must happen **after** all file operations inside the folder comple
 
 **Changes:**
 
-### New IPC channels
+### Approach: main process reads config file directly on startup
 
-- `config:get-window-state` — renderer sends saved window state to main on startup
-- `config:save-window-state` — main sends updated dimensions to renderer for persistence
+The main process has access to Node `fs` and `app.getPath('userData')`. It reads `zeeb-config.json` directly before creating the BrowserWindow — no IPC round-trip needed.
 
 ### main/index.ts — `createWindow()`
 
-- After creating BrowserWindow with defaults (1024x768), listen for the renderer to send saved window state and apply it
-- If `windowMaximized` is true, call `mainWindow.maximize()` after setting dimensions
-- Listen for `resize`, `maximize`, `unmaximize`, and `close` events:
-  - On `resize` (debounced ~500ms): if not maximized, save current width/height
-  - On `maximize`: save `windowMaximized: true`
-  - On `unmaximize`: save `windowMaximized: false`
-  - On `close`: save final state before window closes
+- Read `zeeb-config.json` from `app.getPath('userData')` using `fs.readFileSync`
+- Parse JSON, extract `windowWidth`, `windowHeight`, `windowMaximized`
+- Fall back to 1024x768 if file missing, corrupt, or fields absent
+- Create BrowserWindow with restored dimensions
+- If `windowMaximized` is true, call `mainWindow.maximize()` after window creation
 
-### Renderer startup
+### main/index.ts — persist on window events
 
-- On app mount, read config window state and send to main via IPC
-- Main process applies dimensions
+- Listen for `resize` (debounced ~500ms): if not maximized, save current width/height via IPC to renderer's configStore
+- Listen for `maximize`: save `windowMaximized: true` via IPC
+- Listen for `unmaximize`: save `windowMaximized: false` via IPC
+- On `close`: send final state to renderer for persistence before window closes
 
-### Alternative approach (simpler)
+### New IPC channel
 
-Since the main process already has access to `fs` via Node, it could read the config file directly on startup before creating the window. This avoids the IPC round-trip. The renderer would still handle saving on resize events via the existing configStore → save flow.
+- `config:save-window-state` — main sends `{ windowWidth, windowHeight, windowMaximized }` to renderer. Renderer calls `updateConfig()` then `save()`.
 
-**Recommended: main process reads config file directly on startup.** Saves via IPC from renderer on window events.
+### Renderer listener
+
+- Register IPC listener for `config:save-window-state` on mount. When received, update configStore and save to disk.
 
 ---
 
@@ -262,7 +262,6 @@ Each section gets unit tests:
 | `src/stores/undoStore.ts` | 1, 6 |
 | `src/main/index.ts` | 8 |
 | `src/main/ipc.ts` | 1, 8 |
-| `src/adapters/fs.ts` | 1 |
-| `src/preload/main.ts` | 1 |
 | `src/renderer/App.tsx` | 4 |
 | `src/renderer/components/options/FormatTesterSection.tsx` | 2 |
+| `src/types/index.ts` | 2 (FormatOptions) |
