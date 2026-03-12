@@ -257,8 +257,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       const term = part.text.toLowerCase();
 
       if (state === 'keepAlways') {
-        if (!config.keepTerms.some((t) => t.toLowerCase() === term)) {
-          updateConfig({ keepTerms: [...config.keepTerms, part.text] });
+        if (!config.keepTerms.some(([m]) => m.toLowerCase() === term)) {
+          updateConfig({ keepTerms: [...config.keepTerms, [part.text, part.text]] });
           void saveConfig();
         }
       } else if (state === 'removeAlways') {

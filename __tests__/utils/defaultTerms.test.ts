@@ -16,11 +16,12 @@ describe('defaultTerms', () => {
   });
 
   it('keep terms includes quality markers', () => {
-    expect(DEFAULT_KEEP_TERMS).toContain('720p');
-    expect(DEFAULT_KEEP_TERMS).toContain('1080p');
-    expect(DEFAULT_KEEP_TERMS).toContain('4K');
-    expect(DEFAULT_KEEP_TERMS).toContain("Director's Cut");
-    expect(DEFAULT_KEEP_TERMS).toContain('Extended');
+    const displayLabels = DEFAULT_KEEP_TERMS.map(([, d]) => d);
+    expect(displayLabels).toContain('720p');
+    expect(displayLabels).toContain('1080p');
+    expect(displayLabels).toContain('4K');
+    expect(displayLabels).toContain("Director's Cut");
+    expect(displayLabels).toContain('Extended');
   });
 
   it('movie extensions includes standard formats', () => {
