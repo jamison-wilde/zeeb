@@ -2,8 +2,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { SearchTermsSection } from '../../../src/renderer/components/options/SearchTermsSection';
 import { DEFAULT_CONFIG } from '../../../src/stores/configStore';
+import type { ZeebConfig } from '../../../src/types';
 
 describe('SearchTermsSection', () => {
   it('renders remove terms as tags', () => {
@@ -15,5 +17,19 @@ describe('SearchTermsSection', () => {
     render(<SearchTermsSection config={DEFAULT_CONFIG} updateConfig={vi.fn()} />);
     expect(screen.getByText('Match')).toBeDefined();
     expect(screen.getByText('Display')).toBeDefined();
+  });
+
+  it('filters keep terms by text input', async () => {
+    const config = {
+      ...DEFAULT_CONFIG,
+      keepTerms: [['720p', '720p'], ['1080p', '1080p'], ['dc', "Director's Cut"]] as Array<[string, string]>,
+    };
+    const updateConfig = vi.fn();
+    render(<SearchTermsSection config={config as ZeebConfig} updateConfig={updateConfig} />);
+    const filterInput = screen.getByPlaceholderText('Filter terms...');
+    await userEvent.type(filterInput, '720');
+    // Only rows containing "720" in match or display should be visible
+    expect(screen.getAllByDisplayValue('720p').length).toBeGreaterThan(0);
+    expect(screen.queryByDisplayValue("Director's Cut")).not.toBeInTheDocument();
   });
 });
