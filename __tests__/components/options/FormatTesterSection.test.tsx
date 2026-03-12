@@ -62,4 +62,32 @@ describe('FormatTesterSection', () => {
     render(<FormatTesterSection config={DEFAULT_CONFIG as any} />);
     expect((screen.getByPlaceholderText(/Enter tt#/) as HTMLInputElement).value).toBe('tt0111161');
   });
+
+  it('shows format mode dropdown with Standard and AKA options', () => {
+    useTesterStore.getState().setResult({
+      tt: 'tt0068646', title: 'The Godfather', year: 1972,
+      rating: 9.2, directors: ['Francis Ford Coppola'], genres: ['Crime', 'Drama'],
+      actors: ['Marlon Brando'], duration: 175, mpaa: 'R', aka: [], posterUrl: null,
+    });
+    render(<FormatTesterSection config={DEFAULT_CONFIG as any} />);
+    const select = screen.getByTestId('format-mode-select') as HTMLSelectElement;
+    expect(select).toBeInTheDocument();
+    const options = Array.from(select.options).map((o) => o.text);
+    expect(options).toContain('Standard');
+    expect(options).toContain('AKA');
+  });
+
+  it('shows DVD options when separateDvdFormat is enabled', () => {
+    useTesterStore.getState().setResult({
+      tt: 'tt0068646', title: 'The Godfather', year: 1972,
+      rating: 9.2, directors: ['Francis Ford Coppola'], genres: ['Crime', 'Drama'],
+      actors: ['Marlon Brando'], duration: 175, mpaa: 'R', aka: [], posterUrl: null,
+    });
+    const config = { ...DEFAULT_CONFIG, separateDvdFormat: true };
+    render(<FormatTesterSection config={config as any} />);
+    const select = screen.getByTestId('format-mode-select') as HTMLSelectElement;
+    const options = Array.from(select.options).map((o) => o.text);
+    expect(options).toContain('DVD');
+    expect(options).toContain('DVD AKA');
+  });
 });

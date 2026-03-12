@@ -66,6 +66,7 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
 
   const [ttInput, setTtInput] = useState(currentTt ?? '');
   const [localError, setLocalError] = useState('');
+  const [previewFormat, setPreviewFormat] = useState<string>('standard');
 
   const isLoading = testerRequest !== null && testerResult === null && testerError === null;
 
@@ -79,8 +80,27 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
     setRequest(tt);
   }, [ttInput, setRequest]);
 
+  const formatOptions: Array<{ value: string; label: string; format: string }> = [
+    { value: 'standard', label: 'Standard', format: config.formatStandard },
+    { value: 'aka', label: 'AKA', format: config.formatAka },
+  ];
+  if (config.separateDvdFormat) {
+    formatOptions.push(
+      { value: 'dvd', label: 'DVD', format: config.formatDvd },
+      { value: 'dvdAka', label: 'DVD AKA', format: config.formatDvdAka },
+    );
+  }
+  if (config.separatePosterFormat) {
+    formatOptions.push({ value: 'poster', label: 'Poster', format: config.formatPoster });
+  }
+  if (config.separateUrlFormat) {
+    formatOptions.push({ value: 'url', label: 'URL', format: config.formatUrl });
+  }
+
+  const activeFormat = formatOptions.find((o) => o.value === previewFormat)?.format ?? config.formatStandard;
+
   const preview = testerResult
-    ? interpolateFormat(config.formatStandard, testerResult, {
+    ? interpolateFormat(activeFormat, testerResult, {
         saved: '(from current file)',
         directorSeparator: config.directorSeparator,
         genreSeparator: config.genreSeparator,
@@ -150,7 +170,19 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
           </table>
 
           <div>
-            <h4 className="text-xs font-semibold text-gray-600 mb-1">Preview</h4>
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="text-xs font-semibold text-gray-600">Preview</h4>
+              <select
+                className="text-xs border border-gray-300 rounded px-1.5 py-0.5"
+                value={previewFormat}
+                onChange={(e) => setPreviewFormat(e.target.value)}
+                data-testid="format-mode-select"
+              >
+                {formatOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
             <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm font-mono">
               {preview}
             </div>
