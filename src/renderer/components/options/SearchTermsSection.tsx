@@ -10,6 +10,7 @@ interface SearchTermsSectionProps {
 }
 
 export function SearchTermsSection({ config, updateConfig }: SearchTermsSectionProps): React.JSX.Element {
+  const [removeFilter, setRemoveFilter] = useState('');
   const [keepFilter, setKeepFilter] = useState('');
 
   return (
@@ -17,10 +18,17 @@ export function SearchTermsSection({ config, updateConfig }: SearchTermsSectionP
       <div>
         <h3 className="text-sm font-bold text-gray-700 mb-2">Remove Terms</h3>
         <p className="text-xs text-gray-500 mb-2">Terms auto-marked as &quot;remove&quot; when parsing filenames.</p>
+        <input
+          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mb-2"
+          placeholder="Filter remove terms..."
+          value={removeFilter}
+          onChange={(e) => setRemoveFilter(e.target.value)}
+        />
         <TagInput
           values={config.removeTerms}
           onChange={(v) => updateConfig({ removeTerms: v })}
           placeholder="Add term..."
+          filter={removeFilter}
         />
       </div>
       <div>
@@ -30,7 +38,7 @@ export function SearchTermsSection({ config, updateConfig }: SearchTermsSectionP
         </p>
         <input
           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mb-2"
-          placeholder="Filter terms..."
+          placeholder="Filter keep terms..."
           value={keepFilter}
           onChange={(e) => setKeepFilter(e.target.value)}
         />

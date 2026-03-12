@@ -26,7 +26,7 @@ describe('SearchTermsSection', () => {
     };
     const updateConfig = vi.fn();
     render(<SearchTermsSection config={config as ZeebConfig} updateConfig={updateConfig} />);
-    const filterInput = screen.getByPlaceholderText('Filter terms...');
+    const filterInput = screen.getByPlaceholderText('Filter keep terms...');
     await userEvent.type(filterInput, '720');
     // Only rows containing "720" in match or display should be visible
     expect(screen.getAllByDisplayValue('720p').length).toBeGreaterThan(0);
@@ -39,7 +39,7 @@ describe('SearchTermsSection', () => {
       keepTerms: [['720p', '720p'], ['dc', "Director's Cut"], ['1080p', '1080p']] as Array<[string, string]>,
     };
     render(<SearchTermsSection config={config as ZeebConfig} updateConfig={vi.fn()} />);
-    const filterInput = screen.getByPlaceholderText('Filter terms...');
+    const filterInput = screen.getByPlaceholderText('Filter keep terms...');
     await userEvent.type(filterInput, 'director');
     // Row with display "Director's Cut" should be visible (matched by display column)
     expect(screen.getByDisplayValue("Director's Cut")).toBeInTheDocument();
@@ -47,5 +47,18 @@ describe('SearchTermsSection', () => {
     // Other rows should be hidden
     expect(screen.queryByDisplayValue('720p')).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue('1080p')).not.toBeInTheDocument();
+  });
+
+  it('filters remove terms by text input', async () => {
+    const config = {
+      ...DEFAULT_CONFIG,
+      removeTerms: ['YIFY', 'SPARKS', 'FLUX', 'RARBG'],
+    };
+    render(<SearchTermsSection config={config as ZeebConfig} updateConfig={vi.fn()} />);
+    const filterInput = screen.getByPlaceholderText('Filter remove terms...');
+    await userEvent.type(filterInput, 'spark');
+    expect(screen.getByText('SPARKS')).toBeInTheDocument();
+    expect(screen.queryByText('YIFY')).not.toBeInTheDocument();
+    expect(screen.queryByText('FLUX')).not.toBeInTheDocument();
   });
 });
