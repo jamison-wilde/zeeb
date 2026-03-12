@@ -140,7 +140,11 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       setSelectedAka('');
       setUseAka(false);
     }
-  }, [metadata]);
+    // Publish current tt to testerStore so Format Tester can use it as default
+    if (instanceId === 0) {
+      useTesterStore.getState().setCurrentTt(metadata?.tt ?? null);
+    }
+  }, [metadata, instanceId]);
 
   useEffect(() => {
     if (!metadata || !currentFile) {

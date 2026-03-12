@@ -50,4 +50,16 @@ describe('FormatTesterSection', () => {
     render(<FormatTesterSection config={DEFAULT_CONFIG as any} />);
     expect(screen.getByText(/Could not fetch/)).toBeInTheDocument();
   });
+
+  it('Godfather button fills tt0068646 into input', async () => {
+    render(<FormatTesterSection config={DEFAULT_CONFIG as any} />);
+    await userEvent.click(screen.getByText('Godfather'));
+    expect((screen.getByPlaceholderText(/Enter tt#/) as HTMLInputElement).value).toBe('tt0068646');
+  });
+
+  it('defaults input to currentTt from store', () => {
+    useTesterStore.getState().setCurrentTt('tt0111161');
+    render(<FormatTesterSection config={DEFAULT_CONFIG as any} />);
+    expect((screen.getByPlaceholderText(/Enter tt#/) as HTMLInputElement).value).toBe('tt0111161');
+  });
 });
