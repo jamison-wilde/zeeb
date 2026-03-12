@@ -128,6 +128,14 @@ function App({ fs }: AppProps): React.JSX.Element {
     [updateFile],
   );
 
+  const handleRemoveRecentFolder = useCallback(
+    (folder: string) => {
+      updateConfig({ recentFolders: config.recentFolders.filter((f) => f !== folder) });
+      void save();
+    },
+    [config.recentFolders, updateConfig, save],
+  );
+
   const handleOptionsClose = useCallback(() => {
     setShowOptions(false);
     void save();
@@ -159,6 +167,7 @@ function App({ fs }: AppProps): React.JSX.Element {
           <FolderBrowser
             onFolderSelected={handleFolderSelected}
             recentFolders={recentFolders}
+            onRemoveRecentFolder={handleRemoveRecentFolder}
             initialRecursionMode={config.recursionMode}
           />
         </div>

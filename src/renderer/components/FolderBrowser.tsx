@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 interface FolderBrowserProps {
   onFolderSelected: (path: string, recursionMode: string) => void;
   recentFolders: string[];
+  onRemoveRecentFolder?: (folder: string) => void;
   initialRecursionMode?: 'none' | 'subfolders' | 'full';
 }
 
@@ -14,7 +15,7 @@ const RECURSION_OPTIONS: { label: string; value: RecursionMode }[] = [
   { label: 'Full', value: 'full' },
 ];
 
-export function FolderBrowser({ onFolderSelected, recentFolders, initialRecursionMode = 'none' }: FolderBrowserProps): React.JSX.Element {
+export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentFolder, initialRecursionMode = 'none' }: FolderBrowserProps): React.JSX.Element {
   const [folderPath, setFolderPath] = useState(recentFolders[0] ?? '');
   const [recursionMode, setRecursionMode] = useState<RecursionMode>(initialRecursionMode);
 
@@ -47,13 +48,21 @@ export function FolderBrowser({ onFolderSelected, recentFolders, initialRecursio
 
       <div data-testid="recent-folders" className="flex gap-2 mb-3 overflow-x-auto max-h-10">
         {recentFolders.map((folder, index) => (
-          <button
-            key={index}
-            className="px-2 py-1 bg-gray-200 rounded whitespace-nowrap text-sm"
-            onClick={() => setFolderPath(folder)}
-          >
-            {folder}
-          </button>
+          <div key={index} className="flex items-center bg-gray-200 rounded text-sm shrink-0">
+            <button
+              className="px-2 py-1 whitespace-nowrap hover:bg-gray-300 rounded-l"
+              onClick={() => setFolderPath(folder)}
+            >
+              {folder}
+            </button>
+            <button
+              className="px-1 py-1 text-red-500 hover:text-red-700 hover:bg-gray-300 rounded-r text-xs font-bold"
+              onClick={() => onRemoveRecentFolder?.(folder)}
+              title="Remove"
+            >
+              x
+            </button>
+          </div>
         ))}
       </div>
 
