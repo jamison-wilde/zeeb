@@ -25,6 +25,7 @@ interface Window {
   };
   zeebDialog: {
     openDirectory(): Promise<string | null>;
+    openFile(): Promise<string | null>;
   };
   zeebApp: {
     getPath(name: string): Promise<string>;

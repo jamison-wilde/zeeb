@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('zeebFs', {
 
 contextBridge.exposeInMainWorld('zeebDialog', {
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
+  openFile: () => ipcRenderer.invoke('dialog:openFile'),
 });
 
 contextBridge.exposeInMainWorld('zeebApp', {

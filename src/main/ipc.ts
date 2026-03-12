@@ -50,6 +50,14 @@ export function registerIpcHandlers(): void {
     return result.filePaths[0];
   });
 
+  ipcMain.handle('dialog:openFile', async (_event) => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+  });
+
   ipcMain.handle('app:getPath', (_event, name: string) => {
     return app.getPath(name as Parameters<typeof app.getPath>[0]);
   });
