@@ -8,6 +8,7 @@ export interface UrlFileOptions {
 export interface WeblocOptions {
   url: string;
   originalPath?: string;
+  includeOriginal?: boolean;
   nfoContent?: string | null;
 }
 
@@ -47,11 +48,12 @@ function escapeXml(str: string): string {
 export function generateWeblocContent(options: WeblocOptions | string): string {
   const url = typeof options === 'string' ? options : options.url;
   const originalPath = typeof options === 'string' ? undefined : options.originalPath;
+  const includeOriginal = typeof options === 'string' ? false : options.includeOriginal;
   const nfoContent = typeof options === 'string' ? undefined : options.nfoContent;
 
   const extraEntries: string[] = [];
 
-  if (originalPath) {
+  if (includeOriginal && originalPath) {
     extraEntries.push(`\t<key>OriginalFilename</key>`);
     extraEntries.push(`\t<string>${escapeXml(originalPath)}</string>`);
   }

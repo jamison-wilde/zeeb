@@ -98,6 +98,7 @@ describe('urlFileWriter', () => {
       const content = generateWeblocContent({
         url: 'http://www.imdb.com/title/tt0111161/',
         originalPath: '/movies/old.mkv',
+        includeOriginal: true,
         nfoContent: 'Title: The Shawshank Redemption',
       });
       expect(content).toContain('<key>URL</key>');
@@ -106,6 +107,15 @@ describe('urlFileWriter', () => {
       expect(content).toContain('<string>/movies/old.mkv</string>');
       expect(content).toContain('<key>NFOContent</key>');
       expect(content).toContain('Title: The Shawshank Redemption');
+    });
+
+    it('omits OriginalFilename in webloc when includeOriginal is false', () => {
+      const content = generateWeblocContent({
+        url: 'http://www.imdb.com/title/tt0111161/',
+        originalPath: '/movies/old.mkv',
+        includeOriginal: false,
+      });
+      expect(content).not.toContain('<key>OriginalFilename</key>');
     });
 
     it('generates webloc without optional fields when omitted', () => {
