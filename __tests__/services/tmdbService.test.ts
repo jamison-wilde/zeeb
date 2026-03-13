@@ -6,20 +6,42 @@ global.fetch = vi.fn() as ReturnType<typeof vi.fn>;
 describe('tmdbService', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('searches TMDB for movie posters by IMDB id', async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        movie_results: [{
-          poster_path: '/abc123.jpg',
-          title: 'The Shawshank Redemption',
-        }],
-      }),
-    });
+  it('fetches all poster images via find + images endpoints', async () => {
+    const mockFetch = global.fetch as ReturnType<typeof vi.fn>;
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          movie_results: [{ id: 278, poster_path: '/main.jpg' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          posters: [
+            { file_path: '/en_poster.jpg' },
+            { file_path: '/de_poster.jpg' },
+            { file_path: '/fr_poster.jpg' },
+          ],
+        }),
+      });
 
     const results = await searchPosters('tt0111161', 'https://api.themoviedb.org/3/', 'fake-key');
-    expect(results).toHaveLength(1);
-    expect(results[0]).toBe('/abc123.jpg');
+    expect(results).toHaveLength(3);
+    expect(results[0]).toBe('/en_poster.jpg');
+    expect(results[2]).toBe('/fr_poster.jpg');
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[1][0]).toContain('/movie/278/images');
+  });
+
+  it('returns empty array when find returns no movie results', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ movie_results: [] }),
+    });
+
+    const results = await searchPosters('tt9999999', 'https://api.themoviedb.org/3/', 'fake-key');
+    expect(results).toEqual([]);
   });
 
   it('builds full poster URL from path', () => {

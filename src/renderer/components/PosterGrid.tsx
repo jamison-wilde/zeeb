@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { buildPosterUrl } from '../../services/tmdbService';
 
 interface PosterGridProps {
@@ -10,14 +10,58 @@ interface PosterGridProps {
 
 export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: PosterGridProps): React.JSX.Element | null {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [tipPos, setTipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setTipPos({ x, y });
+  }, []);
 
   if (posterPaths.length === 0) return null;
 
+  // Position tooltip: prefer to the right of cursor, flip left if near right edge
+  // Prefer above cursor origin, shift down if near top
+  const tipStyle: React.CSSProperties = {
+    position: 'absolute',
+    zIndex: 20,
+    pointerEvents: 'none',
+  };
+
+  if (containerRef.current && hoverIndex !== null) {
+    const rect = containerRef.current.getBoundingClientRect();
+    const tipWidth = 320;
+    const tipHeight = 480;
+    const pad = 16;
+
+    // Horizontal: prefer right of cursor
+    let left = tipPos.x + pad;
+    if (left + tipWidth > rect.width) {
+      left = tipPos.x - tipWidth - pad;
+    }
+    if (left < 0) left = 0;
+
+    // Vertical: align top with cursor, shift down if would go above container
+    let top = tipPos.y - tipHeight / 2;
+    if (top < 0) top = 0;
+    if (top + tipHeight > rect.height) top = Math.max(0, rect.height - tipHeight);
+
+    tipStyle.left = left;
+    tipStyle.top = top;
+  }
+
   return (
-    <div className={`flex gap-2 p-2 relative ${compact ? 'overflow-x-auto flex-nowrap' : 'flex-wrap'}`}>
+    <div
+      ref={containerRef}
+      className={`flex gap-2 p-2 relative ${compact ? 'overflow-x-auto flex-nowrap' : 'flex-wrap'}`}
+      onMouseMove={hoverIndex !== null ? handleMouseMove : undefined}
+    >
       {posterPaths.map((path, i) => (
         <div
-          key={path}
+          key={`${path}-${i}`}
           className={`shrink-0 cursor-pointer border-2 rounded ${
             selectedIndex === i ? 'border-blue-500' : 'border-transparent'
           }`}
@@ -33,12 +77,12 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
         </div>
       ))}
       {hoverIndex !== null && (
-        <div className="absolute z-10 top-0 right-0 p-2 bg-white shadow-lg rounded border border-gray-200">
+        <div style={tipStyle} className="bg-white shadow-lg rounded border border-gray-200 p-1">
           <img
             data-testid="poster-hover-preview"
             src={buildPosterUrl(posterPaths[hoverIndex], 'w780')}
             alt="Preview"
-            className="max-h-[400px] rounded"
+            className="max-h-[460px] rounded"
           />
         </div>
       )}
