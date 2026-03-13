@@ -20,6 +20,8 @@ import { interpolateFormat } from '../../services/formatEngine';
 import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
 import { generateUrlFileContent, generateWeblocContent } from '../../services/urlFileWriter';
 import { createLogger } from '../../services/logger';
+import { searchPosters } from '../../services/tmdbService';
+import { PosterGrid } from './PosterGrid';
 
 interface RenamerProps {
   instanceId: number;
@@ -50,6 +52,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const [selectedTt, setSelectedTt] = useState('');
   const [useAka, setUseAka] = useState(false);
   const [selectedAka, setSelectedAka] = useState('');
+  const [selectedPosterIndex, setSelectedPosterIndex] = useState<number | null>(null);
 
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
   const movieMatches = useStore(storeRef.current, (s) => s.movieMatches);
@@ -63,6 +66,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const appendAkas = useStore(storeRef.current, (s) => s.appendAkas);
   const setPreviewFilename = useStore(storeRef.current, (s) => s.setPreviewFilename);
   const reset = useStore(storeRef.current, (s) => s.reset);
+  const posterPaths = useStore(storeRef.current, (s) => s.posterPaths);
+  const setPosterPaths = useStore(storeRef.current, (s) => s.setPosterPaths);
 
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
@@ -271,6 +276,19 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     };
   }, [webviewEl, instanceId, config.extractionPatterns, config.htmlZoom, setMovieMatches, setMetadata, setTesterResult]);
 
+  useEffect(() => {
+    if (!metadata?.tt) {
+      setPosterPaths([]);
+      setSelectedPosterIndex(null);
+      return;
+    }
+    searchPosters(metadata.tt, config.urlTmdbApi, config.tmdbApiKey)
+      .then((paths) => {
+        setPosterPaths(paths);
+        setSelectedPosterIndex(paths.length > 0 ? 0 : null);
+      });
+  }, [metadata?.tt, config.urlTmdbApi, config.tmdbApiKey, setPosterPaths]);
+
   // Handle Format Tester requests — only first Renamer instance responds
   useEffect(() => {
     if (!testerRequest || !webviewEl || instanceId !== 0) return;
@@ -369,6 +387,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
 
   const advance = useCallback(() => {
     reset();
+    setSelectedPosterIndex(null);
     onComplete?.();
   }, [reset, onComplete]);
 
@@ -560,11 +579,22 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
               />
             )}
             {!config.showWebView && (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Poster view coming soon
-              </div>
+              <PosterGrid
+                posterPaths={posterPaths}
+                selectedIndex={selectedPosterIndex}
+                onSelect={setSelectedPosterIndex}
+                compact={false}
+              />
             )}
           </div>
+            {config.showWebView && (
+              <PosterGrid
+                posterPaths={posterPaths}
+                selectedIndex={selectedPosterIndex}
+                onSelect={setSelectedPosterIndex}
+                compact={true}
+              />
+            )}
         </div>
       </div>
 
