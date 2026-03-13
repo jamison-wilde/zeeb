@@ -74,6 +74,10 @@ function App({ fs }: AppProps): React.JSX.Element {
     window.zeebMenu.onReleaseNotes(() => setShowReleaseNotes(true));
   }, []);
 
+  const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
+
+  const updateConfig = useConfigStore((s) => s.updateConfig);
+
   useEffect(() => {
     const cleanup = window.zeebMenu.onWindowStateChanged((state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => {
       updateConfig(state);
@@ -81,10 +85,6 @@ function App({ fs }: AppProps): React.JSX.Element {
     });
     return cleanup;
   }, [updateConfig, save]);
-
-  const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
-
-  const updateConfig = useConfigStore((s) => s.updateConfig);
 
   const handleFolderSelected = useCallback(
     async (path: string, recursionMode: string) => {

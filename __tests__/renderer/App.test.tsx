@@ -10,6 +10,7 @@ const mockZeebMenu = {
   onOptions: vi.fn(),
   onUndo: vi.fn(),
   onReleaseNotes: vi.fn(),
+  onWindowStateChanged: vi.fn(() => () => {}),
 };
 
 describe('App', () => {
