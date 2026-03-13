@@ -6,7 +6,7 @@ interface RenamerStoreState {
   searchParts: SearchPart[];
   movieMatches: MovieMatch[];
   metadata: MovieMetadata | null;
-  posterUrls: string[];
+  posterPaths: string[];
   previewFilename: string;
 
   setCurrentIndex: (index: number) => void;
@@ -16,7 +16,7 @@ interface RenamerStoreState {
   setMovieMatches: (matches: MovieMatch[]) => void;
   setMetadata: (metadata: MovieMetadata | null) => void;
   appendAkas: (akas: string[]) => void;
-  setPosterUrls: (urls: string[]) => void;
+  setPosterPaths: (paths: string[]) => void;
   setPreviewFilename: (filename: string) => void;
   reset: () => void;
 }
@@ -26,7 +26,7 @@ const INITIAL_STATE = {
   searchParts: [] as SearchPart[],
   movieMatches: [] as MovieMatch[],
   metadata: null as MovieMetadata | null,
-  posterUrls: [] as string[],
+  posterPaths: [] as string[],
   previewFilename: '',
 };
 
@@ -81,8 +81,8 @@ export function createRenamerStore(): StoreApi<RenamerStoreState> {
       });
     },
 
-    setPosterUrls(urls: string[]) {
-      set({ posterUrls: urls });
+    setPosterPaths(paths: string[]) {
+      set({ posterPaths: paths });
     },
 
     setPreviewFilename(filename: string) {
