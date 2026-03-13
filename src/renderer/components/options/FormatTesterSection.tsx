@@ -109,6 +109,7 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
         swapThe: config.swapThe,
         titleSpaceChar: config.titleSpaceChar,
         mpaaMap: config.mpaaMap,
+        theWord: config.theWord,
       })
     : '';
 

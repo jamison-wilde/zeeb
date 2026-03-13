@@ -10,14 +10,21 @@ export interface FormatOptions {
   swapThe?: boolean;
   titleSpaceChar?: string;
   mpaaMap?: Array<[string, string]>;
+  theWord?: string;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function applyTheHandling(title: string, options: FormatOptions): string {
   let result = title;
+  const word = options.theWord ?? 'The';
+  const escaped = escapeRegExp(word);
   if (options.removeThe) {
-    result = result.replace(/^The\s+/i, '');
+    result = result.replace(new RegExp(`^${escaped}\\s+`, 'i'), '');
   } else if (options.swapThe) {
-    result = result.replace(/^(The)\s+(.+)$/i, '$2, $1');
+    result = result.replace(new RegExp(`^(${escaped})\\s+(.+)$`, 'i'), '$2, $1');
   }
   if (options.titleSpaceChar) {
     result = result.replace(/ /g, options.titleSpaceChar);

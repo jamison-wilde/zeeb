@@ -83,6 +83,29 @@ describe('interpolateFormat', () => {
     const weirdTitle = { ...meta, title: 'What If...?' };
     expect(interpolateFormat('<title>', weirdTitle, { saved: '' })).toBe('What If..');
   });
+
+  it('removes custom theWord "Der" from title', () => {
+    const german = { ...meta, title: 'Der Untergang' };
+    const result = interpolateFormat('<title>', german, { saved: '', removeThe: true, theWord: 'Der' });
+    expect(result).toBe('Untergang');
+  });
+
+  it('swaps custom theWord "Le" to end', () => {
+    const french = { ...meta, title: 'Le Fabuleux Destin' };
+    const result = interpolateFormat('<title>', french, { saved: '', swapThe: true, theWord: 'Le' });
+    expect(result).toBe('Fabuleux Destin, Le');
+  });
+
+  it('defaults theWord to "The" when not provided', () => {
+    const result = interpolateFormat('<title>', meta, { saved: '', removeThe: true });
+    expect(result).toBe('Shawshank Redemption');
+  });
+
+  it('escapes regex special chars in theWord', () => {
+    const weird = { ...meta, title: 'A+ Movie Title' };
+    const result = interpolateFormat('<title>', weird, { saved: '', removeThe: true, theWord: 'A+' });
+    expect(result).toBe('Movie Title');
+  });
 });
 
 describe('interpolateFormat mpaaMap', () => {
