@@ -15,7 +15,7 @@ export async function searchPosters(
 
     return movieResults
       .filter(r => r.poster_path)
-      .map(r => buildPosterUrl(r.poster_path!, 'w500'));
+      .map(r => r.poster_path!);
   } catch {
     return [];
   }
@@ -23,4 +23,14 @@ export async function searchPosters(
 
 export function buildPosterUrl(posterPath: string, size: string): string {
   return `${TMDB_IMAGE_BASE}${size}${posterPath}`;
+}
+
+export async function fetchPosterBinary(posterPath: string, size: string): Promise<Uint8Array> {
+  const url = buildPosterUrl(posterPath, size);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch poster: ${response.status}`);
+  }
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
 }
