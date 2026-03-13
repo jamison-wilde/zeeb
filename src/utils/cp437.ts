@@ -54,3 +54,16 @@ export function cp437ToUnicode(buffer: Buffer): string {
   }
   return result;
 }
+
+/**
+ * Converts a latin1-encoded string (from readFile with 'latin1' encoding)
+ * to Unicode using the CP437 table. Each character's charCode is used as
+ * the byte index into the CP437 lookup table.
+ */
+export function cp437StringToUnicode(str: string): string {
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+    result += CP437_TABLE[str.charCodeAt(i)];
+  }
+  return result;
+}

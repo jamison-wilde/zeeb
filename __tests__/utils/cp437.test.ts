@@ -1,4 +1,4 @@
-import { cp437ToUnicode } from '../../src/utils/cp437';
+import { cp437ToUnicode, cp437StringToUnicode } from '../../src/utils/cp437';
 
 describe('cp437ToUnicode', () => {
   it('converts standard ASCII unchanged', () => {
@@ -15,5 +15,13 @@ describe('cp437ToUnicode', () => {
 
   it('handles empty input', () => {
     expect(cp437ToUnicode(Buffer.from([]))).toBe('');
+  });
+});
+
+describe('cp437StringToUnicode', () => {
+  it('converts a latin1-encoded string using CP437 table', () => {
+    // 0xDA = ┌, 0xC4 = ─, 0xBF = ┐ in CP437
+    const latin1 = String.fromCharCode(0xDA, 0xC4, 0xBF);
+    expect(cp437StringToUnicode(latin1)).toBe('┌─┐');
   });
 });
