@@ -1,14 +1,33 @@
 import { app, BrowserWindow, Menu } from 'electron';
 import path from 'node:path';
+import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+function loadWindowState(): { width: number; height: number; maximized: boolean } {
+  const defaults = { width: 1024, height: 768, maximized: false };
+  try {
+    const configDir = app.getPath('userData');
+    const configPath = path.join(configDir, 'zeeb-config.json');
+    const raw = fs.readFileSync(configPath, 'utf-8');
+    const config = JSON.parse(raw);
+    return {
+      width: typeof config.windowWidth === 'number' ? config.windowWidth : defaults.width,
+      height: typeof config.windowHeight === 'number' ? config.windowHeight : defaults.height,
+      maximized: typeof config.windowMaximized === 'boolean' ? config.windowMaximized : defaults.maximized,
+    };
+  } catch {
+    return defaults;
+  }
+}
+
 function createWindow(): void {
+  const windowState = loadWindowState();
   const mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: windowState.width,
+    height: windowState.height,
     webPreferences: {
       preload: path.join(__dirname, 'main.js'),
       contextIsolation: true,
@@ -16,6 +35,10 @@ function createWindow(): void {
       webviewTag: true,
     },
   });
+
+  if (windowState.maximized) {
+    mainWindow.maximize();
+  }
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -54,6 +77,27 @@ function createWindow(): void {
     { label: 'Help', role: 'help' },
   ]);
   Menu.setApplicationMenu(menu);
+
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  mainWindow.on('resize', () => {
+    if (mainWindow.isMaximized()) return;
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const [width, height] = mainWindow.getSize();
+      mainWindow.webContents.send('config:window-state', { windowWidth: width, windowHeight: height });
+    }, 500);
+  });
+
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('config:window-state', { windowMaximized: true });
+  });
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('config:window-state', { windowMaximized: false });
+    const [width, height] = mainWindow.getSize();
+    mainWindow.webContents.send('config:window-state', { windowWidth: width, windowHeight: height });
+  });
 }
 
 app.whenReady().then(() => {

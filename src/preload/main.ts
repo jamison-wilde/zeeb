@@ -28,4 +28,9 @@ contextBridge.exposeInMainWorld('zeebMenu', {
   onOptions: (callback: () => void) => ipcRenderer.on('menu:options', callback),
   onUndo: (callback: () => void) => ipcRenderer.on('menu:undo', callback),
   onReleaseNotes: (callback: () => void) => ipcRenderer.on('menu:release-notes', callback),
+  onWindowStateChanged: (callback: (state: any) => void) => {
+    const handler = (_event: any, state: any) => callback(state);
+    ipcRenderer.on('config:window-state', handler);
+    return () => ipcRenderer.removeListener('config:window-state', handler);
+  },
 });
