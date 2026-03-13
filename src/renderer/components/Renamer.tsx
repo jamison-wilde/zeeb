@@ -22,6 +22,8 @@ import { generateUrlFileContent, generateWeblocContent } from '../../services/ur
 import { createLogger } from '../../services/logger';
 import { searchPosters, buildPosterUrl } from '../../services/tmdbService';
 import { PosterGrid } from './PosterGrid';
+import { NfoViewer } from './NfoViewer';
+import { cp437StringToUnicode } from '../../utils/cp437';
 
 interface RenamerProps {
   instanceId: number;
@@ -53,6 +55,8 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const [useAka, setUseAka] = useState(false);
   const [selectedAka, setSelectedAka] = useState('');
   const [selectedPosterIndex, setSelectedPosterIndex] = useState<number | null>(null);
+  const [nfoViewerOpen, setNfoViewerOpen] = useState(false);
+  const [nfoContent, setNfoContent] = useState('');
 
   const searchParts = useStore(storeRef.current, (s) => s.searchParts);
   const movieMatches = useStore(storeRef.current, (s) => s.movieMatches);
@@ -650,6 +654,21 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
               {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : ''}
             </span>
             <span className="flex-1" />
+            {currentFile.nfoPath && (
+              <button
+                data-testid="nfo-button"
+                className="px-2 py-0.5 bg-gray-600 text-white text-[11px] font-bold rounded hover:bg-gray-700 shrink-0"
+                onClick={async () => {
+                  try {
+                    const raw = await fs.readFile(currentFile.nfoPath!, 'latin1');
+                    setNfoContent(cp437StringToUnicode(raw));
+                    setNfoViewerOpen(true);
+                  } catch { /* silently skip */ }
+                }}
+              >
+                NFO
+              </button>
+            )}
             <button
               data-testid="search-button"
               className="px-2 py-0.5 bg-blue-500 text-white text-[11px] font-bold rounded hover:bg-blue-600 shrink-0"
@@ -702,6 +721,11 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
           onSkip={handleSkip}
         />
       </div>
+      <NfoViewer
+        visible={nfoViewerOpen}
+        content={nfoContent}
+        onClose={() => setNfoViewerOpen(false)}
+      />
     </div>
   );
 }

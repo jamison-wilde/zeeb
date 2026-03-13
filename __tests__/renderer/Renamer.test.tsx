@@ -51,4 +51,19 @@ describe('Renamer', () => {
     );
     expect(screen.getByTestId('file-list')).toBeDefined();
   });
+
+  it('shows NFO button when file has nfoPath', () => {
+    const fileWithNfo = { ...testFile, nfoPath: '/movies/The.Matrix.1999.nfo', hasNfo: true };
+    render(
+      <Renamer instanceId={0} visible={true} fileIndex={0} files={[fileWithNfo]} fs={mockFs} />,
+    );
+    expect(screen.getByTestId('nfo-button')).toBeDefined();
+  });
+
+  it('hides NFO button when file has no nfoPath', () => {
+    render(
+      <Renamer instanceId={0} visible={true} fileIndex={0} files={[testFile]} fs={mockFs} />,
+    );
+    expect(screen.queryByTestId('nfo-button')).toBeNull();
+  });
 });
