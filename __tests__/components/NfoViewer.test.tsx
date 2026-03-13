@@ -1,11 +1,53 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { NfoViewer } from '../../src/renderer/components/NfoViewer';
 
 describe('NfoViewer', () => {
+  beforeEach(() => {
+    Object.assign(navigator, {
+      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+  });
+
+  it('renders nothing when not visible', () => {
+    const { container } = render(
+      <NfoViewer visible={false} content="test" onClose={vi.fn()} />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
   it('renders NFO content', () => {
     render(<NfoViewer visible={true} content="╔═══╗" onClose={vi.fn()} />);
     expect(screen.getByText('╔═══╗')).toBeDefined();
+  });
+
+  it('detects URLs and renders copy icons', () => {
+    const content = 'Visit https://example.com for info';
+    render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
+    expect(screen.getByText('https://example.com')).toBeDefined();
+    expect(screen.getByTestId('copy-url-0')).toBeDefined();
+  });
+
+  it('does not include trailing punctuation in detected URLs', () => {
+    const content = 'See (https://example.com).';
+    render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
+    expect(screen.getByText('https://example.com')).toBeDefined();
+  });
+
+  it('copies URL to clipboard on icon click', async () => {
+    const content = 'Visit https://example.com for info';
+    render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('copy-url-0'));
+    });
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com');
+  });
+
+  it('closes on Escape key', () => {
+    const onClose = vi.fn();
+    render(<NfoViewer visible={true} content="test" onClose={onClose} />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
   });
 });
