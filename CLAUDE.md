@@ -65,5 +65,17 @@ EOF
 - Avoid passive constructions unless the subject is unknown
 - Present tense for code behavior: "returns", not "will return"
 
+# Execution Rules
+
+## Windows Command Execution
+- Execute ONE command per Bash call, never chain with &&
+- After each command, verify success before continuing
+- If a command fails, stop and report the error with the exit code
+- Do not use && || ; to chain commands
+- Do not use cd && somecommand — instead set the working directory separately
+
+## Git Commands
+- Run git commands one at a time
+- Always check status after operations that modify files
 
 
