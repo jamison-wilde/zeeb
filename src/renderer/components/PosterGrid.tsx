@@ -23,8 +23,11 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
 
   if (posterPaths.length === 0) return null;
 
+  const thumbSize = compact ? 'w92' : 'w185';
+  const thumbWidth = compact ? 'w-[92px]' : 'w-[185px]';
+  const thumbHeight = compact ? 'h-[138px]' : 'h-[278px]';
+
   // Position tooltip: prefer to the right of cursor, flip left if near right edge
-  // Prefer above cursor origin, shift down if near top
   const tipStyle: React.CSSProperties = {
     position: 'absolute',
     zIndex: 20,
@@ -37,14 +40,12 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
     const tipHeight = 480;
     const pad = 16;
 
-    // Horizontal: prefer right of cursor
     let left = tipPos.x + pad;
     if (left + tipWidth > rect.width) {
       left = tipPos.x - tipWidth - pad;
     }
     if (left < 0) left = 0;
 
-    // Vertical: align top with cursor, shift down if would go above container
     let top = tipPos.y - tipHeight / 2;
     if (top < 0) top = 0;
     if (top + tipHeight > rect.height) top = Math.max(0, rect.height - tipHeight);
@@ -56,7 +57,10 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
   return (
     <div
       ref={containerRef}
-      className={`flex gap-2 p-2 relative ${compact ? 'overflow-x-auto flex-nowrap' : 'flex-wrap'}`}
+      className={`flex gap-2 p-2 relative ${
+        compact ? 'overflow-x-auto flex-nowrap' : 'flex-wrap overflow-y-auto'
+      }`}
+      style={compact ? undefined : { maxHeight: '100%' }}
       onMouseMove={hoverIndex !== null ? handleMouseMove : undefined}
     >
       {posterPaths.map((path, i) => (
@@ -70,9 +74,10 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
           onMouseLeave={() => setHoverIndex(null)}
         >
           <img
-            src={buildPosterUrl(path, 'w185')}
+            src={buildPosterUrl(path, thumbSize)}
             alt={`Poster ${i + 1}`}
-            className="w-[92px] h-[138px] object-cover rounded"
+            loading="lazy"
+            className={`${thumbWidth} ${thumbHeight} object-cover rounded`}
           />
         </div>
       ))}

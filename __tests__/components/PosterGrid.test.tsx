@@ -13,13 +13,29 @@ describe('PosterGrid', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders thumbnail images with w185 URLs', () => {
+  it('renders thumbnail images with w185 URLs in full mode', () => {
     render(
       <PosterGrid posterPaths={paths} selectedIndex={null} onSelect={vi.fn()} compact={false} />,
     );
     const images = screen.getAllByRole('img');
     expect(images).toHaveLength(3);
     expect((images[0] as HTMLImageElement).src).toContain('/t/p/w185/abc.jpg');
+  });
+
+  it('renders smaller w92 thumbnails in compact mode', () => {
+    render(
+      <PosterGrid posterPaths={paths} selectedIndex={null} onSelect={vi.fn()} compact={true} />,
+    );
+    const images = screen.getAllByRole('img');
+    expect((images[0] as HTMLImageElement).src).toContain('/t/p/w92/abc.jpg');
+  });
+
+  it('uses lazy loading on thumbnail images', () => {
+    render(
+      <PosterGrid posterPaths={paths} selectedIndex={null} onSelect={vi.fn()} compact={false} />,
+    );
+    const images = screen.getAllByRole('img');
+    expect(images[0].getAttribute('loading')).toBe('lazy');
   });
 
   it('highlights selected poster with blue border', () => {
@@ -48,12 +64,13 @@ describe('PosterGrid', () => {
     expect(wrapper.className).toContain('flex-nowrap');
   });
 
-  it('uses wrapping grid in full mode', () => {
+  it('uses wrapping scrollable grid in full mode', () => {
     const { container } = render(
       <PosterGrid posterPaths={paths} selectedIndex={0} onSelect={vi.fn()} compact={false} />,
     );
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toContain('flex-wrap');
+    expect(wrapper.className).toContain('overflow-y-auto');
   });
 
   it('shows hover preview with w780 URL on mouseenter', () => {
