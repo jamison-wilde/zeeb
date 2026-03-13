@@ -93,6 +93,7 @@ function App({ fs }: AppProps): React.JSX.Element {
         path,
         config.movieExtensions,
         recursionMode as 'none' | 'subfolders' | 'full',
+        { detectDvd: config.detectDvd },
       );
       setFiles(results);
       // Find first two visible files for the interleaved renamers

@@ -3,6 +3,10 @@ import { MovieFile } from '../types';
 
 type RecursionMode = 'none' | 'subfolders' | 'full';
 
+interface ScanOptions {
+  detectDvd?: boolean;
+}
+
 let idCounter = 0;
 
 function generateId(): string {
@@ -55,6 +59,7 @@ export async function scanDirectory(
   path: string,
   extensions: string[],
   recursionMode: RecursionMode,
+  options?: ScanOptions,
 ): Promise<MovieFile[]> {
   const results: MovieFile[] = [];
   const entries = await fs.readdir(path);
@@ -88,7 +93,8 @@ export async function scanDirectory(
         posterPath,
       });
     } else if (entry.isDirectory) {
-      const dvd = await isDvdOrBluray(fs, entry.path);
+      const detectDvd = options?.detectDvd ?? true;
+      const dvd = detectDvd ? await isDvdOrBluray(fs, entry.path) : false;
       if (dvd) {
         const baseName = entry.name;
         const folder = getFolder(entry.path);
@@ -117,6 +123,7 @@ export async function scanDirectory(
           entry.path,
           extensions,
           recursionMode === 'full' ? 'full' : 'none',
+          options,
         );
         results.push(...subResults);
       }

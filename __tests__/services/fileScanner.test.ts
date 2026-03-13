@@ -61,4 +61,20 @@ describe('fileScanner', () => {
     const files = await scanDirectory(fs, '/movies', ['mkv'], 'subfolders');
     expect(files).toHaveLength(2);
   });
+
+  it('skips DVD detection when detectDvd is false', async () => {
+    const dvdFiles: DirEntry[] = [
+      mkEntry('MyMovie', '/movies/MyMovie', false),
+    ];
+    const subFiles: DirEntry[] = [
+      mkEntry('movie.mkv', '/movies/MyMovie/movie.mkv', true, 2000),
+    ];
+    (fs.readdir as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(dvdFiles)
+      .mockResolvedValueOnce(subFiles);
+    const files = await scanDirectory(fs, '/movies', ['mkv'], 'subfolders', { detectDvd: false });
+    expect(files.every((f) => !f.isDvdFolder)).toBe(true);
+    expect(files).toHaveLength(1);
+    expect(files[0].name).toBe('movie.mkv');
+  });
 });
