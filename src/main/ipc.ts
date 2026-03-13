@@ -42,6 +42,10 @@ export function registerIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle('fs:writeBinaryFile', async (_event, filePath: string, data: Uint8Array) => {
+    await fs.writeFile(filePath, Buffer.from(data));
+  });
+
   ipcMain.handle('dialog:openDirectory', async (_event) => {
     const result = await dialog.showOpenDialog({
       properties: ['openDirectory'],

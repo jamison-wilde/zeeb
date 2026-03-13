@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('zeebFs', {
   rename: (oldPath: string, newPath: string) => ipcRenderer.invoke('fs:rename', oldPath, newPath),
   unlink: (filePath: string) => ipcRenderer.invoke('fs:unlink', filePath),
   exists: (filePath: string) => ipcRenderer.invoke('fs:exists', filePath),
+  writeBinaryFile: (filePath: string, data: Uint8Array) => ipcRenderer.invoke('fs:writeBinaryFile', filePath, data),
 });
 
 contextBridge.exposeInMainWorld('zeebDialog', {
