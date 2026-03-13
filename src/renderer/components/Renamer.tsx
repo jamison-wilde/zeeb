@@ -282,11 +282,14 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       setSelectedPosterIndex(null);
       return;
     }
+    let cancelled = false;
     searchPosters(metadata.tt, config.urlTmdbApi, config.tmdbApiKey)
       .then((paths) => {
+        if (cancelled) return;
         setPosterPaths(paths);
         setSelectedPosterIndex(paths.length > 0 ? 0 : null);
       });
+    return () => { cancelled = true; };
   }, [metadata?.tt, config.urlTmdbApi, config.tmdbApiKey, setPosterPaths]);
 
   // Handle Format Tester requests — only first Renamer instance responds
@@ -490,7 +493,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       }
 
       // Save poster if enabled and selected
-      if (config.createPoster && selectedPosterIndex !== null && posterPaths.length > 0) {
+      if (config.createPoster && selectedPosterIndex !== null && posterPaths.length > 0 && metadata) {
         try {
           const posterData = await fetchPosterBinary(posterPaths[selectedPosterIndex], config.posterSaveSize);
 
