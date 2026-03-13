@@ -93,7 +93,40 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
                 Place poster inside DVD folder
               </span>
             </label>
+            <div className="flex items-center gap-2 mt-2">
+              <label className={`text-sm ${!config.createPoster ? 'text-gray-400' : ''}`}>
+                Save size:
+              </label>
+              <select
+                data-testid="poster-save-size"
+                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                value={config.posterSaveSize}
+                disabled={!config.createPoster}
+                onChange={(e) => updateConfig({ posterSaveSize: e.target.value })}
+              >
+                <option value="w185">w185 (185px)</option>
+                <option value="w342">w342 (342px)</option>
+                <option value="w500">w500 (500px)</option>
+                <option value="w780">w780 (780px)</option>
+                <option value="original">Original</option>
+              </select>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-bold text-gray-700 mb-3">TMDB</h3>
+        <div className="space-y-2">
+          <label className="text-sm text-gray-600">API Key:</label>
+          <input
+            data-testid="tmdb-api-key"
+            type="text"
+            className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono"
+            value={config.tmdbApiKey}
+            onChange={(e) => updateConfig({ tmdbApiKey: e.target.value })}
+            placeholder="TMDB API key..."
+          />
         </div>
       </div>
 
