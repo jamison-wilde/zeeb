@@ -26,12 +26,12 @@ export function BrowserSection({ config, updateConfig }: BrowserSectionProps): R
             checked={config.showWebView}
             onChange={(e) => updateConfig({ showWebView: e.target.checked })}
           />
-          <span className="text-sm">Show IMDB web browser</span>
+          <span className="text-sm">Show Browser</span>
         </label>
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">HTML Zoom</h3>
+        <h3 className="text-sm font-bold text-gray-700 mb-3">Browser Zoom</h3>
         <div className="flex items-center gap-3">
           <button
             className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm font-bold"
