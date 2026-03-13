@@ -45,6 +45,7 @@ describe('Full rename pipeline', () => {
     const urlContent = generateUrlFileContent({
       url: `https://www.imdb.com/title/${meta.tt}/`,
       originalPath: '/movies/old.mkv',
+      includeOriginal: true,
       nfoContent: null,
     });
     expect(urlContent).toContain(meta.tt);
