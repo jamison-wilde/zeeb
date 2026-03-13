@@ -20,7 +20,7 @@ import { interpolateFormat } from '../../services/formatEngine';
 import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
 import { generateUrlFileContent, generateWeblocContent } from '../../services/urlFileWriter';
 import { createLogger } from '../../services/logger';
-import { searchPosters } from '../../services/tmdbService';
+import { searchPosters, fetchPosterBinary } from '../../services/tmdbService';
 import { PosterGrid } from './PosterGrid';
 
 interface RenamerProps {
@@ -489,6 +489,44 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
         }
       }
 
+      // Save poster if enabled and selected
+      if (config.createPoster && selectedPosterIndex !== null && posterPaths.length > 0) {
+        try {
+          const posterData = await fetchPosterBinary(posterPaths[selectedPosterIndex], config.posterSaveSize);
+
+          let posterFolder = workingFolder;
+          if (currentFile.isDvdFolder && !config.posterInDvdFolder) {
+            const parts = workingFolder.split(/[\\/]/);
+            posterFolder = parts.slice(0, -1).join(sep);
+          }
+
+          let posterBaseName = newBase;
+          if (config.separatePosterFormat && config.formatPoster) {
+            posterBaseName = interpolateFormat(config.formatPoster, metadata!, {
+              saved: '',
+              directorSeparator: config.directorSeparator,
+              genreSeparator: config.genreSeparator,
+              starSeparator: config.starSeparator,
+              removeThe: config.removeThe,
+              swapThe: config.swapThe,
+              titleSpaceChar: config.titleSpaceChar,
+              mpaaMap: config.mpaaMap,
+              theWord: config.theWord,
+            });
+          }
+
+          const posterSavePath = `${posterFolder}${sep}${posterBaseName}.jpg`;
+          await fs.writeBinaryFile(posterSavePath, posterData);
+          undoStore?.getState().addEntry({
+            type: 'create',
+            sourcePath: posterSavePath,
+            destPath: posterSavePath,
+          });
+        } catch {
+          // Poster save failed — continue with rename
+        }
+      }
+
       undoStore?.getState().commitTransaction(config.maxUndos);
       onFileRenamed?.(currentFile.id, previewFilename, `${workingFolder}${sep}${previewFilename}`);
 
@@ -501,7 +539,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     }
 
     advance();
-  }, [currentFile, previewFilename, metadata, fs, undoStore, onFileRenamed, config, advance]);
+  }, [currentFile, previewFilename, metadata, fs, undoStore, onFileRenamed, config, advance, selectedPosterIndex, posterPaths]);
 
   const handleSkip = useCallback(() => {
     advance();
