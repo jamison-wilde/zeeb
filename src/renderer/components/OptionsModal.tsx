@@ -8,6 +8,7 @@ import { SearchTermsSection } from './options/SearchTermsSection';
 import { CompanionsSection } from './options/CompanionsSection';
 import { LoggingSection } from './options/LoggingSection';
 import { ImdbSection } from './options/ImdbSection';
+import { BrowserSection } from './options/BrowserSection';
 import { FormatTesterSection } from './options/FormatTesterSection';
 
 const SECTIONS = [
@@ -18,6 +19,7 @@ const SECTIONS = [
   { id: 'companions', label: 'Companions' },
   { id: 'logging', label: 'Logging' },
   { id: 'imdb', label: 'IMDB' },
+  { id: 'browser', label: 'Browser' },
   { id: 'format-tester', label: 'Format Tester' },
 ] as const;
 
@@ -93,6 +95,11 @@ export function OptionsModal({ visible, onClose }: OptionsModalProps): React.JSX
           {activeSection === 'imdb' && (
             <div data-testid="section-imdb">
               <ImdbSection config={config} updateConfig={updateConfig} />
+            </div>
+          )}
+          {activeSection === 'browser' && (
+            <div data-testid="section-browser">
+              <BrowserSection config={config} updateConfig={updateConfig} />
             </div>
           )}
           {activeSection === 'format-tester' && (

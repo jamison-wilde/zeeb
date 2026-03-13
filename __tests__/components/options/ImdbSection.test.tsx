@@ -11,11 +11,6 @@ describe('ImdbSection', () => {
     expect(screen.getByTestId('imdb-search-url')).toBeDefined();
   });
 
-  it('renders HTML zoom input', () => {
-    render(<ImdbSection config={DEFAULT_CONFIG} updateConfig={vi.fn()} />);
-    expect(screen.getByTestId('html-zoom')).toBeDefined();
-  });
-
   it('renders MPAA mapping table', () => {
     const config = { ...DEFAULT_CONFIG, mpaaMap: [['R', 'R'], ['PG-13', 'PG13']] as Array<[string, string]> };
     render(<ImdbSection config={config} updateConfig={vi.fn()} />);
@@ -23,10 +18,4 @@ describe('ImdbSection', () => {
     expect(screen.getByText('Output')).toBeDefined();
   });
 
-  it('clamps zoom to 50-200', () => {
-    const updateConfig = vi.fn();
-    render(<ImdbSection config={DEFAULT_CONFIG} updateConfig={updateConfig} />);
-    fireEvent.change(screen.getByTestId('html-zoom'), { target: { value: '250' } });
-    expect(updateConfig).toHaveBeenCalledWith({ htmlZoom: 200 });
-  });
 });
