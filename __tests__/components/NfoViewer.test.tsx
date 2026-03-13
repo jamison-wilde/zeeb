@@ -44,6 +44,17 @@ describe('NfoViewer', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com');
   });
 
+  it('shows Copied! feedback after clicking copy icon', async () => {
+    const content = 'Visit https://example.com for info';
+    render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
+    const icon = screen.getByTestId('copy-url-0');
+    expect(icon.textContent).toBe('📋');
+    await act(async () => {
+      fireEvent.click(icon);
+    });
+    expect(icon.textContent).toBe('Copied!');
+  });
+
   it('closes on Escape key', () => {
     const onClose = vi.fn();
     render(<NfoViewer visible={true} content="test" onClose={onClose} />);
