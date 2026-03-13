@@ -41,7 +41,7 @@ Download and save movie poster images from TMDB during rename. Show a poster sel
 
 Add `writeBinaryFile(path: string, data: Uint8Array): Promise<void>` to the `FsAdapter` interface and IPC implementation.
 
-Add to `createMockFsAdapter` with `vi.fn()` default.
+Add to `createMockFsAdapter` with `async () => {}` default (consistent with other mock methods). Tests needing call assertions use the overrides parameter: `createMockFsAdapter({ writeBinaryFile: vi.fn() })`.
 
 ### IPC handler (`src/main/ipc.ts`)
 
