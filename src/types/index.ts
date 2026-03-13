@@ -147,6 +147,7 @@ export interface ZeebConfig {
   theWord: string;
   separateDvdFormat: boolean;
   separatePosterFormat: boolean;
+  posterSaveSize: string;
   separateUrlFormat: boolean;
 
   // NFO

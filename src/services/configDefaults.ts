@@ -60,6 +60,7 @@ export const DEFAULT_CONFIG: ZeebConfig = {
   theWord: 'The',
   separateDvdFormat: false,
   separatePosterFormat: false,
+  posterSaveSize: 'w780',
   separateUrlFormat: false,
 
   // NFO
