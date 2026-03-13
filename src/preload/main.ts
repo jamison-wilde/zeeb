@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('zeebFs', {
   unlink: (filePath: string) => ipcRenderer.invoke('fs:unlink', filePath),
   exists: (filePath: string) => ipcRenderer.invoke('fs:exists', filePath),
   writeBinaryFile: (filePath: string, data: Uint8Array) => ipcRenderer.invoke('fs:writeBinaryFile', filePath, data),
+  downloadToFile: (url: string, filePath: string) => ipcRenderer.invoke('fs:downloadToFile', url, filePath),
 });
 
 contextBridge.exposeInMainWorld('zeebDialog', {

@@ -46,6 +46,13 @@ export function registerIpcHandlers(): void {
     await fs.writeFile(filePath, Buffer.from(data));
   });
 
+  ipcMain.handle('fs:downloadToFile', async (_event, url: string, filePath: string) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    await fs.writeFile(filePath, Buffer.from(buffer));
+  });
+
   ipcMain.handle('dialog:openDirectory', async (_event) => {
     const result = await dialog.showOpenDialog({
       properties: ['openDirectory'],

@@ -1,7 +1,31 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { PosterGrid } from '../../src/renderer/components/PosterGrid';
+
+// Mock IntersectionObserver for jsdom
+let observerCallbacks: Array<(entries: Array<{ isIntersecting: boolean }>) => void> = [];
+
+function makeIntersectionObserverMock(autoTrigger: boolean) {
+  observerCallbacks = [];
+  global.IntersectionObserver = class MockIntersectionObserver {
+    private cb: (entries: Array<{ isIntersecting: boolean }>) => void;
+    constructor(cb: (entries: Array<{ isIntersecting: boolean }>) => void) {
+      this.cb = cb;
+      observerCallbacks.push(cb);
+    }
+    observe() {
+      if (autoTrigger) this.cb([{ isIntersecting: true }]);
+    }
+    disconnect() {}
+    unobserve() {}
+  } as unknown as typeof IntersectionObserver;
+}
+
+beforeEach(() => {
+  // By default, trigger intersection immediately so images render
+  makeIntersectionObserverMock(true);
+});
 
 describe('PosterGrid', () => {
   const paths = ['/abc.jpg', '/def.jpg', '/ghi.jpg'];
@@ -30,12 +54,23 @@ describe('PosterGrid', () => {
     expect((images[0] as HTMLImageElement).src).toContain('/t/p/w92/abc.jpg');
   });
 
-  it('uses lazy loading on thumbnail images', () => {
-    render(
+  it('uses IntersectionObserver for lazy loading thumbnails', () => {
+    // Override to NOT trigger intersection immediately
+    makeIntersectionObserverMock(false);
+
+    const { container } = render(
       <PosterGrid posterPaths={paths} selectedIndex={null} onSelect={vi.fn()} compact={false} />,
     );
-    const images = screen.getAllByRole('img');
-    expect(images[0].getAttribute('loading')).toBe('lazy');
+    // No images rendered yet — only placeholder divs
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+    const placeholders = container.querySelectorAll('.bg-gray-200');
+    expect(placeholders.length).toBe(3);
+
+    // Simulate first element becoming visible
+    act(() => {
+      observerCallbacks[0]([{ isIntersecting: true }]);
+    });
+    expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
   it('highlights selected poster with blue border', () => {

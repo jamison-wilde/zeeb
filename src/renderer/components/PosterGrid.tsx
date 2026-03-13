@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { buildPosterUrl } from '../../services/tmdbService';
 
 interface PosterGridProps {
@@ -6,6 +6,62 @@ interface PosterGridProps {
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   compact: boolean;
+}
+
+/** Thumbnail that only loads its image when scrolled into view. */
+function LazyPosterThumb({ path, size, index, selected, onSelect, onMouseEnter, onMouseLeave, className }: {
+  path: string;
+  size: string;
+  index: number;
+  selected: boolean;
+  onSelect: (i: number) => void;
+  onMouseEnter: (i: number) => void;
+  onMouseLeave: () => void;
+  className: string;
+}): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const src = visible ? buildPosterUrl(path, size) : undefined;
+
+  return (
+    <div
+      ref={ref}
+      className={`shrink-0 cursor-pointer border-2 rounded ${
+        selected ? 'border-blue-500' : 'border-transparent'
+      }`}
+      onClick={() => onSelect(index)}
+      onMouseEnter={() => onMouseEnter(index)}
+      onMouseLeave={onMouseLeave}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={`Poster ${index + 1}`}
+          className={className}
+        />
+      ) : (
+        <div className={`${className} bg-gray-200`} />
+      )}
+    </div>
+  );
 }
 
 export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: PosterGridProps): React.JSX.Element | null {
@@ -21,13 +77,14 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
     setTipPos({ x, y });
   }, []);
 
+  const handleMouseLeave = useCallback(() => setHoverIndex(null), []);
+
   if (posterPaths.length === 0) return null;
 
   const thumbSize = compact ? 'w92' : 'w185';
-  const thumbWidth = compact ? 'w-[92px]' : 'w-[185px]';
-  const thumbHeight = compact ? 'h-[138px]' : 'h-[278px]';
+  const thumbClass = compact ? 'w-[92px] h-[138px] object-cover rounded' : 'w-[185px] h-[278px] object-cover rounded';
 
-  // Position tooltip: prefer to the right of cursor, flip left if near right edge
+  // Position tooltip near cursor
   const tipStyle: React.CSSProperties = {
     position: 'absolute',
     zIndex: 20,
@@ -64,22 +121,17 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
       onMouseMove={hoverIndex !== null ? handleMouseMove : undefined}
     >
       {posterPaths.map((path, i) => (
-        <div
+        <LazyPosterThumb
           key={`${path}-${i}`}
-          className={`shrink-0 cursor-pointer border-2 rounded ${
-            selectedIndex === i ? 'border-blue-500' : 'border-transparent'
-          }`}
-          onClick={() => onSelect(i)}
-          onMouseEnter={() => setHoverIndex(i)}
-          onMouseLeave={() => setHoverIndex(null)}
-        >
-          <img
-            src={buildPosterUrl(path, thumbSize)}
-            alt={`Poster ${i + 1}`}
-            loading="lazy"
-            className={`${thumbWidth} ${thumbHeight} object-cover rounded`}
-          />
-        </div>
+          path={path}
+          size={thumbSize}
+          index={i}
+          selected={selectedIndex === i}
+          onSelect={onSelect}
+          onMouseEnter={setHoverIndex}
+          onMouseLeave={handleMouseLeave}
+          className={thumbClass}
+        />
       ))}
       {hoverIndex !== null && (
         <div style={tipStyle} className="bg-white shadow-lg rounded border border-gray-200 p-1">

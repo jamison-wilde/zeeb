@@ -16,6 +16,7 @@ export interface FsAdapter {
   exists(filePath: string): Promise<boolean>;
   getConfigDir(): Promise<string>;
   writeBinaryFile(filePath: string, data: Uint8Array): Promise<void>;
+  downloadToFile(url: string, filePath: string): Promise<void>;
 }
 
 /**
@@ -36,6 +37,7 @@ export function createElectronFsAdapter(): FsAdapter {
     exists: (filePath) => zeebFs.exists(filePath),
     getConfigDir: () => zeebApp.getPath('userData'),
     writeBinaryFile: (filePath, data) => zeebFs.writeBinaryFile(filePath, data),
+    downloadToFile: (url, filePath) => zeebFs.downloadToFile(url, filePath),
   };
 }
 
@@ -53,6 +55,7 @@ export function createMockFsAdapter(overrides?: Partial<FsAdapter>): FsAdapter {
     exists: async () => false,
     getConfigDir: async () => '/mock/config',
     writeBinaryFile: async () => {},
+    downloadToFile: async () => {},
     ...overrides,
   };
 }

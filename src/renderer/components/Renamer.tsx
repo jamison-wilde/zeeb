@@ -20,7 +20,7 @@ import { interpolateFormat } from '../../services/formatEngine';
 import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
 import { generateUrlFileContent, generateWeblocContent } from '../../services/urlFileWriter';
 import { createLogger } from '../../services/logger';
-import { searchPosters, fetchPosterBinary } from '../../services/tmdbService';
+import { searchPosters, buildPosterUrl } from '../../services/tmdbService';
 import { PosterGrid } from './PosterGrid';
 
 interface RenamerProps {
@@ -495,7 +495,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       // Save poster if enabled and selected
       if (config.createPoster && selectedPosterIndex !== null && posterPaths.length > 0 && metadata) {
         try {
-          const posterData = await fetchPosterBinary(posterPaths[selectedPosterIndex], config.posterSaveSize);
+          const posterUrl = buildPosterUrl(posterPaths[selectedPosterIndex], config.posterSaveSize);
 
           let posterFolder = workingFolder;
           if (currentFile.isDvdFolder && !config.posterInDvdFolder) {
@@ -519,14 +519,14 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
           }
 
           const posterSavePath = `${posterFolder}${sep}${posterBaseName}.jpg`;
-          await fs.writeBinaryFile(posterSavePath, posterData);
+          await fs.downloadToFile(posterUrl, posterSavePath);
           undoStore?.getState().addEntry({
             type: 'create',
             sourcePath: posterSavePath,
             destPath: posterSavePath,
           });
-        } catch {
-          // Poster save failed — continue with rename
+        } catch (err) {
+          console.error('[Renamer] Poster save failed:', err);
         }
       }
 
