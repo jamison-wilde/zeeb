@@ -18,6 +18,7 @@ import {
 import { extractImdbFromNfo } from '../../services/nfoParser';
 import { interpolateFormat } from '../../services/formatEngine';
 import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
+import { generateUrlFileContent, generateWeblocContent } from '../../services/urlFileWriter';
 import { createLogger } from '../../services/logger';
 
 interface RenamerProps {
@@ -30,7 +31,7 @@ interface RenamerProps {
   undoStore?: StoreApi<{
     beginTransaction: () => void;
     addEntry: (entry: UndoEntry) => void;
-    commitTransaction: () => void;
+    commitTransaction: (maxUndos?: number) => void;
   }>;
   onFileRenamed?: (fileId: string, newName: string, newPath: string) => void;
   onComplete?: () => void;
@@ -74,6 +75,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const currentFile = useMemo(() => files[fileIndex] ?? null, [files, fileIndex]);
 
   const navigationMode = useRef<'title' | 'idle' | 'tester'>('idle');
+  const webviewReady = useRef(false);
 
   useEffect(() => {
     window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
@@ -197,14 +199,27 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     } catch { /* webview not ready yet — patterns will be sent on next nav */ }
   }, [webviewEl, config.extractionPatterns]);
 
+  // Re-apply zoom when htmlZoom config changes
+  useEffect(() => {
+    if (!webviewEl || !webviewReady.current) return;
+    try {
+      webviewEl.setZoomFactor(config.htmlZoom / 100);
+    } catch { /* webview not ready */ }
+  }, [webviewEl, config.htmlZoom]);
+
   useEffect(() => {
     if (!webviewEl) return;
     const webview = webviewEl;
 
     const handleDomReady = () => {
+      webviewReady.current = true;
       try {
         const url = webview.getURL();
         setUrlInput(url);
+      } catch { /* ignore */ }
+      // Apply zoom factor
+      try {
+        webview.setZoomFactor(config.htmlZoom / 100);
       } catch { /* ignore */ }
       // Send extraction patterns to the newly loaded preload context
       try {
@@ -254,7 +269,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('ipc-message', handleIpcMessage);
     };
-  }, [webviewEl, instanceId, config.extractionPatterns, setMovieMatches, setMetadata, setTesterResult]);
+  }, [webviewEl, instanceId, config.extractionPatterns, config.htmlZoom, setMovieMatches, setMetadata, setTesterResult]);
 
   // Handle Format Tester requests — only first Renamer instance responds
   useEffect(() => {
@@ -364,13 +379,15 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
 
     try {
       const sep = currentFile.nativePath.includes('\\') ? '\\' : '/';
-      const newPath = `${currentFile.folder}${sep}${previewFilename}`;
+      let workingFolder = currentFile.folder;
+      const newPath = `${workingFolder}${sep}${previewFilename}`;
       const entry = await renameFile(fs, currentFile.nativePath, newPath);
       undoStore?.getState().addEntry(entry);
 
+      // Rename subtitles
       const baseName = currentFile.name.replace(/\.[^.]+$/, '');
       const newBase = previewFilename.replace(/\.[^.]+$/, '');
-      const subs = await findSubtitles(fs, currentFile.folder, baseName, config.subtitleExtensions);
+      const subs = await findSubtitles(fs, workingFolder, baseName, config.subtitleExtensions);
       if (subs.length > 0) {
         const subEntries = await renameSubtitles(fs, subs, baseName, newBase);
         for (const subEntry of subEntries) {
@@ -378,19 +395,94 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
         }
       }
 
-      undoStore?.getState().commitTransaction();
-      onFileRenamed?.(currentFile.id, previewFilename, newPath);
+      // Rename folder if enabled
+      if (config.renameFolder) {
+        const parentParts = workingFolder.split(/[\\/]/);
+        if (parentParts.length > 1 && parentParts[parentParts.length - 1] !== '') {
+          const parentDir = parentParts.slice(0, -1).join(sep);
+          const newFolderName = newBase;
+          const currentFolderName = parentParts[parentParts.length - 1];
+          if (currentFolderName !== newFolderName) {
+            const newFolderPath = `${parentDir}${sep}${newFolderName}`;
+            await fs.rename(workingFolder, newFolderPath);
+            undoStore?.getState().addEntry({
+              type: 'rename',
+              sourcePath: workingFolder,
+              destPath: newFolderPath,
+            });
+            workingFolder = newFolderPath;
+          }
+        }
+      }
+
+      // Create URL file if enabled
+      let nfoContent: string | null = null;
+      if (config.createUrlFile && metadata) {
+        if (config.includeNfoInUrl && currentFile.nfoPath) {
+          try {
+            const nfoName = currentFile.nfoPath.split(/[\\/]/).pop()!;
+            const nfoPath = workingFolder !== currentFile.folder
+              ? `${workingFolder}${sep}${nfoName}`
+              : currentFile.nfoPath;
+            nfoContent = await fs.readFile(nfoPath, 'utf-8');
+          } catch { /* NFO read failed — skip */ }
+        }
+
+        const isMac = navigator.userAgent.includes('Macintosh');
+        const urlExt = isMac ? '.webloc' : '.url';
+        const urlPath = `${workingFolder}${sep}${newBase}${urlExt}`;
+        const imdbUrl = buildTitleUrl(metadata.tt, config.urlImdbTT);
+
+        const urlContent = isMac
+          ? generateWeblocContent({
+              url: imdbUrl,
+              originalPath: config.includeOriginalInUrl ? currentFile.nativePath : undefined,
+              includeOriginal: config.includeOriginalInUrl,
+              nfoContent,
+            })
+          : generateUrlFileContent({
+              url: imdbUrl,
+              originalPath: config.includeOriginalInUrl ? currentFile.nativePath : undefined,
+              nfoContent,
+              includeOriginal: config.includeOriginalInUrl,
+            });
+
+        await fs.writeFile(urlPath, urlContent, 'utf-8');
+        undoStore?.getState().addEntry({
+          type: 'create',
+          sourcePath: urlPath,
+          destPath: urlPath,
+        });
+
+        // Delete NFO after including in URL file
+        if (config.deleteNfoAfterInclude && nfoContent != null && currentFile.nfoPath) {
+          const nfoName = currentFile.nfoPath.split(/[\\/]/).pop()!;
+          const nfoPath = workingFolder !== currentFile.folder
+            ? `${workingFolder}${sep}${nfoName}`
+            : currentFile.nfoPath;
+          await fs.unlink(nfoPath);
+          undoStore?.getState().addEntry({
+            type: 'delete',
+            sourcePath: nfoPath,
+            destPath: null,
+            content: nfoContent,
+          });
+        }
+      }
+
+      undoStore?.getState().commitTransaction(config.maxUndos);
+      onFileRenamed?.(currentFile.id, previewFilename, `${workingFolder}${sep}${previewFilename}`);
 
       if (config.logFilePath) {
         const logger = createLogger(fs, config.logFilePath);
-        await logger.log('rename', currentFile.nativePath, newPath);
+        await logger.log('rename', currentFile.nativePath, `${workingFolder}${sep}${previewFilename}`);
       }
     } catch {
       // Transaction stays pending for inspection
     }
 
     advance();
-  }, [currentFile, previewFilename, fs, undoStore, onFileRenamed, config.subtitleExtensions, config.logFilePath, advance]);
+  }, [currentFile, previewFilename, metadata, fs, undoStore, onFileRenamed, config, advance]);
 
   const handleSkip = useCallback(() => {
     advance();
@@ -436,31 +528,41 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
 
         {/* Right panel: URL bar + webview */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center gap-1 px-1 py-0.5 bg-gray-100 border-b border-gray-300">
-            <button
-              className="px-1.5 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 rounded"
-              onClick={handleBack}
-              title="Back"
-            >
-              ←
-            </button>
-            <input
-              className="flex-1 px-2 py-0.5 text-xs border border-gray-300 rounded bg-white"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              onKeyDown={handleUrlSubmit}
-              placeholder="URL"
-            />
-          </div>
-          <div className="flex-1 min-h-0">
+          {config.showWebView && (
+            <div className="flex items-center gap-1 px-1 py-0.5 bg-gray-100 border-b border-gray-300">
+              <button
+                className="px-1.5 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+                onClick={handleBack}
+                title="Back"
+              >
+                ←
+              </button>
+              <input
+                className="flex-1 px-2 py-0.5 text-xs border border-gray-300 rounded bg-white"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={handleUrlSubmit}
+                placeholder="URL"
+              />
+            </div>
+          )}
+          <div className="flex-1 min-h-0 relative">
             {webviewPreloadPath && (
               <webview
                 ref={(el: any) => { if (el && el !== webviewEl) setWebviewEl(el); }}
                 data-testid="imdb-webview"
                 src="about:blank"
                 preload={webviewPreloadPath}
-                style={{ width: '100%', height: '100%' }}
+                style={config.showWebView
+                  ? { width: '100%', height: '100%' }
+                  : { position: 'absolute', left: '-9999px', width: '1px', height: '1px' }
+                }
               />
+            )}
+            {!config.showWebView && (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                Poster view coming soon
+              </div>
             )}
           </div>
         </div>

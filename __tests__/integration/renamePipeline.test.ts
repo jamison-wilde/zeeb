@@ -59,4 +59,35 @@ describe('Full rename pipeline', () => {
     await undoStore.getState().undoTransaction(undoStore.getState().transactions[0].id);
     expect(fs.rename).toHaveBeenCalledWith(`/movies/${newName}.mkv`, '/movies/old.mkv');
   });
+
+  it('creates URL file when createUrlFile is true', async () => {
+    const undoStore = createUndoStore(fs);
+
+    undoStore.getState().beginTransaction();
+    const entry = await renameFile(fs, '/movies/old.mkv', '/movies/new.mkv');
+    undoStore.getState().addEntry(entry);
+
+    const urlContent = generateUrlFileContent({
+      url: 'https://www.imdb.com/title/tt0111161/',
+      originalPath: '/movies/old.mkv',
+      nfoContent: null,
+      includeOriginal: true,
+    });
+    expect(urlContent).toContain('[InternetShortcut]');
+    expect(urlContent).toContain('[OriginalFilename]');
+    expect(urlContent).toContain('NAME=/movies/old.mkv');
+
+    undoStore.getState().commitTransaction();
+    expect(undoStore.getState().transactions).toHaveLength(1);
+  });
+
+  it('respects maxUndos limit in commitTransaction', () => {
+    const undoStore = createUndoStore(fs);
+    for (let i = 0; i < 5; i++) {
+      undoStore.getState().beginTransaction();
+      undoStore.getState().addEntry({ type: 'rename', sourcePath: `/old${i}.mkv`, destPath: `/new${i}.mkv` });
+      undoStore.getState().commitTransaction(2);
+    }
+    expect(undoStore.getState().transactions).toHaveLength(2);
+  });
 });
