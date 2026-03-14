@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { buildPosterUrl } from '../../services/tmdbService';
 
 interface PosterGridProps {
@@ -70,11 +71,7 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setTipPos({ x, y });
+    setTipPos({ x: e.clientX, y: e.clientY });
   }, []);
 
   const handleMouseLeave = useCallback(() => setHoverIndex(null), []);
@@ -84,28 +81,29 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
   const thumbSize = compact ? 'w92' : 'w185';
   const thumbClass = compact ? 'w-[92px] h-[138px] object-cover rounded' : 'w-[185px] h-[278px] object-cover rounded';
 
-  // Position tooltip near cursor
+  // Position tooltip near cursor using viewport coordinates (rendered via portal)
   const tipStyle: React.CSSProperties = {
-    position: 'absolute',
-    zIndex: 20,
+    position: 'fixed',
+    zIndex: 9999,
     pointerEvents: 'none',
   };
 
-  if (containerRef.current && hoverIndex !== null) {
-    const rect = containerRef.current.getBoundingClientRect();
+  if (hoverIndex !== null) {
     const tipWidth = 320;
     const tipHeight = 480;
     const pad = 16;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
     let left = tipPos.x + pad;
-    if (left + tipWidth > rect.width) {
+    if (left + tipWidth > vw) {
       left = tipPos.x - tipWidth - pad;
     }
     if (left < 0) left = 0;
 
     let top = tipPos.y - tipHeight / 2;
     if (top < 0) top = 0;
-    if (top + tipHeight > rect.height) top = Math.max(0, rect.height - tipHeight);
+    if (top + tipHeight > vh) top = Math.max(0, vh - tipHeight);
 
     tipStyle.left = left;
     tipStyle.top = top;
@@ -114,7 +112,7 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
   return (
     <div
       ref={containerRef}
-      className={`flex gap-2 p-2 relative ${
+      className={`flex gap-2 p-2 ${
         compact ? 'overflow-x-auto flex-nowrap' : 'flex-wrap overflow-y-auto'
       }`}
       style={compact ? undefined : { maxHeight: '100%' }}
@@ -133,7 +131,7 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
           className={thumbClass}
         />
       ))}
-      {hoverIndex !== null && (
+      {hoverIndex !== null && createPortal(
         <div style={tipStyle} className="bg-white shadow-lg rounded border border-gray-200 p-1">
           <img
             data-testid="poster-hover-preview"
@@ -141,7 +139,8 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
             alt="Preview"
             className="max-h-[460px] rounded"
           />
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
