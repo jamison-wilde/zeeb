@@ -42,6 +42,31 @@ describe('main preload', () => {
     expect(menuCall).toBeDefined();
     expect(menuCall![1]).toHaveProperty('onOpenFolder');
   });
+
+  it('exposes onUndoRename and onToggleWebView on zeebMenu', async () => {
+    await import('../../src/preload/main');
+    const { contextBridge: cb } = await import('electron');
+    const exposeMock = cb.exposeInMainWorld as ReturnType<typeof vi.fn>;
+    const menuCall = exposeMock.mock.calls.find((c: unknown[]) => c[0] === 'zeebMenu');
+    expect(menuCall![1]).toHaveProperty('onUndoRename');
+    expect(menuCall![1]).toHaveProperty('onToggleWebView');
+  });
+
+  it('does not expose onUndo on zeebMenu', async () => {
+    await import('../../src/preload/main');
+    const { contextBridge: cb } = await import('electron');
+    const exposeMock = cb.exposeInMainWorld as ReturnType<typeof vi.fn>;
+    const menuCall = exposeMock.mock.calls.find((c: unknown[]) => c[0] === 'zeebMenu');
+    expect(menuCall![1]).not.toHaveProperty('onUndo');
+  });
+
+  it('exposes sendWebViewState on zeebMenu', async () => {
+    await import('../../src/preload/main');
+    const { contextBridge: cb } = await import('electron');
+    const exposeMock = cb.exposeInMainWorld as ReturnType<typeof vi.fn>;
+    const menuCall = exposeMock.mock.calls.find((c: unknown[]) => c[0] === 'zeebMenu');
+    expect(menuCall![1]).toHaveProperty('sendWebViewState');
+  });
 });
 
 describe('webview preload', () => {

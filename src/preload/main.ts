@@ -28,9 +28,11 @@ contextBridge.exposeInMainWorld('zeebImdb', {
 
 contextBridge.exposeInMainWorld('zeebMenu', {
   onOptions: (callback: () => void) => ipcRenderer.on('menu:options', callback),
-  onUndo: (callback: () => void) => ipcRenderer.on('menu:undo', callback),
+  onUndoRename: (callback: () => void) => ipcRenderer.on('menu:undo-rename', callback),
+  onToggleWebView: (callback: () => void) => ipcRenderer.on('menu:toggle-webview', callback),
   onReleaseNotes: (callback: () => void) => ipcRenderer.on('menu:release-notes', callback),
   onOpenFolder: (callback: () => void) => ipcRenderer.on('menu:open-folder', callback),
+  sendWebViewState: (visible: boolean) => ipcRenderer.send('webview-state', visible),
   onWindowStateChanged: (callback: (state: any) => void) => {
     const handler = (_event: any, state: any) => callback(state);
     ipcRenderer.on('config:window-state', handler);
