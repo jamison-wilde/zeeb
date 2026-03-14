@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
@@ -63,9 +63,17 @@ function createWindow(): void {
           click: () => mainWindow.webContents.send('menu:options'),
         },
         {
-          label: 'Undo',
-          accelerator: 'CmdOrCtrl+Z',
-          click: () => mainWindow.webContents.send('menu:undo'),
+          label: 'Undo Rename...',
+          click: () => mainWindow.webContents.send('menu:undo-rename'),
+        },
+        {
+          id: 'toggle-webview',
+          label: 'Toggle Web View',
+          type: 'checkbox',
+          checked: false,
+          click: (menuItem) => {
+            mainWindow.webContents.send('menu:toggle-webview');
+          },
         },
         { type: 'separator' },
         {
@@ -82,6 +90,11 @@ function createWindow(): void {
     { label: 'Help', role: 'help' },
   ]);
   Menu.setApplicationMenu(menu);
+
+  ipcMain.on('webview-state', (_event, visible: boolean) => {
+    const menuItem = menu.getMenuItemById('toggle-webview');
+    if (menuItem) menuItem.checked = visible;
+  });
 
   let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
