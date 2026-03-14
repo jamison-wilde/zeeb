@@ -2,6 +2,11 @@ import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
+import { handleSquirrelEvents } from './squirrelHandler';
+
+if (handleSquirrelEvents()) {
+  process.exit(0);
+}
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;

@@ -7,12 +7,26 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    icon: 'assets/zeeb',
+    name: 'Zeeb Movie Renamer',
   },
   makers: [
-    new MakerSquirrel({}),
-    new MakerDMG({}),
+    new MakerSquirrel({
+      name: 'Zeeb',
+      setupIcon: 'assets/zeeb.ico',
+      noMsi: true,
+    }),
+    new MakerDMG({
+      icon: 'assets/zeeb.icns',
+    }),
     new MakerZIP({}, ['darwin']),
   ],
+  hooks: {
+    generateAssets: async () => {
+      const { execSync } = require('child_process');
+      execSync('node scripts/extract-changelog.js', { stdio: 'inherit' });
+    },
+  },
   plugins: [
     new VitePlugin({
       build: [
