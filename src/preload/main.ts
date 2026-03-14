@@ -27,6 +27,32 @@ contextBridge.exposeInMainWorld('zeebImdb', {
   suggest: (query: string) => ipcRenderer.invoke('imdb:suggest', query),
 });
 
+contextBridge.exposeInMainWorld('zeebUpdate', {
+  onUpdateAvailable: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data);
+    ipcRenderer.on('update:available', handler);
+    return () => ipcRenderer.removeListener('update:available', handler);
+  },
+  downloadUpdate: (assetUrl: string) => ipcRenderer.invoke('update:download', assetUrl),
+  onDownloadProgress: (callback: (progress: any) => void) => {
+    const handler = (_event: any, progress: any) => callback(progress);
+    ipcRenderer.on('update:download-progress', handler);
+    return () => ipcRenderer.removeListener('update:download-progress', handler);
+  },
+  onDownloadComplete: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data);
+    ipcRenderer.on('update:download-complete', handler);
+    return () => ipcRenderer.removeListener('update:download-complete', handler);
+  },
+  onDownloadError: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data);
+    ipcRenderer.on('update:download-error', handler);
+    return () => ipcRenderer.removeListener('update:download-error', handler);
+  },
+  showInFolder: (filePath: string) => ipcRenderer.invoke('update:show-in-folder', filePath),
+  openExternal: (url: string) => ipcRenderer.invoke('update:open-external', url),
+});
+
 contextBridge.exposeInMainWorld('zeebMenu', {
   onOptions: (callback: () => void) => ipcRenderer.on('menu:options', callback),
   onUndoRename: (callback: () => void) => ipcRenderer.on('menu:undo-rename', callback),

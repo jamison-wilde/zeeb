@@ -32,6 +32,20 @@ interface Window {
     getWebviewPreloadPath(): Promise<string>;
     getReleaseNotes(): Promise<string>;
   };
+  zeebUpdate: {
+    onUpdateAvailable(callback: (data: {
+      version: string;
+      releaseNotes: string;
+      releaseUrl: string;
+      assets: Array<{ name: string; url: string; size: number }>;
+    }) => void): () => void;
+    downloadUpdate(assetUrl: string): Promise<void>;
+    onDownloadProgress(callback: (progress: { percent: number; bytesDownloaded: number; totalBytes: number }) => void): () => void;
+    onDownloadComplete(callback: (data: { filePath: string }) => void): () => void;
+    onDownloadError(callback: (data: { message: string }) => void): () => void;
+    showInFolder(filePath: string): Promise<void>;
+    openExternal(url: string): Promise<void>;
+  };
   zeebImdb: {
     suggest(query: string): Promise<import('../types').MovieMatch[]>;
   };
