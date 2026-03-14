@@ -50,7 +50,7 @@ describe('Full rename pipeline', () => {
     });
     expect(urlContent).toContain(meta.tt);
 
-    undoStore.getState().commitTransaction();
+    undoStore.getState().commitTransaction('/movies');
     expect(undoStore.getState().transactions).toHaveLength(1);
 
     await logger.log('rename', '/movies/old.mkv', `/movies/${newName}.mkv`);
@@ -77,7 +77,7 @@ describe('Full rename pipeline', () => {
     expect(urlContent).toContain('[OriginalFilename]');
     expect(urlContent).toContain('NAME=/movies/old.mkv');
 
-    undoStore.getState().commitTransaction();
+    undoStore.getState().commitTransaction('/movies');
     expect(undoStore.getState().transactions).toHaveLength(1);
   });
 
@@ -86,7 +86,7 @@ describe('Full rename pipeline', () => {
     for (let i = 0; i < 5; i++) {
       undoStore.getState().beginTransaction();
       undoStore.getState().addEntry({ type: 'rename', sourcePath: `/old${i}.mkv`, destPath: `/new${i}.mkv` });
-      undoStore.getState().commitTransaction(2);
+      undoStore.getState().commitTransaction('/movies', 2);
     }
     expect(undoStore.getState().transactions).toHaveLength(2);
   });

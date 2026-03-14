@@ -1,15 +1,15 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { FsAdapter } from '../adapters/fs';
-import type { UndoEntry, RenameTransaction } from '../types';
+import type { UndoEntry, RenameTransaction, UndoResult } from '../types';
 
 interface UndoStoreState {
   transactions: RenameTransaction[];
   pendingTransaction: { entries: UndoEntry[] } | null;
   beginTransaction: () => void;
   addEntry: (entry: UndoEntry) => void;
-  commitTransaction: (maxUndos?: number) => void;
+  commitTransaction: (basePath: string, maxUndos?: number) => void;
   discardTransaction: () => void;
-  undoTransaction: (id: string) => Promise<void>;
+  undoTransaction: (id: string) => Promise<UndoResult[]>;
 }
 
 export function createUndoStore(fs: FsAdapter): StoreApi<UndoStoreState> {
@@ -31,7 +31,7 @@ export function createUndoStore(fs: FsAdapter): StoreApi<UndoStoreState> {
       });
     },
 
-    commitTransaction(maxUndos?: number) {
+    commitTransaction(basePath: string, maxUndos?: number) {
       const pending = get().pendingTransaction;
       if (!pending) return;
       if (maxUndos === 0) {
@@ -41,6 +41,7 @@ export function createUndoStore(fs: FsAdapter): StoreApi<UndoStoreState> {
       const transaction: RenameTransaction = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2),
         timestamp: Date.now(),
+        basePath,
         entries: pending.entries,
       };
       set((state) => {
@@ -56,11 +57,11 @@ export function createUndoStore(fs: FsAdapter): StoreApi<UndoStoreState> {
       set({ pendingTransaction: null });
     },
 
-    async undoTransaction(id: string) {
+    async undoTransaction(id: string): Promise<UndoResult[]> {
       const transaction = get().transactions.find((t) => t.id === id);
-      if (!transaction) return;
+      if (!transaction) return [];
 
-      const errors: Array<{ entry: UndoEntry; error: unknown }> = [];
+      const results: UndoResult[] = [];
       const reversed = [...transaction.entries].reverse();
       for (const entry of reversed) {
         try {
@@ -81,21 +82,36 @@ export function createUndoStore(fs: FsAdapter): StoreApi<UndoStoreState> {
               }
               break;
           }
+          results.push({ entry, success: true });
         } catch (error) {
-          errors.push({ entry, error });
+          results.push({
+            entry,
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
 
-      if (errors.length === 0) {
+      const failedEntries = results.filter((r) => !r.success).map((r) => r.entry);
+      if (failedEntries.length === 0) {
         set((state) => ({
           transactions: state.transactions.filter((t) => t.id !== id),
         }));
+      } else {
+        const retryTransaction: RenameTransaction = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+          timestamp: Date.now(),
+          basePath: transaction.basePath,
+          entries: failedEntries,
+        };
+        set((state) => ({
+          transactions: state.transactions.map((t) =>
+            t.id === id ? retryTransaction : t,
+          ),
+        }));
       }
-      if (errors.length > 0) {
-        throw new Error(
-          `Undo partially failed: ${errors.length}/${reversed.length} entries failed`,
-        );
-      }
+
+      return results;
     },
   }));
 }
