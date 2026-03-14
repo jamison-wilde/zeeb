@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('zeebDialog', {
 contextBridge.exposeInMainWorld('zeebApp', {
   getPath: (name: string) => ipcRenderer.invoke('app:getPath', name),
   getWebviewPreloadPath: () => ipcRenderer.invoke('app:getWebviewPreloadPath'),
+  getReleaseNotes: () => ipcRenderer.invoke('app:getReleaseNotes'),
 });
 
 contextBridge.exposeInMainWorld('zeebImdb', {

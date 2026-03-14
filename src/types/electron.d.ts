@@ -30,6 +30,7 @@ interface Window {
   zeebApp: {
     getPath(name: string): Promise<string>;
     getWebviewPreloadPath(): Promise<string>;
+    getReleaseNotes(): Promise<string>;
   };
   zeebImdb: {
     suggest(query: string): Promise<import('../types').MovieMatch[]>;

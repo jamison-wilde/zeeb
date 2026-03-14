@@ -97,4 +97,23 @@ export function registerIpcHandlers(): void {
         thumbnailUrl: item.i?.imageUrl ?? null,
       }));
   });
+
+  ipcMain.handle('app:getReleaseNotes', async () => {
+    const fsSync = require('node:fs');
+    // Try bundled release-notes.md first (production)
+    const bundledPath = path.join(__dirname, '..', 'assets', 'release-notes.md');
+    try {
+      return fsSync.readFileSync(bundledPath, 'utf-8');
+    } catch { /* not bundled — dev mode */ }
+
+    // Dev fallback: extract from CHANGELOG.md
+    try {
+      const pkg = JSON.parse(fsSync.readFileSync(path.join(app.getAppPath(), 'package.json'), 'utf-8'));
+      const changelog = fsSync.readFileSync(path.join(app.getAppPath(), 'CHANGELOG.md'), 'utf-8');
+      const { extractVersionSection } = require('../../scripts/extract-changelog');
+      return extractVersionSection(changelog, pkg.version) || 'No release notes available.';
+    } catch {
+      return 'No release notes available.';
+    }
+  });
 }

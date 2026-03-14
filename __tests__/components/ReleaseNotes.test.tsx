@@ -1,7 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { ReleaseNotes } from '../../src/renderer/components/ReleaseNotes';
+
+beforeEach(() => {
+  (window as any).zeebApp = {
+    ...((window as any).zeebApp || {}),
+    getReleaseNotes: vi.fn().mockResolvedValue('### Added\n- Cool feature'),
+  };
+});
 
 describe('ReleaseNotes', () => {
   it('renders release notes content', () => {
