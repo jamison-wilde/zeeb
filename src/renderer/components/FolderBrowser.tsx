@@ -9,10 +9,10 @@ interface FolderBrowserProps {
 
 type RecursionMode = 'none' | 'subfolders' | 'full';
 
-const RECURSION_OPTIONS: { label: string; value: RecursionMode }[] = [
-  { label: 'None', value: 'none' },
-  { label: 'Subfolders', value: 'subfolders' },
-  { label: 'Full', value: 'full' },
+const RECURSION_OPTIONS: { label: string; value: RecursionMode; tooltip: string }[] = [
+  { label: 'None', value: 'none', tooltip: 'Only look in this directory, not in subfolders' },
+  { label: 'Subfolders', value: 'subfolders', tooltip: 'Look one level deep into immediate subfolders, but not deeper' },
+  { label: 'Full', value: 'full', tooltip: 'Recursively look in all subfolders at every level' },
 ];
 
 export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentFolder, initialRecursionMode = 'none' }: FolderBrowserProps): React.JSX.Element {
@@ -39,10 +39,17 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
         />
         <button
           data-testid="browse-button"
-          className="px-3 py-1.5 bg-gray-200 rounded hover:bg-gray-300"
+          className="px-3 py-1.5 bg-gray-200 rounded hover:bg-gray-300 shrink-0"
           onClick={handleBrowse}
         >
           Browse...
+        </button>
+        <button
+          data-testid="list-movies-button"
+          className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 shrink-0"
+          onClick={() => onFolderSelected(folderPath, recursionMode)}
+        >
+          List Movies
         </button>
       </div>
 
@@ -51,7 +58,7 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
           <div key={index} className="flex items-center bg-gray-200 rounded text-sm shrink-0">
             <button
               className="px-2 py-1 whitespace-nowrap hover:bg-gray-300 rounded-l"
-              onClick={() => setFolderPath(folder)}
+              onClick={() => onFolderSelected(folder, recursionMode)}
             >
               {folder}
             </button>
@@ -70,6 +77,7 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
         {RECURSION_OPTIONS.map((option) => (
           <button
             key={option.value}
+            title={option.tooltip}
             className={`px-2 py-1 border rounded ${
               recursionMode === option.value
                 ? 'bg-blue-500 border-blue-500 text-white'
@@ -82,13 +90,9 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
         ))}
       </div>
 
-      <button
-        data-testid="list-movies-button"
-        className="w-full bg-blue-500 text-white py-2.5 rounded hover:bg-blue-600"
-        onClick={() => onFolderSelected(folderPath, recursionMode)}
-      >
-        List Movies
-      </button>
+      <p className="text-xs text-gray-400 italic">
+        Note: Listing movies can take several seconds or more, especially on network shares or when including subfolders.
+      </p>
     </div>
   );
 }
