@@ -52,9 +52,6 @@ function App({ fs }: AppProps): React.JSX.Element {
     return idx;
   }, [isFileVisible]);
 
-  const transactions = useStore(undoStoreRef.current, (s) => s.transactions);
-  const undoTransaction = useStore(undoStoreRef.current, (s) => s.undoTransaction);
-
   const config = useConfigStore((s) => s.config);
   const load = useConfigStore((s) => s.load);
   const save = useConfigStore((s) => s.save);
@@ -65,11 +62,12 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   useEffect(() => {
     window.zeebMenu.onOptions(() => setShowOptions(true));
-    window.zeebMenu.onUndo(() => {
-      const txns = undoStoreRef.current.getState().transactions;
-      if (txns.length > 0) {
-        void undoStoreRef.current.getState().undoTransaction(txns[txns.length - 1].id);
-      }
+    window.zeebMenu.onUndoRename(() => setShowUndo(true));
+    window.zeebMenu.onToggleWebView(() => {
+      const newVal = !useConfigStore.getState().config.showWebView;
+      useConfigStore.getState().updateConfig({ showWebView: newVal });
+      void useConfigStore.getState().save();
+      window.zeebMenu.sendWebViewState(newVal);
     });
     window.zeebMenu.onReleaseNotes(() => setShowReleaseNotes(true));
     window.zeebMenu.onOpenFolder(() => {
@@ -180,12 +178,19 @@ function App({ fs }: AppProps): React.JSX.Element {
     void save();
   }, [save]);
 
-  const handleUndo = useCallback(
-    (id: string) => {
-      void undoTransaction(id);
-    },
-    [undoTransaction],
-  );
+  const handleRescan = useCallback(async () => {
+    const cfg = useConfigStore.getState().config;
+    const folder = cfg.recentFolders[0];
+    if (!folder) return;
+    const results = await scanDirectory(
+      fs,
+      folder,
+      cfg.movieExtensions,
+      cfg.recursionMode,
+      { detectDvd: cfg.detectDvd },
+    );
+    setFiles(results);
+  }, [fs, setFiles]);
 
   return (
     <div className="flex flex-col h-full">
@@ -245,8 +250,8 @@ function App({ fs }: AppProps): React.JSX.Element {
       <UndoModal
         visible={showUndo}
         onClose={() => setShowUndo(false)}
-        transactions={transactions}
-        onUndo={handleUndo}
+        undoStore={undoStoreRef.current}
+        onRescan={handleRescan}
       />
       <ReleaseNotes
         visible={showReleaseNotes}

@@ -1,14 +1,22 @@
 import React from 'react';
+import { useStore } from 'zustand';
+import type { StoreApi } from 'zustand/vanilla';
 import type { RenameTransaction } from '../../types';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyStore = StoreApi<any>;
 
 interface UndoModalProps {
   visible: boolean;
   onClose: () => void;
-  transactions: RenameTransaction[];
-  onUndo: (id: string) => void;
+  undoStore: AnyStore;
+  onRescan: () => void;
 }
 
-export function UndoModal({ visible, onClose, transactions, onUndo }: UndoModalProps): React.JSX.Element | null {
+export function UndoModal({ visible, onClose, undoStore, onRescan }: UndoModalProps): React.JSX.Element | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const transactions: RenameTransaction[] = useStore(undoStore, (s: any) => s.transactions);
+
   if (!visible) return null;
 
   return (
@@ -28,18 +36,8 @@ export function UndoModal({ visible, onClose, transactions, onUndo }: UndoModalP
           {transactions.map((item) => (
             <div key={item.id} className="flex items-center px-3 py-2.5 border-b border-gray-200">
               <div className="flex-1">
-                <p className="text-sm">{new Date(item.timestamp).toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {item.entries.length} {item.entries.length === 1 ? 'file' : 'files'}
-                </p>
+                <p className="text-sm">{item.entries.length} {item.entries.length === 1 ? 'file' : 'files'}</p>
               </div>
-              <button
-                data-testid={`undo-button-${item.id}`}
-                className="px-4 py-1.5 bg-red-500 text-white rounded font-bold text-sm hover:bg-red-600"
-                onClick={() => onUndo(item.id)}
-              >
-                Undo
-              </button>
             </div>
           ))}
         </div>

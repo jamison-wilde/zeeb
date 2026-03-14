@@ -36,7 +36,11 @@ interface Window {
   };
   zeebMenu: {
     onOptions(callback: () => void): void;
-    onUndo(callback: () => void): void;
+    onUndoRename(callback: () => void): void;
+    onToggleWebView(callback: () => void): void;
     onReleaseNotes(callback: () => void): void;
+    onOpenFolder(callback: () => void): void;
+    sendWebViewState(visible: boolean): void;
+    onWindowStateChanged(callback: (state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => void): () => void;
   };
 }

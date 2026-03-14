@@ -8,10 +8,12 @@ const mockFs = createMockFsAdapter();
 
 const mockZeebMenu = {
   onOptions: vi.fn(),
-  onUndo: vi.fn(),
+  onUndoRename: vi.fn(),
+  onToggleWebView: vi.fn(),
   onReleaseNotes: vi.fn(),
   onOpenFolder: vi.fn(),
   onWindowStateChanged: vi.fn(() => () => {}),
+  sendWebViewState: vi.fn(),
 };
 
 describe('App', () => {

@@ -8,20 +8,29 @@ import { initConfigStore } from '../src/stores/configStore';
 const mockFs = createMockFsAdapter();
 
 let optionsCallback: (() => void) | null = null;
+let undoRenameCallback: (() => void) | null = null;
+let toggleWebViewCallback: (() => void) | null = null;
+
 const mockZeebMenu = {
   onOptions: vi.fn((cb: () => void) => { optionsCallback = cb; }),
-  onUndo: vi.fn(),
+  onUndoRename: vi.fn((cb: () => void) => { undoRenameCallback = cb; }),
+  onToggleWebView: vi.fn((cb: () => void) => { toggleWebViewCallback = cb; }),
   onReleaseNotes: vi.fn(),
   onOpenFolder: vi.fn(),
   onWindowStateChanged: vi.fn(() => () => {}),
+  sendWebViewState: vi.fn(),
 };
 
 describe('App', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
     optionsCallback = null;
+    undoRenameCallback = null;
+    toggleWebViewCallback = null;
     vi.clearAllMocks();
     mockZeebMenu.onOptions.mockImplementation((cb: () => void) => { optionsCallback = cb; });
+    mockZeebMenu.onUndoRename.mockImplementation((cb: () => void) => { undoRenameCallback = cb; });
+    mockZeebMenu.onToggleWebView.mockImplementation((cb: () => void) => { toggleWebViewCallback = cb; });
     Object.defineProperty(window, 'zeebMenu', { value: mockZeebMenu, writable: true, configurable: true });
     Object.defineProperty(window, 'zeebApp', {
       value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue('') },
@@ -52,7 +61,6 @@ describe('App', () => {
   });
 
   it('registers onOpenFolder handler', () => {
-    mockZeebMenu.onOpenFolder = vi.fn();
     render(<App fs={mockFs} />);
     expect(mockZeebMenu.onOpenFolder).toHaveBeenCalled();
   });
@@ -63,5 +71,16 @@ describe('App', () => {
     render(<App fs={mockFs} />);
     act(() => { openFolderCallback?.(); });
     expect(screen.getByTestId('folder-browser')).toBeDefined();
+  });
+
+  it('opens undo modal via onUndoRename menu event', () => {
+    render(<App fs={mockFs} />);
+    act(() => { undoRenameCallback?.(); });
+    expect(screen.getByText('Undo History')).toBeDefined();
+  });
+
+  it('does not register onUndo handler', () => {
+    render(<App fs={mockFs} />);
+    expect(mockZeebMenu).not.toHaveProperty('onUndo');
   });
 });
