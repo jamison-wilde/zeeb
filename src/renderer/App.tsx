@@ -186,18 +186,6 @@ function App({ fs }: AppProps): React.JSX.Element {
   return (
     <div className="flex flex-col h-full">
       {view === 'folderBrowser' && (
-        <div className="flex flex-row p-2 bg-gray-100 gap-3">
-          <button
-            data-testid="start-processing"
-            className="px-3 py-2 hover:bg-gray-200 rounded"
-            onClick={() => setView('process')}
-          >
-            Start Processing
-          </button>
-        </div>
-      )}
-
-      {view === 'folderBrowser' && (
         <div data-testid="folder-browser" className="flex-1">
           <FolderBrowser
             onFolderSelected={handleFolderSelected}

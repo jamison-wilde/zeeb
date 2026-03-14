@@ -39,11 +39,9 @@ describe('App', () => {
     expect(screen.getByTestId('folder-browser')).toBeDefined();
   });
 
-  it('switches to process view', () => {
+  it('does not render Start Processing button', () => {
     render(<App fs={mockFs} />);
-    fireEvent.click(screen.getByTestId('start-processing'));
-    expect(screen.queryByTestId('folder-browser')).toBeNull();
-    expect(screen.getByTestId('renamer-view')).toBeDefined();
+    expect(screen.queryByTestId('start-processing')).toBeNull();
   });
 
   it('shows options modal via menu event', () => {
