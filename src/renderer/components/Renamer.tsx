@@ -269,14 +269,21 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       }
     };
 
+    // Recover from webview renderer crashes (blank page)
+    const handleCrash = () => {
+      webviewReady.current = false;
+    };
+
     webview.addEventListener('dom-ready', handleDomReady);
     webview.addEventListener('did-navigate', handleNavigate);
     webview.addEventListener('ipc-message', handleIpcMessage);
+    webview.addEventListener('render-process-gone', handleCrash);
 
     return () => {
       webview.removeEventListener('dom-ready', handleDomReady);
       webview.removeEventListener('did-navigate', handleNavigate);
       webview.removeEventListener('ipc-message', handleIpcMessage);
+      webview.removeEventListener('render-process-gone', handleCrash);
     };
   }, [webviewEl, instanceId, config.extractionPatterns, config.htmlZoom, setMovieMatches, setMetadata, setTesterResult]);
 
@@ -624,22 +631,31 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
               />
             )}
             {!config.showWebView && (
-              <PosterGrid
-                posterPaths={posterPaths}
-                selectedIndex={selectedPosterIndex}
-                onSelect={setSelectedPosterIndex}
-                compact={false}
-              />
+              <>
+                {selectedTt && !metadata && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+                    <div className="text-sm text-gray-500 animate-pulse">Loading movie data...</div>
+                  </div>
+                )}
+                <PosterGrid
+                  posterPaths={posterPaths}
+                  selectedIndex={selectedPosterIndex}
+                  onSelect={setSelectedPosterIndex}
+                  compact={false}
+                />
+              </>
+            )}
+            {config.showWebView && posterPaths.length > 0 && (
+              <div className="absolute bottom-0 left-0 right-0 bg-white/95 border-t border-gray-300 z-10">
+                <PosterGrid
+                  posterPaths={posterPaths}
+                  selectedIndex={selectedPosterIndex}
+                  onSelect={setSelectedPosterIndex}
+                  compact={true}
+                />
+              </div>
             )}
           </div>
-            {config.showWebView && (
-              <PosterGrid
-                posterPaths={posterPaths}
-                selectedIndex={selectedPosterIndex}
-                onSelect={setSelectedPosterIndex}
-                compact={true}
-              />
-            )}
         </div>
       </div>
 

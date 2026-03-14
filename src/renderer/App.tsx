@@ -6,7 +6,7 @@ import { FolderBrowser } from './components/FolderBrowser';
 import { OptionsModal } from './components/OptionsModal';
 import { UndoModal } from './components/UndoModal';
 import { ReleaseNotes } from './components/ReleaseNotes';
-import { useConfigStore } from '../stores/configStore';
+import { useConfigStore, getConfigStore } from '../stores/configStore';
 import { createFileStore } from '../stores/fileStore';
 import { createUndoStore } from '../stores/undoStore';
 import { scanDirectory } from '../services/fileScanner';
@@ -57,16 +57,20 @@ function App({ fs }: AppProps): React.JSX.Element {
   const save = useConfigStore((s) => s.save);
 
   useEffect(() => {
-    void load();
+    void load().then(() => {
+      // Sync menu checkbox with config on startup
+      window.zeebMenu.sendWebViewState(getConfigStore().getState().config.showWebView);
+    });
   }, [load]);
 
   useEffect(() => {
     window.zeebMenu.onOptions(() => setShowOptions(true));
     window.zeebMenu.onUndoRename(() => setShowUndo(true));
     window.zeebMenu.onToggleWebView(() => {
-      const newVal = !useConfigStore.getState().config.showWebView;
-      useConfigStore.getState().updateConfig({ showWebView: newVal });
-      void useConfigStore.getState().save();
+      const store = getConfigStore().getState();
+      const newVal = !store.config.showWebView;
+      store.updateConfig({ showWebView: newVal });
+      void store.save();
       window.zeebMenu.sendWebViewState(newVal);
     });
     window.zeebMenu.onReleaseNotes(() => setShowReleaseNotes(true));
@@ -179,7 +183,7 @@ function App({ fs }: AppProps): React.JSX.Element {
   }, [save]);
 
   const handleRescan = useCallback(async () => {
-    const cfg = useConfigStore.getState().config;
+    const cfg = getConfigStore().getState().config;
     const folder = cfg.recentFolders[0];
     if (!folder) return;
     const results = await scanDirectory(

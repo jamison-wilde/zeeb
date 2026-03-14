@@ -66,15 +66,6 @@ function createWindow(): void {
           label: 'Undo Rename...',
           click: () => mainWindow.webContents.send('menu:undo-rename'),
         },
-        {
-          id: 'toggle-webview',
-          label: 'Toggle Web View',
-          type: 'checkbox',
-          checked: false,
-          click: (menuItem) => {
-            mainWindow.webContents.send('menu:toggle-webview');
-          },
-        },
         { type: 'separator' },
         {
           label: 'Release Notes',
@@ -84,8 +75,42 @@ function createWindow(): void {
         { role: 'quit' },
       ],
     },
-    { role: 'editMenu' },
-    { role: 'viewMenu' },
+    {
+      label: 'Edit',
+      submenu: [
+        { label: 'Undo Typing', role: 'undo' },
+        { label: 'Redo Typing', role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        {
+          id: 'toggle-webview',
+          label: 'Toggle Web View',
+          type: 'checkbox',
+          checked: false,
+          click: () => {
+            mainWindow.webContents.send('menu:toggle-webview');
+          },
+        },
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
     { role: 'windowMenu' },
     { label: 'Help', role: 'help' },
   ]);
