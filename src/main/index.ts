@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
 import { handleSquirrelEvents } from './squirrelHandler';
+import { checkForUpdates, downloadAsset } from './updateChecker';
 
 if (handleSquirrelEvents()) {
   process.exit(0);
@@ -28,7 +29,7 @@ function loadWindowState(): { width: number; height: number; maximized: boolean 
   }
 }
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const windowState = loadWindowState();
   const mainWindow = new BrowserWindow({
     width: windowState.width,
@@ -146,11 +147,39 @@ function createWindow(): void {
     const [width, height] = mainWindow.getSize();
     mainWindow.webContents.send('config:window-state', { windowWidth: width, windowHeight: height });
   });
+
+  return mainWindow;
 }
 
 app.whenReady().then(() => {
   registerIpcHandlers();
-  createWindow();
+  const mainWindow = createWindow();
+
+  // Update check
+  const configPath = path.join(app.getPath('userData'), 'zeeb-config.json');
+  let skipVersion: string | null = null;
+  try {
+    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    skipVersion = cfg.skipUpdateVersion ?? null;
+  } catch { /* no config yet */ }
+  checkForUpdates(mainWindow, skipVersion);
+
+  // Download handler
+  ipcMain.handle('update:download', (_event, assetUrl: string) => {
+    downloadAsset(assetUrl, mainWindow);
+  });
+
+  // Show in folder handler
+  ipcMain.handle('update:show-in-folder', (_event, filePath: string) => {
+    const { shell } = require('electron');
+    shell.showItemInFolder(filePath);
+  });
+
+  // Open external handler
+  ipcMain.handle('update:open-external', (_event, url: string) => {
+    const { shell } = require('electron');
+    shell.openExternal(url);
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

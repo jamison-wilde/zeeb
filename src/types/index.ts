@@ -175,4 +175,7 @@ export interface ZeebConfig {
 
   // Legacy regex (for imported configs)
   customRegexPatterns: Record<string, string> | null;
+
+  // Update
+  skipUpdateVersion: string | null;
 }

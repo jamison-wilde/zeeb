@@ -81,4 +81,7 @@ export const DEFAULT_CONFIG: ZeebConfig = {
 
   // Legacy regex
   customRegexPatterns: null,
+
+  // Update
+  skipUpdateVersion: null,
 };
