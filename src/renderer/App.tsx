@@ -6,6 +6,7 @@ import { FolderBrowser } from './components/FolderBrowser';
 import { OptionsModal } from './components/OptionsModal';
 import { UndoModal } from './components/UndoModal';
 import { ReleaseNotes } from './components/ReleaseNotes';
+import { UpdateModal } from './components/UpdateModal';
 import { useConfigStore, getConfigStore } from '../stores/configStore';
 import { createFileStore } from '../stores/fileStore';
 import { createUndoStore } from '../stores/undoStore';
@@ -25,6 +26,7 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showTt, setShowTt] = useState(false);
   const [showSample, setShowSample] = useState(false);
+  const [updateData, setUpdateData] = useState<any>(null);
 
   // Each renamer gets its own file index; they interleave (0,2,4... and 1,3,5...)
   const [fileIndex0, setFileIndex0] = useState(0);
@@ -77,6 +79,12 @@ function App({ fs }: AppProps): React.JSX.Element {
     window.zeebMenu.onOpenFolder(() => {
       setFiles([]);
       setView('folderBrowser');
+    });
+  }, []);
+
+  useEffect(() => {
+    return window.zeebUpdate.onUpdateAvailable((data) => {
+      setUpdateData(data);
     });
   }, []);
 
@@ -182,6 +190,12 @@ function App({ fs }: AppProps): React.JSX.Element {
     void save();
   }, [save]);
 
+  const handleSkipUpdate = useCallback((version: string) => {
+    updateConfig({ skipUpdateVersion: version });
+    void save();
+    setUpdateData(null);
+  }, [updateConfig, save]);
+
   const handleRescan = useCallback(async () => {
     const cfg = getConfigStore().getState().config;
     const folder = cfg.recentFolders[0];
@@ -261,6 +275,13 @@ function App({ fs }: AppProps): React.JSX.Element {
         visible={showReleaseNotes}
         onClose={() => setShowReleaseNotes(false)}
       />
+      {updateData && (
+        <UpdateModal
+          data={updateData}
+          onClose={() => setUpdateData(null)}
+          onSkip={handleSkipUpdate}
+        />
+      )}
     </div>
   );
 }

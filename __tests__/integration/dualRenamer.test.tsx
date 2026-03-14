@@ -25,6 +25,19 @@ describe('Dual Renamer integration', () => {
       writable: true,
       configurable: true,
     });
+    Object.defineProperty(window, 'zeebUpdate', {
+      value: {
+        onUpdateAvailable: vi.fn(() => () => {}),
+        downloadUpdate: vi.fn().mockResolvedValue(undefined),
+        onDownloadProgress: vi.fn(() => () => {}),
+        onDownloadComplete: vi.fn(() => () => {}),
+        onDownloadError: vi.fn(() => () => {}),
+        showInFolder: vi.fn().mockResolvedValue(undefined),
+        openExternal: vi.fn().mockResolvedValue(undefined),
+      },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('renders two Renamer instances in process view', async () => {

@@ -20,6 +20,19 @@ describe('App', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
     Object.defineProperty(window, 'zeebMenu', { value: mockZeebMenu, writable: true, configurable: true });
+    Object.defineProperty(window, 'zeebUpdate', {
+      value: {
+        onUpdateAvailable: vi.fn(() => () => {}),
+        downloadUpdate: vi.fn().mockResolvedValue(undefined),
+        onDownloadProgress: vi.fn(() => () => {}),
+        onDownloadComplete: vi.fn(() => () => {}),
+        onDownloadError: vi.fn(() => () => {}),
+        showInFolder: vi.fn().mockResolvedValue(undefined),
+        openExternal: vi.fn().mockResolvedValue(undefined),
+      },
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('renders folder browser view by default', () => {
