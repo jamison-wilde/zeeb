@@ -31,3 +31,6 @@ credentials.json
 # Electron Forge
 out/
 .vite/
+
+# Generated at build time
+assets/release-notes.md
