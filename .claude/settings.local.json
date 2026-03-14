@@ -28,7 +28,11 @@
       "Bash(git commit:*)",
       "Bash(npx vitest:*)",
       "Bash(timeout 30 npm start 2>&1 || true)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node_modules/.bin/vitest run:*)",
+      "Bash(git cherry-pick:*)"
     ]
   }
 }

@@ -1,6 +1,10 @@
 {
-  "name": "Zeeb",
-  "version": "0.0.1",
+  "name": "zeeb",
+  "productName": "Zeeb Movie Renamer",
+  "version": "4.0.0",
+  "description": "Batch movie file renamer with IMDB integration",
+  "author": "jamison-wilde",
+  "license": "MIT",
   "private": true,
   "main": ".vite/build/index.js",
   "scripts": {
@@ -13,6 +17,8 @@
   },
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
+    "dompurify": "^3.3.3",
+    "marked": "^17.0.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zustand": "^5.0.11"
@@ -27,6 +33,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^25.4.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
