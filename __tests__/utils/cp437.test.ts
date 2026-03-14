@@ -24,4 +24,9 @@ describe('cp437StringToUnicode', () => {
     const latin1 = String.fromCharCode(0xDA, 0xC4, 0xBF);
     expect(cp437StringToUnicode(latin1)).toBe('┌─┐');
   });
+
+  it('preserves newlines, carriage returns, and tabs', () => {
+    const latin1 = 'A' + String.fromCharCode(0x0A) + 'B' + String.fromCharCode(0x0D) + 'C' + String.fromCharCode(0x09) + 'D';
+    expect(cp437StringToUnicode(latin1)).toBe('A\nB\rC\tD');
+  });
 });

@@ -22,11 +22,10 @@ describe('NfoViewer', () => {
     expect(screen.getByText('╔═══╗')).toBeDefined();
   });
 
-  it('detects URLs and renders copy icons', () => {
+  it('detects URLs and renders them as links', () => {
     const content = 'Visit https://example.com for info';
     render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
     expect(screen.getByText('https://example.com')).toBeDefined();
-    expect(screen.getByTestId('copy-url-0')).toBeDefined();
   });
 
   it('does not include trailing punctuation in detected URLs', () => {
@@ -35,7 +34,7 @@ describe('NfoViewer', () => {
     expect(screen.getByText('https://example.com')).toBeDefined();
   });
 
-  it('copies URL to clipboard on icon click', async () => {
+  it('copies URL to clipboard on click', async () => {
     const content = 'Visit https://example.com for info';
     render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
     await act(async () => {
@@ -44,15 +43,16 @@ describe('NfoViewer', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com');
   });
 
-  it('shows Copied! feedback after clicking copy icon', async () => {
+  it('shows clipboard icon on hover and Copied! after click', async () => {
     const content = 'Visit https://example.com for info';
     render(<NfoViewer visible={true} content={content} onClose={vi.fn()} />);
-    const icon = screen.getByTestId('copy-url-0');
-    expect(icon.textContent).toBe('📋');
+    const urlWrapper = screen.getByTestId('copy-url-0');
+    fireEvent.mouseEnter(urlWrapper);
+    expect(urlWrapper.textContent).toContain('📋');
     await act(async () => {
-      fireEvent.click(icon);
+      fireEvent.click(urlWrapper);
     });
-    expect(icon.textContent).toBe('Copied!');
+    expect(urlWrapper.textContent).toContain('Copied!');
   });
 
   it('closes on Escape key', () => {

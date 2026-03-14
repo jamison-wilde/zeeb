@@ -36,6 +36,7 @@ function parseContent(content: string): ContentSegment[] {
 
 function CopyableUrl({ url, index }: { url: string; index: number }): React.JSX.Element {
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(url);
@@ -44,16 +45,19 @@ function CopyableUrl({ url, index }: { url: string; index: number }): React.JSX.
   }, [url]);
 
   return (
-    <span className="relative inline">
+    <span
+      className="relative inline cursor-pointer"
+      data-testid={`copy-url-${index}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setCopied(false); }}
+      onClick={handleCopy}
+    >
       <span className="text-blue-400 underline">{url}</span>
-      <span
-        data-testid={`copy-url-${index}`}
-        className="absolute -top-4 -right-5 cursor-pointer text-[10px] text-gray-400 hover:text-white select-none"
-        onClick={handleCopy}
-        title="Copy URL"
-      >
-        {copied ? 'Copied!' : '📋'}
-      </span>
+      {hovered && (
+        <span className="absolute -top-3 left-0 text-[10px] text-gray-300 select-none bg-gray-800 px-1 rounded">
+          {copied ? 'Copied!' : '📋'}
+        </span>
+      )}
     </span>
   );
 }

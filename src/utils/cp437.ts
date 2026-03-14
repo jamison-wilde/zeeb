@@ -63,7 +63,12 @@ export function cp437ToUnicode(buffer: Buffer): string {
 export function cp437StringToUnicode(str: string): string {
   let result = '';
   for (let i = 0; i < str.length; i++) {
-    result += CP437_TABLE[str.charCodeAt(i)];
+    const code = str.charCodeAt(i);
+    if (code === 0x0A || code === 0x0D || code === 0x09) {
+      result += str[i];
+    } else {
+      result += CP437_TABLE[code];
+    }
   }
   return result;
 }

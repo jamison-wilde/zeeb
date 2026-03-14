@@ -647,13 +647,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       <div className="shrink-0 border-t border-gray-300">
         {currentFile && (
           <div className="flex items-center gap-2 px-2 py-0.5 bg-gray-50 border-b border-gray-200">
-            <span className="text-xs text-gray-600 truncate">
-              {currentFile.name}
-            </span>
-            <span className="text-xs text-gray-400 shrink-0">
-              {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : ''}
-            </span>
-            <span className="flex-1" />
             {currentFile.nfoPath && (
               <button
                 data-testid="nfo-button"
@@ -669,6 +662,13 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
                 NFO
               </button>
             )}
+            <span className="text-xs text-gray-600 truncate">
+              {currentFile.name}
+            </span>
+            <span className="text-xs text-gray-400 shrink-0">
+              {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : ''}
+            </span>
+            <span className="flex-1" />
             <button
               data-testid="search-button"
               className="px-2 py-0.5 bg-blue-500 text-white text-[11px] font-bold rounded hover:bg-blue-600 shrink-0"
