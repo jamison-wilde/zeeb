@@ -12,6 +12,7 @@ const mockZeebMenu = {
   onOptions: vi.fn((cb: () => void) => { optionsCallback = cb; }),
   onUndo: vi.fn(),
   onReleaseNotes: vi.fn(),
+  onOpenFolder: vi.fn(),
   onWindowStateChanged: vi.fn(() => () => {}),
 };
 
@@ -48,5 +49,19 @@ describe('App', () => {
     render(<App fs={mockFs} />);
     act(() => { optionsCallback?.(); });
     expect(screen.getByTestId('options-modal')).toBeDefined();
+  });
+
+  it('registers onOpenFolder handler', () => {
+    mockZeebMenu.onOpenFolder = vi.fn();
+    render(<App fs={mockFs} />);
+    expect(mockZeebMenu.onOpenFolder).toHaveBeenCalled();
+  });
+
+  it('switches to folder browser when Open Folder callback fires', () => {
+    let openFolderCallback: (() => void) | null = null;
+    mockZeebMenu.onOpenFolder = vi.fn((cb: () => void) => { openFolderCallback = cb; });
+    render(<App fs={mockFs} />);
+    act(() => { openFolderCallback?.(); });
+    expect(screen.getByTestId('folder-browser')).toBeDefined();
   });
 });

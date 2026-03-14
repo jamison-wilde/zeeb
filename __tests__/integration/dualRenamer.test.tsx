@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, act } from '@testing-library/react';
 import App from '../../src/renderer/App';
 import { createMockFsAdapter } from '../../src/adapters/fs';
 import { initConfigStore } from '../../src/stores/configStore';
@@ -11,7 +11,7 @@ describe('Dual Renamer integration', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
     Object.defineProperty(window, 'zeebMenu', {
-      value: { onOptions: vi.fn(), onUndo: vi.fn(), onReleaseNotes: vi.fn(), onWindowStateChanged: vi.fn(() => () => {}) },
+      value: { onOptions: vi.fn(), onUndo: vi.fn(), onReleaseNotes: vi.fn(), onOpenFolder: vi.fn(), onWindowStateChanged: vi.fn(() => () => {}) },
       writable: true,
       configurable: true,
     });
@@ -27,16 +27,22 @@ describe('Dual Renamer integration', () => {
     });
   });
 
-  it('renders two Renamer instances in process view', () => {
+  it('renders two Renamer instances in process view', async () => {
     render(<App fs={mockFs} />);
-    fireEvent.click(screen.getByTestId('start-processing'));
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: '/some/path' } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('list-movies-button'));
+    });
     expect(screen.getByTestId('renamer-0')).toBeDefined();
     expect(screen.getByTestId('renamer-1')).toBeDefined();
   });
 
-  it('only shows the active renamer as visible', () => {
+  it('only shows the active renamer as visible', async () => {
     render(<App fs={mockFs} />);
-    fireEvent.click(screen.getByTestId('start-processing'));
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: '/some/path' } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('list-movies-button'));
+    });
     // Renamer-0 is active by default, renamer-1 is hidden
     // Both testID wrappers exist, but only one Renamer has visible=true
     expect(screen.getByTestId('renamer-0')).toBeDefined();

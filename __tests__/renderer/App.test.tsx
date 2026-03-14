@@ -10,6 +10,7 @@ const mockZeebMenu = {
   onOptions: vi.fn(),
   onUndo: vi.fn(),
   onReleaseNotes: vi.fn(),
+  onOpenFolder: vi.fn(),
   onWindowStateChanged: vi.fn(() => () => {}),
 };
 
@@ -19,12 +20,12 @@ describe('App', () => {
     Object.defineProperty(window, 'zeebMenu', { value: mockZeebMenu, writable: true, configurable: true });
   });
 
-  it('renders toolbar with Start Processing button', () => {
+  it('renders folder browser view by default', () => {
     render(<App fs={mockFs} />);
-    expect(screen.getByTestId('start-processing')).toBeDefined();
+    expect(screen.getByTestId('folder-browser')).toBeDefined();
   });
 
-  it('shows folder browser by default', () => {
+  it('shows folder path input in folder browser', () => {
     render(<App fs={mockFs} />);
     expect(screen.getByPlaceholderText('Enter folder path...')).toBeDefined();
   });

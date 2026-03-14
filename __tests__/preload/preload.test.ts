@@ -33,6 +33,15 @@ describe('main preload', () => {
     expect(keys).toContain('zeebImdb');
     expect(keys).toContain('zeebMenu');
   });
+
+  it('exposes onOpenFolder on zeebMenu', async () => {
+    await import('../../src/preload/main');
+    const { contextBridge: cb } = await import('electron');
+    const exposeMock = cb.exposeInMainWorld as ReturnType<typeof vi.fn>;
+    const menuCall = exposeMock.mock.calls.find((c: unknown[]) => c[0] === 'zeebMenu');
+    expect(menuCall).toBeDefined();
+    expect(menuCall![1]).toHaveProperty('onOpenFolder');
+  });
 });
 
 describe('webview preload', () => {

@@ -72,6 +72,10 @@ function App({ fs }: AppProps): React.JSX.Element {
       }
     });
     window.zeebMenu.onReleaseNotes(() => setShowReleaseNotes(true));
+    window.zeebMenu.onOpenFolder(() => {
+      setFiles([]);
+      setView('folderBrowser');
+    });
   }, []);
 
   const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
