@@ -35,7 +35,7 @@ interface RenamerProps {
   undoStore?: StoreApi<{
     beginTransaction: () => void;
     addEntry: (entry: UndoEntry) => void;
-    commitTransaction: (maxUndos?: number) => void;
+    commitTransaction: (basePath: string, maxUndos?: number) => void;
   }>;
   onFileRenamed?: (fileId: string, newName: string, newPath: string) => void;
   onComplete?: () => void;
@@ -534,7 +534,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
         }
       }
 
-      undoStore?.getState().commitTransaction(config.maxUndos);
+      undoStore?.getState().commitTransaction(currentFile.folder, config.maxUndos);
       onFileRenamed?.(currentFile.id, previewFilename, `${workingFolder}${sep}${previewFilename}`);
 
       if (config.logFilePath) {
