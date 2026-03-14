@@ -8,7 +8,7 @@ Streamline the folder selection experience: fewer clicks, better layout, explana
 
 ### 1. Remove "Start Processing" toolbar button
 
-The button in `App.tsx` (lines 189-197) switches to the process view without scanning — useless. Remove it entirely. The folder browser view should have no toolbar row.
+Remove the entire `{view === 'folderBrowser' && (<div>...</div>)}` toolbar block in `App.tsx`. The folder browser view should have no toolbar row.
 
 ### 2. Compact button layout
 
@@ -18,12 +18,12 @@ Move "List Movies" button next to "Browse..." on the same row. Layout: `[input] 
 
 Add `title` attributes to the three recursion mode buttons:
 - **None**: "Only look in this directory, not in subfolders"
-- **Subfolders**: "Look in folders of this directory, but not in subfolders inside each folder"
-- **Full**: "Look in folders of this directory, and in subfolders inside each folder"
+- **Subfolders**: "Look one level deep into immediate subfolders, but not deeper"
+- **Full**: "Recursively look in all subfolders at every level"
 
 ### 4. Recent folders auto-scan
 
-Clicking a recent folder tag immediately triggers `onFolderSelected(folder, recursionMode)` — scans and switches to process view in one click. No need to press "List Movies" separately.
+Clicking a recent folder tag immediately calls `onFolderSelected(folder, currentRecursionMode)` — using the component's current recursion mode state. Scans and switches to process view in one click. No need to press "List Movies" separately.
 
 ### 5. Explanatory text
 
@@ -33,18 +33,21 @@ Below the recursion buttons, add a muted note:
 
 ### 6. "Open Folder" menu item
 
-Add "Open Folder" to the File menu with accelerator Ctrl+O (Cmd+O on macOS). Sends a `menu:open-folder` IPC event. The renderer listens for this event and:
+Add "Open Folder" to the File menu with accelerator Ctrl+O (Cmd+O on macOS). Sends a `menu:open-folder` IPC event. In the renderer, `App.tsx` listens via `window.zeebMenu.onOpenFolder()` and:
+- Calls `setFiles([])` to clear the file store
 - Switches view to `folderBrowser`
-- Clears the current file list (fresh start)
+
+Follow the existing pattern for menu event listeners (same as `onOptions`, `onUndo`, `onReleaseNotes`).
 
 ## Files to Modify
 
 - `src/renderer/components/FolderBrowser.tsx` — layout changes (button placement), tooltips, auto-scan on recent folder click, explanatory text
-- `src/renderer/App.tsx` — remove "Start Processing" toolbar, add `menu:open-folder` handler
+- `src/renderer/App.tsx` — remove "Start Processing" toolbar block, add `menu:open-folder` handler
 - `src/main/index.ts` — add "Open Folder" menu item to File submenu
-- `src/preload/main.ts` — expose `onOpenFolder` callback if not reusable from existing pattern
+- `src/preload/main.ts` — add `onOpenFolder` to `zeebMenu` context bridge
 
 ## Testing
 
 - **FolderBrowser**: List Movies button beside Browse, tooltips on recursion buttons, recent folder click calls `onFolderSelected`, explanatory text renders
-- **App**: no "Start Processing" button in folder browser view, Open Folder menu event switches to folder browser and clears files
+- **App**: no "Start Processing" button in folder browser view, Open Folder menu event switches to folder browser and calls `setFiles([])`
+- **Preload**: `onOpenFolder` exists on `window.zeebMenu`
