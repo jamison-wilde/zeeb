@@ -60,7 +60,14 @@ export interface UndoEntry {
 export interface RenameTransaction {
   id: string;
   timestamp: number;
+  basePath: string;
   entries: UndoEntry[];
+}
+
+export interface UndoResult {
+  entry: UndoEntry;
+  success: boolean;
+  error?: string;
 }
 
 export interface ExtractionPattern {
