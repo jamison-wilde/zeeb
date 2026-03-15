@@ -11,12 +11,12 @@ describe('Dual Renamer integration', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
     Object.defineProperty(window, 'zeebMenu', {
-      value: { onOptions: vi.fn(), onUndoRename: vi.fn(), onToggleWebView: vi.fn(), onReleaseNotes: vi.fn(), onOpenFolder: vi.fn(), onWindowStateChanged: vi.fn(() => () => {}), sendWebViewState: vi.fn() },
+      value: { onOptions: vi.fn(), onUndoRename: vi.fn(), onToggleWebView: vi.fn(), onReleaseNotes: vi.fn(), onOpenFolder: vi.fn(), onAbout: vi.fn(), onWindowStateChanged: vi.fn(() => () => {}), sendWebViewState: vi.fn() },
       writable: true,
       configurable: true,
     });
     Object.defineProperty(window, 'zeebApp', {
-      value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue('') },
+      value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue(''), getVersion: vi.fn().mockResolvedValue('0.0.0') },
       writable: true,
       configurable: true,
     });

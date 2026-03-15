@@ -98,6 +98,8 @@ export function registerIpcHandlers(): void {
       }));
   });
 
+  ipcMain.handle('app:getVersion', () => app.getVersion());
+
   ipcMain.handle('app:getReleaseNotes', async () => {
     const fsSync = require('node:fs');
     // Try bundled release-notes.md first (production)

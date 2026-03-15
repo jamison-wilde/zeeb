@@ -118,7 +118,30 @@ function createWindow(): BrowserWindow {
       ],
     },
     { role: 'windowMenu' },
-    { label: 'Help', role: 'help' },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About Zeeb Movie Renamer',
+          click: () => mainWindow.webContents.send('menu:about'),
+        },
+        { type: 'separator' },
+        {
+          label: 'Zeeb on GitHub',
+          click: () => {
+            const { shell } = require('electron');
+            shell.openExternal('https://github.com/jamison-wilde/zeeb');
+          },
+        },
+        {
+          label: 'Report an Issue',
+          click: () => {
+            const { shell } = require('electron');
+            shell.openExternal('https://github.com/jamison-wilde/zeeb/issues');
+          },
+        },
+      ],
+    },
   ]);
   Menu.setApplicationMenu(menu);
 

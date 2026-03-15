@@ -7,6 +7,7 @@ import { OptionsModal } from './components/OptionsModal';
 import { UndoModal } from './components/UndoModal';
 import { ReleaseNotes } from './components/ReleaseNotes';
 import { UpdateModal } from './components/UpdateModal';
+import { AboutModal } from './components/AboutModal';
 import { useConfigStore, getConfigStore } from '../stores/configStore';
 import { createFileStore } from '../stores/fileStore';
 import { createUndoStore } from '../stores/undoStore';
@@ -27,6 +28,8 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showTt, setShowTt] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const [updateData, setUpdateData] = useState<any>(null);
+  const [showAbout, setShowAbout] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
 
   // Each renamer gets its own file index; they interleave (0,2,4... and 1,3,5...)
   const [fileIndex0, setFileIndex0] = useState(0);
@@ -66,6 +69,10 @@ function App({ fs }: AppProps): React.JSX.Element {
   }, [load]);
 
   useEffect(() => {
+    window.zeebApp.getVersion().then(setAppVersion);
+  }, []);
+
+  useEffect(() => {
     window.zeebMenu.onOptions(() => setShowOptions(true));
     window.zeebMenu.onUndoRename(() => setShowUndo(true));
     window.zeebMenu.onToggleWebView(() => {
@@ -80,6 +87,7 @@ function App({ fs }: AppProps): React.JSX.Element {
       setFiles([]);
       setView('folderBrowser');
     });
+    window.zeebMenu.onAbout(() => setShowAbout(true));
   }, []);
 
   useEffect(() => {
@@ -282,6 +290,11 @@ function App({ fs }: AppProps): React.JSX.Element {
           onSkip={handleSkipUpdate}
         />
       )}
+      <AboutModal
+        visible={showAbout}
+        onClose={() => setShowAbout(false)}
+        version={appVersion}
+      />
     </div>
   );
 }

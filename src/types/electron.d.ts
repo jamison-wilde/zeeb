@@ -31,6 +31,7 @@ interface Window {
     getPath(name: string): Promise<string>;
     getWebviewPreloadPath(): Promise<string>;
     getReleaseNotes(): Promise<string>;
+    getVersion(): Promise<string>;
   };
   zeebUpdate: {
     onUpdateAvailable(callback: (data: {
@@ -55,6 +56,7 @@ interface Window {
     onToggleWebView(callback: () => void): void;
     onReleaseNotes(callback: () => void): void;
     onOpenFolder(callback: () => void): void;
+    onAbout(callback: () => void): void;
     sendWebViewState(visible: boolean): void;
     onWindowStateChanged(callback: (state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => void): () => void;
   };

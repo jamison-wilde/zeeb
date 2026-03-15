@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('zeebApp', {
   getPath: (name: string) => ipcRenderer.invoke('app:getPath', name),
   getWebviewPreloadPath: () => ipcRenderer.invoke('app:getWebviewPreloadPath'),
   getReleaseNotes: () => ipcRenderer.invoke('app:getReleaseNotes'),
+  getVersion: () => ipcRenderer.invoke('app:getVersion'),
 });
 
 contextBridge.exposeInMainWorld('zeebImdb', {
@@ -59,6 +60,7 @@ contextBridge.exposeInMainWorld('zeebMenu', {
   onToggleWebView: (callback: () => void) => ipcRenderer.on('menu:toggle-webview', callback),
   onReleaseNotes: (callback: () => void) => ipcRenderer.on('menu:release-notes', callback),
   onOpenFolder: (callback: () => void) => ipcRenderer.on('menu:open-folder', callback),
+  onAbout: (callback: () => void) => ipcRenderer.on('menu:about', callback),
   sendWebViewState: (visible: boolean) => ipcRenderer.send('webview-state', visible),
   onWindowStateChanged: (callback: (state: any) => void) => {
     const handler = (_event: any, state: any) => callback(state);

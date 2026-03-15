@@ -17,6 +17,7 @@ const mockZeebMenu = {
   onToggleWebView: vi.fn((cb: () => void) => { toggleWebViewCallback = cb; }),
   onReleaseNotes: vi.fn(),
   onOpenFolder: vi.fn(),
+  onAbout: vi.fn(),
   onWindowStateChanged: vi.fn(() => () => {}),
   sendWebViewState: vi.fn(),
 };
@@ -33,7 +34,7 @@ describe('App', () => {
     mockZeebMenu.onToggleWebView.mockImplementation((cb: () => void) => { toggleWebViewCallback = cb; });
     Object.defineProperty(window, 'zeebMenu', { value: mockZeebMenu, writable: true, configurable: true });
     Object.defineProperty(window, 'zeebApp', {
-      value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue('') },
+      value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue(''), getVersion: vi.fn().mockResolvedValue('0.0.0') },
       writable: true,
       configurable: true,
     });
