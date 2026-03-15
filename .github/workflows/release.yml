@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: out/make/squirrel.windows/x64/
+
+  build-macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: out/make/*.dmg
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          node scripts/extract-changelog.js
+          echo "NOTES_FILE=assets/release-notes.md" >> $GITHUB_OUTPUT
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: artifacts/windows
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-artifacts
+          path: artifacts/macos
+
+      - name: Rename artifacts
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          mv artifacts/windows/*Setup*.exe "artifacts/Zeeb-Movie-Renamer-${VERSION}-Setup.exe" 2>/dev/null || true
+          mv artifacts/macos/*.dmg "artifacts/Zeeb-Movie-Renamer-${VERSION}.dmg" 2>/dev/null || true
+          # Keep Squirrel nupkg and RELEASES for future auto-update support
+          cp artifacts/windows/*.nupkg artifacts/ 2>/dev/null || true
+          cp artifacts/windows/RELEASES artifacts/ 2>/dev/null || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: ${{ steps.changelog.outputs.NOTES_FILE }}
+          files: |
+            artifacts/Zeeb-Movie-Renamer-*
+            artifacts/*.nupkg
+            artifacts/RELEASES
