@@ -1,97 +1,62 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Zeeb Movie Renamer
 
-# Getting Started
+Batch movie file renamer with IMDB integration. Automatically parses filenames, searches IMDB, and renames files with customizable format patterns.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+A complete rewrite of the original [Zeeb](https://sourceforge.net/projects/zeeb/) (Adobe Flex, v3.x) as a modern Electron + React desktop application.
 
-## Step 1: Start Metro
+## Download
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Get the latest release from the [Releases page](https://github.com/jamison-wilde/zeeb/releases):
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **Windows:** Download the `.exe` installer (no admin rights needed)
+- **macOS:** Download the `.dmg` disk image
 
-```sh
-# Using npm
-npm start
+No Node.js or other runtime is required — the installer is self-contained.
 
-# OR using Yarn
-yarn start
+> **Note:** The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt. On macOS, right-click → Open → confirm.
+
+## Features
+
+- Dual-renamer workflow with interleaved file processing
+- IMDB integration via embedded webview
+- TMDB poster browsing and saving
+- NFO file parsing for auto-selection
+- Configurable filename format patterns
+- AKA (alternate title) support
+- Subtitle and companion file renaming
+- Selective undo with per-file results
+- DVD folder detection and renaming
+- URL/webloc bookmark file generation
+- Format tester
+
+## Building from Source
+
+Requires Node.js >= 20.
+
+```bash
+git clone https://github.com/jamison-wilde/zeeb.git
+cd zeeb
+npm install
+npm start        # Run in development mode
+npm test         # Run tests
+npm run make     # Build installers for your platform
 ```
 
-## Step 2: Build and run your app
+## Releasing
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+1. Update `version` in `package.json`
+2. Add release notes to `CHANGELOG.md` under `## [x.y.z] - YYYY-MM-DD`
+3. Commit: `git commit -m "chore: bump version to x.y.z"`
+4. Tag: `git tag vx.y.z`
+5. Push: `git push origin main --tags`
 
-### Android
+GitHub Actions will automatically build Windows and macOS installers and create a GitHub Release.
 
-```sh
-# Using npm
-npm run android
+## Credits
 
-# OR using Yarn
-yarn android
-```
+- Icon by Kristof Polleunis
+- This product uses the TMDB API but is not endorsed or certified by TMDB.
 
-### iOS
+## License
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+MIT

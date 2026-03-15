@@ -31,6 +31,17 @@ EOF
 - Lock worktrees used by long-running agents
 - Document active worktrees in a `WORKTREES.md` if > 3 are live
 
+## Releasing
+
+1. Update `version` in `package.json`
+2. Add release notes to `CHANGELOG.md` under `## [x.y.z] - YYYY-MM-DD` (Keep a Changelog format)
+3. Commit: `chore: bump version to x.y.z`
+4. Tag: `git tag vx.y.z`
+5. Push: `git push origin main --tags`
+6. CI builds Win+Mac installers and creates GitHub Release with changelog as body
+- Never push a tag without a matching CHANGELOG.md entry — the build will fail
+- Version in package.json must match the tag (minus the `v` prefix)
+
 ## Subagent Usage
 
 ### Models
