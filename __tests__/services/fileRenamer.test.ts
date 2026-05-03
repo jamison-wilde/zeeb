@@ -42,4 +42,34 @@ describe('fileRenamer', () => {
     expect(fs.rename).toHaveBeenCalledWith('/movies/Movie.srt', '/movies/New Movie (2024).srt');
     expect(fs.rename).toHaveBeenCalledWith('/movies/Movie.en.srt', '/movies/New Movie (2024).en.srt');
   });
+
+  it('does not rename a subtitle whose name does not start with oldBase', async () => {
+    const renameMock = vi.fn().mockResolvedValue(undefined);
+    const fs2 = createMockFsAdapter({ rename: renameMock });
+
+    const entries = await renameSubtitles(
+      fs2,
+      ['/folder/My.Movie.en.srt'],
+      'Movie',
+      'Film',
+    );
+
+    expect(renameMock).not.toHaveBeenCalled();
+    expect(entries).toHaveLength(0);
+  });
+
+  it('replaces only the prefix when oldBase repeats elsewhere in the name', async () => {
+    const renameMock = vi.fn().mockResolvedValue(undefined);
+    const fs2 = createMockFsAdapter({ rename: renameMock });
+
+    const entries = await renameSubtitles(
+      fs2,
+      ['/folder/Foo.Foo.en.srt'],
+      'Foo',
+      'Bar',
+    );
+
+    expect(renameMock).toHaveBeenCalledWith('/folder/Foo.Foo.en.srt', '/folder/Bar.Foo.en.srt');
+    expect(entries).toHaveLength(1);
+  });
 });

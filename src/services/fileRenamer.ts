@@ -46,7 +46,11 @@ export async function renameSubtitles(
     const dir = dirSep >= 0 ? filePath.substring(0, dirSep) : '';
     const fileName = dirSep >= 0 ? filePath.substring(dirSep + 1) : filePath;
 
-    const newFileName = fileName.replace(oldBase, newBase);
+    if (!fileName.startsWith(oldBase)) continue;
+
+    const newFileName = newBase + fileName.slice(oldBase.length);
+    if (newFileName === fileName) continue;
+
     const newPath = dir ? `${dir}/${newFileName}` : newFileName;
 
     await fs.rename(filePath, newPath);
