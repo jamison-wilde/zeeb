@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, session } from 'electron';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
@@ -171,10 +171,24 @@ function createWindow(): BrowserWindow {
     mainWindow.webContents.send('config:window-state', { windowWidth: width, windowHeight: height });
   });
 
+  // Windows-only: flush storage on graceful shutdown/restart/logoff. Windows
+  // allows ~5s before SIGKILL. Doesn't fire on hard power-off, BSOD, or End Task.
+  mainWindow.on('session-end', () => {
+    session.defaultSession.flushStorageData();
+    app.quit();
+  });
+
   return mainWindow;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Dev-only: clear HTTP cache on startup. Chromium's disk cache uses
+  // memory-mapped block files that can corrupt on forced shutdown, poisoning
+  // subsequent loads of Vite-served modules. Production keeps the cache.
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    await session.defaultSession.clearCache();
+  }
+
   registerIpcHandlers();
   const mainWindow = createWindow();
 
