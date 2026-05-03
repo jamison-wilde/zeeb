@@ -35,7 +35,10 @@ No Node.js or other runtime is required — the installer is self-contained.
 - URL/webloc bookmark file generation
 - Format tester
 
-## Building from Source
+## For developers
+<details>
+
+<summary><strong>Building from source</strong></summary>
 
 Requires Node.js >= 20.
 
@@ -48,13 +51,17 @@ npm test         # Run tests
 npm run make     # Build installers for your platform
 ```
 
-## Releasing
+<summary><strong>Releasing</strong></summary>
 
 1. Update `version` in `package.json`
 2. Add release notes to `CHANGELOG.md` under `## [x.y.z] - YYYY-MM-DD`
 3. Commit: `git commit -m "chore: bump version to x.y.z"`
 4. Tag: `git tag vx.y.z`
 5. Push: `git push origin main --tags`
+
+CI automatically builds Windows and macOS installers and creates a GitHub Release.
+
+</details>
 
 GitHub Actions will automatically build Windows and macOS installers and create a GitHub Release.
 
