@@ -18,8 +18,8 @@ import {
 import { extractImdbFromNfo } from '../../services/nfoParser';
 import { useFilenamePreview } from '../hooks/useFilenamePreview';
 import { createLogger } from '../../services/logger';
-import { searchPosters } from '../../services/tmdbService';
 import { executeRename } from '../../services/renamePipeline';
+import { usePosterFetch } from '../hooks/usePosterFetch';
 import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
@@ -59,7 +59,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const [selectedTt, setSelectedTt] = useState('');
   const [useAka, setUseAka] = useState(false);
   const [selectedAka, setSelectedAka] = useState('');
-  const [selectedPosterIndex, setSelectedPosterIndex] = useState<number | null>(null);
   const [nfoViewerOpen, setNfoViewerOpen] = useState(false);
   const [nfoContent, setNfoContent] = useState('');
 
@@ -274,21 +273,11 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     };
   }, [webviewEl, instanceId, config.extractionPatterns, config.htmlZoom, setMovieMatches, setMetadata, setTesterResult]);
 
-  useEffect(() => {
-    if (!metadata?.tt) {
-      setPosterPaths([]);
-      setSelectedPosterIndex(null);
-      return;
-    }
-    let cancelled = false;
-    searchPosters(metadata.tt, config.urlTmdbApi, config.tmdbApiKey)
-      .then((paths) => {
-        if (cancelled) return;
-        setPosterPaths(paths);
-        setSelectedPosterIndex(paths.length > 0 ? 0 : null);
-      });
-    return () => { cancelled = true; };
-  }, [metadata?.tt, config.urlTmdbApi, config.tmdbApiKey, setPosterPaths]);
+  const { selectedPosterIndex, setSelectedPosterIndex } = usePosterFetch({
+    metadata,
+    config,
+    setPosterPaths,
+  });
 
   // Handle Format Tester requests — only first Renamer instance responds
   useEffect(() => {
