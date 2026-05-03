@@ -1,4 +1,4 @@
-import { createStore, type StoreApi } from 'zustand/vanilla';
+import { create } from 'zustand';
 import type { MovieFile } from '../types';
 
 interface FileStoreState {
@@ -8,22 +8,20 @@ interface FileStoreState {
   clear: () => void;
 }
 
-export function createFileStore(): StoreApi<FileStoreState> {
-  return createStore<FileStoreState>((set) => ({
-    files: [],
+export const useFileStore = create<FileStoreState>((set) => ({
+  files: [],
 
-    setFiles(files: MovieFile[]) {
-      set({ files });
-    },
+  setFiles(files) {
+    set({ files });
+  },
 
-    updateFile(id: string, updates: Partial<MovieFile>) {
-      set((state) => ({
-        files: state.files.map((f) => (f.id === id ? { ...f, ...updates } : f)),
-      }));
-    },
+  updateFile(id, updates) {
+    set((state) => ({
+      files: state.files.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+    }));
+  },
 
-    clear() {
-      set({ files: [] });
-    },
-  }));
-}
+  clear() {
+    set({ files: [] });
+  },
+}));

@@ -1,4 +1,5 @@
-import { createFileStore } from '../../src/stores/fileStore';
+import { beforeEach } from 'vitest';
+import { useFileStore } from '../../src/stores/fileStore';
 import type { MovieFile } from '../../src/types';
 
 const mockFile: MovieFile = {
@@ -9,24 +10,25 @@ const mockFile: MovieFile = {
 };
 
 describe('fileStore', () => {
+  beforeEach(() => {
+    useFileStore.setState({ files: [] });
+  });
+
   it('sets scanned files', () => {
-    const store = createFileStore();
-    store.getState().setFiles([mockFile]);
-    expect(store.getState().files).toHaveLength(1);
+    useFileStore.getState().setFiles([mockFile]);
+    expect(useFileStore.getState().files).toHaveLength(1);
   });
 
   it('updates a file entry in place', () => {
-    const store = createFileStore();
-    store.getState().setFiles([mockFile]);
-    store.getState().updateFile('1', { name: 'Renamed.mkv', nativePath: '/movies/Renamed.mkv' });
-    expect(store.getState().files[0].name).toBe('Renamed.mkv');
-    expect(store.getState().files[0].nativePath).toBe('/movies/Renamed.mkv');
+    useFileStore.getState().setFiles([mockFile]);
+    useFileStore.getState().updateFile('1', { name: 'Renamed.mkv', nativePath: '/movies/Renamed.mkv' });
+    expect(useFileStore.getState().files[0].name).toBe('Renamed.mkv');
+    expect(useFileStore.getState().files[0].nativePath).toBe('/movies/Renamed.mkv');
   });
 
   it('clears files', () => {
-    const store = createFileStore();
-    store.getState().setFiles([mockFile]);
-    store.getState().clear();
-    expect(store.getState().files).toHaveLength(0);
+    useFileStore.getState().setFiles([mockFile]);
+    useFileStore.getState().clear();
+    expect(useFileStore.getState().files).toHaveLength(0);
   });
 });

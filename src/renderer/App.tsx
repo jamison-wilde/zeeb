@@ -10,7 +10,7 @@ import { UpdateModal } from './components/UpdateModal';
 import { AboutModal } from './components/AboutModal';
 import { NotificationToast } from './components/NotificationToast';
 import { useConfigStore, getConfigStore } from '../stores/configStore';
-import { createFileStore } from '../stores/fileStore';
+import { useFileStore } from '../stores/fileStore';
 import { createUndoStore } from '../stores/undoStore';
 import { scanDirectory } from '../services/fileScanner';
 import { useDualCursor } from './hooks/useDualCursor';
@@ -32,12 +32,11 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showAbout, setShowAbout] = useState(false);
   const [appVersion, setAppVersion] = useState('');
 
-  const fileStoreRef = useRef(createFileStore());
   const undoStoreRef = useRef(createUndoStore(fs));
 
-  const files = useStore(fileStoreRef.current, (s) => s.files);
-  const setFiles = useStore(fileStoreRef.current, (s) => s.setFiles);
-  const updateFile = useStore(fileStoreRef.current, (s) => s.updateFile);
+  const files = useFileStore((s) => s.files);
+  const setFiles = useFileStore((s) => s.setFiles);
+  const updateFile = useFileStore((s) => s.updateFile);
 
   const isFileVisible = useCallback((f: { name: string }) => {
     if (!showSample && /sample/i.test(f.name)) return false;
