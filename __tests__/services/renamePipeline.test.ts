@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { _legacyExecuteRename, type ExecuteRenameArgs } from '../../src/renderer/components/Renamer';
+import { executeRename, type ExecuteRenameArgs } from '../../src/services/renamePipeline';
 import { createMockFsAdapter } from '../../src/adapters/fs';
 import type { ZeebConfig, MovieFile, MovieMetadata } from '../../src/types';
 import { DEFAULT_CONFIG } from '../../src/services/configDefaults';
@@ -73,7 +73,7 @@ describe('renamePipeline', () => {
   it('renames a single file with no extras', async () => {
     const renameMock = vi.fn().mockResolvedValue(undefined);
     const fs = createMockFsAdapter({ rename: renameMock });
-    const result = await _legacyExecuteRename(makeArgs({ fs }));
+    const result = await executeRename(makeArgs({ fs }));
     expect(renameMock).toHaveBeenCalledWith('/movies/old.mkv', '/movies/New Movie (1994).mkv');
     expect(result.entries).toEqual([
       { type: 'rename', sourcePath: '/movies/old.mkv', destPath: '/movies/New Movie (1994).mkv' },
@@ -92,7 +92,7 @@ describe('renamePipeline', () => {
       { name: 'old.fr.srt', path: '/movies/old.fr.srt', isFile: true, isDirectory: false },
     ]);
     const fs = createMockFsAdapter({ rename: renameMock, readdir: readdirMock });
-    const result = await _legacyExecuteRename(makeArgs({ fs }));
+    const result = await executeRename(makeArgs({ fs }));
     expect(renameMock).toHaveBeenCalledWith('/movies/old.mkv', '/movies/New Movie (1994).mkv');
     expect(renameMock).toHaveBeenCalledWith('/movies/old.en.srt', '/movies/New Movie (1994).en.srt');
     expect(renameMock).toHaveBeenCalledWith('/movies/old.fr.srt', '/movies/New Movie (1994).fr.srt');
@@ -103,7 +103,7 @@ describe('renamePipeline', () => {
   it('renames the containing folder when enabled and folder name differs', async () => {
     const renameMock = vi.fn().mockResolvedValue(undefined);
     const fs = createMockFsAdapter({ rename: renameMock });
-    const result = await _legacyExecuteRename(makeArgs({
+    const result = await executeRename(makeArgs({
       fs,
       currentFile: makeFile({ nativePath: '/parent/old folder/old.mkv', folder: '/parent/old folder' }),
       config: makeConfig({ renameFolder: true }),
@@ -123,7 +123,7 @@ describe('renamePipeline', () => {
     const writeFileMock = vi.fn().mockResolvedValue(undefined);
     const renameMock = vi.fn().mockResolvedValue(undefined);
     const fs = createMockFsAdapter({ rename: renameMock, writeFile: writeFileMock });
-    const result = await _legacyExecuteRename(makeArgs({
+    const result = await executeRename(makeArgs({
       fs,
       config: makeConfig({ createUrlFile: true, includeOriginalInUrl: true }),
     }));
@@ -146,7 +146,7 @@ describe('renamePipeline', () => {
       unlink: unlinkMock,
       readFile: readFileMock,
     });
-    const result = await _legacyExecuteRename(makeArgs({
+    const result = await executeRename(makeArgs({
       fs,
       currentFile: makeFile({ nfoPath: '/movies/old.nfo', hasNfo: true }),
       config: makeConfig({
@@ -169,7 +169,7 @@ describe('renamePipeline', () => {
       rename: vi.fn().mockResolvedValue(undefined),
       writeFile: writeFileMock,
     });
-    await _legacyExecuteRename(makeArgs({
+    await executeRename(makeArgs({
       fs,
       platform: 'mac',
       config: makeConfig({ createUrlFile: true }),
@@ -187,7 +187,7 @@ describe('renamePipeline', () => {
   it('renames a DVD folder (no extension) using its parent as the working folder', async () => {
     const renameMock = vi.fn().mockResolvedValue(undefined);
     const fs = createMockFsAdapter({ rename: renameMock });
-    const result = await _legacyExecuteRename(makeArgs({
+    const result = await executeRename(makeArgs({
       fs,
       currentFile: makeFile({
         name: 'OLD DVD',
@@ -211,7 +211,7 @@ describe('renamePipeline', () => {
       rename: vi.fn().mockResolvedValue(undefined),
       downloadToFile: downloadMock,
     });
-    await _legacyExecuteRename(makeArgs({
+    await executeRename(makeArgs({
       fs,
       posterRemotePath: '/abc.jpg',
       selectedAka: 'Castaway',
@@ -234,7 +234,7 @@ describe('renamePipeline', () => {
       rename: vi.fn().mockResolvedValue(undefined),
       downloadToFile: downloadMock,
     });
-    await _legacyExecuteRename(makeArgs({
+    await executeRename(makeArgs({
       fs,
       posterRemotePath: '/abc.jpg',
       config: makeConfig({ createPoster: true }),
@@ -252,7 +252,7 @@ describe('renamePipeline', () => {
       rename: vi.fn().mockResolvedValue(undefined),
       downloadToFile: downloadMock,
     });
-    await _legacyExecuteRename(makeArgs({
+    await executeRename(makeArgs({
       fs,
       posterRemotePath: '/abc.jpg',
       config: makeConfig({
@@ -275,7 +275,7 @@ describe('renamePipeline', () => {
       rename: vi.fn().mockResolvedValue(undefined),
       downloadToFile: downloadMock,
     });
-    await _legacyExecuteRename(makeArgs({
+    await executeRename(makeArgs({
       fs,
       currentFile: makeFile({
         name: 'OLD DVD',
@@ -299,6 +299,6 @@ describe('renamePipeline', () => {
   it('throws when the primary rename fails and returns no entries', async () => {
     const renameMock = vi.fn().mockRejectedValue(new Error('EACCES'));
     const fs = createMockFsAdapter({ rename: renameMock });
-    await expect(_legacyExecuteRename(makeArgs({ fs }))).rejects.toThrow(/EACCES/);
+    await expect(executeRename(makeArgs({ fs }))).rejects.toThrow(/EACCES/);
   });
 });
