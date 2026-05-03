@@ -4,6 +4,12 @@ Batch movie file renamer with IMDB integration. Automatically parses filenames, 
 
 A complete rewrite of the original [Zeeb](https://sourceforge.net/projects/zeeb/) (Adobe Flex, v3.x) as a modern Electron + React desktop application.
 
+
+![Zeeb Movie Renamer](./docs/images/zeeb_screenshot.jpg)
+![Zeeb Movie Renamer](./docs/images/zeeb_screenshot2.jpg)
+![Zeeb Movie Renamer](./docs/images/zeeb_screenshot3.jpg)
+
+
 ## Download
 
 Get the latest release from the [Releases page](https://github.com/jamison-wilde/zeeb/releases):
