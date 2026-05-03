@@ -24,6 +24,7 @@ import { searchPosters, buildPosterUrl } from '../../services/tmdbService';
 import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
+import { useNotificationStore } from '../../stores/notificationStore';
 
 interface WebviewIpcMessageEvent {
   channel: string;
@@ -543,6 +544,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
           });
         } catch (err) {
           console.error('[Renamer] Poster save failed:', err);
+          useNotificationStore.getState().notify('error', 'Poster save failed');
         }
       }
 

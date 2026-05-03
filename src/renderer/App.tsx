@@ -8,6 +8,7 @@ import { UndoModal } from './components/UndoModal';
 import { ReleaseNotes } from './components/ReleaseNotes';
 import { UpdateModal } from './components/UpdateModal';
 import { AboutModal } from './components/AboutModal';
+import { NotificationToast } from './components/NotificationToast';
 import { useConfigStore, getConfigStore } from '../stores/configStore';
 import { createFileStore } from '../stores/fileStore';
 import { createUndoStore } from '../stores/undoStore';
@@ -287,6 +288,7 @@ function App({ fs }: AppProps): React.JSX.Element {
         onClose={() => setShowAbout(false)}
         version={appVersion}
       />
+      <NotificationToast />
     </div>
   );
 }
