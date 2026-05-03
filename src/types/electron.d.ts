@@ -22,6 +22,8 @@ interface Window {
     rename(oldPath: string, newPath: string): Promise<void>;
     unlink(filePath: string): Promise<void>;
     exists(filePath: string): Promise<boolean>;
+    writeBinaryFile(filePath: string, data: Uint8Array): Promise<void>;
+    downloadToFile(url: string, filePath: string): Promise<void>;
   };
   zeebDialog: {
     openDirectory(): Promise<string | null>;

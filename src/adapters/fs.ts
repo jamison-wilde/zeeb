@@ -24,8 +24,8 @@ export interface FsAdapter {
  * Call this in the renderer process.
  */
 export function createElectronFsAdapter(): FsAdapter {
-  const zeebFs = (window as any).zeebFs;
-  const zeebApp = (window as any).zeebApp;
+  const zeebFs = window.zeebFs;
+  const zeebApp = window.zeebApp;
 
   return {
     readdir: (dirPath) => zeebFs.readdir(dirPath),
