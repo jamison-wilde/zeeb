@@ -1,0 +1,10 @@
+node_modules/
+.vite/
+out/
+dist/
+legacy_adobe_flex_src/
+assets/
+test-data/
+scripts/
+*.config.ts
+*.config.js
