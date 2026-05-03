@@ -20,6 +20,7 @@ import { useFilenamePreview } from '../hooks/useFilenamePreview';
 import { createLogger } from '../../services/logger';
 import { executeRename } from '../../services/renamePipeline';
 import { usePosterFetch } from '../hooks/usePosterFetch';
+import { useAutoSelect } from '../hooks/useAutoSelect';
 import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
@@ -95,7 +96,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   }, []);
 
   const autoSearchRef = useRef(false);
-  const nfoAutoSelectedRef = useRef(false);
 
   useEffect(() => {
     if (!currentFile) return;
@@ -107,28 +107,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     setUseAka(false);
     setSelectedAka('');
     autoSearchRef.current = true;
-    nfoAutoSelectedRef.current = false;
   }, [currentFile, config.removeTerms, config.keepTerms, setSearchParts, setMovieMatches, setMetadata, setPreviewFilename]);
-
-  // Auto-navigate to IMDB title page if NFO contains a tt#
-  useEffect(() => {
-    if (!currentFile?.nfoPath || !webviewEl) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const content = await fs.readFile(currentFile.nfoPath!, 'utf-8');
-        const tt = extractImdbFromNfo(content);
-        if (tt && !cancelled) {
-          nfoAutoSelectedRef.current = true;
-          setSelectedTt(tt);
-          const url = buildTitleUrl(tt, config.urlImdbTT);
-          navigationMode.current = 'title';
-          webviewEl.loadURL(url);
-        }
-      } catch { /* NFO read failed — fall through to year-based auto-select */ }
-    })();
-    return () => { cancelled = true; };
-  }, [currentFile, webviewEl, fs, config.urlImdbTT]);
 
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
@@ -171,20 +150,6 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     setPreviewFilename,
   });
 
-  // Auto-select a search result whose year matches the year detected in the filename
-  // Skip if NFO already auto-selected a title
-  useEffect(() => {
-    if (movieMatches.length === 0 || nfoAutoSelectedRef.current) return;
-    const yearCandidates = searchParts.filter(
-      (p) => p.state === 'remove' && /^\d{4}$/.test(p.text) && parseInt(p.text, 10) > 1900,
-    );
-    const yearPart = yearCandidates[yearCandidates.length - 1] ?? null;
-    if (!yearPart) return;
-    const match = movieMatches.slice(0, 8).find((m) => m.year === parseInt(yearPart.text, 10));
-    if (match) {
-      handleMovieSelect(match.tt);
-    }
-  }, [movieMatches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Send extraction patterns to webview preload whenever they change
   useEffect(() => {
@@ -352,6 +317,16 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     },
     [webviewEl, config.urlImdbTT],
   );
+
+  useAutoSelect({
+    currentFile,
+    webviewEl,
+    fs,
+    movieMatches,
+    searchParts,
+    onSelectImdbTt: setSelectedTt,
+    navigateToTitle: handleMovieSelect,
+  });
 
   const handleBack = useCallback(() => {
     webviewEl?.goBack();
