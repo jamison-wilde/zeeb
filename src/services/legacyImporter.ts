@@ -113,8 +113,6 @@ export function migrateLegacyConfig(parsed: Record<string, string>): Partial<Zee
 
   // Numeric values
   if (parsed.htmlZoom) config.htmlZoom = parseFloat(parsed.htmlZoom);
-  if (parsed.windowWidth) config.windowWidth = parseInt(parsed.windowWidth, 10);
-  if (parsed.windowHeight) config.windowHeight = parseInt(parsed.windowHeight, 10);
 
   // String values
   if (parsed.titleSpaceChar) config.titleSpaceChar = parsed.titleSpaceChar;

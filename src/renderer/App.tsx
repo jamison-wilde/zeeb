@@ -100,14 +100,6 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   const updateConfig = useConfigStore((s) => s.updateConfig);
 
-  useEffect(() => {
-    const cleanup = window.zeebMenu.onWindowStateChanged((state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => {
-      updateConfig(state);
-      void save();
-    });
-    return cleanup;
-  }, [updateConfig, save]);
-
   const handleFolderSelected = useCallback(
     async (path: string, recursionMode: string) => {
       // Save folder and recursion mode to config

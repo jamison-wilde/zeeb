@@ -11,7 +11,7 @@ describe('Dual Renamer integration', () => {
   beforeEach(() => {
     initConfigStore(mockFs);
     Object.defineProperty(window, 'zeebMenu', {
-      value: { onOptions: vi.fn(), onUndoRename: vi.fn(), onToggleWebView: vi.fn(), onReleaseNotes: vi.fn(), onOpenFolder: vi.fn(), onAbout: vi.fn(), onWindowStateChanged: vi.fn(() => () => {}), sendWebViewState: vi.fn() },
+      value: { onOptions: vi.fn(), onUndoRename: vi.fn(), onToggleWebView: vi.fn(), onReleaseNotes: vi.fn(), onOpenFolder: vi.fn(), onAbout: vi.fn(), sendWebViewState: vi.fn() },
       writable: true,
       configurable: true,
     });

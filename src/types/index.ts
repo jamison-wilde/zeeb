@@ -102,11 +102,6 @@ export interface FormatTokens {
 }
 
 export interface ZeebConfig {
-  // Window state
-  windowWidth: number;
-  windowHeight: number;
-  windowMaximized: boolean;
-
   // Format strings
   formatStandard: string;
   formatAka: string;

@@ -13,7 +13,6 @@ const mockZeebMenu = {
   onReleaseNotes: vi.fn(),
   onOpenFolder: vi.fn(),
   onAbout: vi.fn(),
-  onWindowStateChanged: vi.fn(() => () => {}),
   sendWebViewState: vi.fn(),
 };
 

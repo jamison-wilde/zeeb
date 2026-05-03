@@ -8,11 +8,6 @@ import {
 } from '../utils/defaultTerms';
 
 export const DEFAULT_CONFIG: ZeebConfig = {
-  // Window state
-  windowWidth: 1024,
-  windowHeight: 768,
-  windowMaximized: false,
-
   // Format strings
   formatStandard: '<title> (<year>).<imdb>(<rating100>).<saved>',
   formatAka: '<aka> (<title>) (<year>).<imdb>(<rating100>).<saved>',

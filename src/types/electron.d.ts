@@ -62,6 +62,5 @@ interface Window {
     onOpenFolder(callback: () => void): void;
     onAbout(callback: () => void): void;
     sendWebViewState(visible: boolean): void;
-    onWindowStateChanged(callback: (state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => void): () => void;
   };
 }

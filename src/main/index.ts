@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
 import { handleSquirrelEvents } from './squirrelHandler';
 import { checkForUpdates, downloadAsset } from './updateChecker';
+import { loadWindowState, saveWindowState } from './windowState';
 
 if (handleSquirrelEvents()) {
   process.exit(0);
@@ -11,23 +12,6 @@ if (handleSquirrelEvents()) {
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
-
-function loadWindowState(): { width: number; height: number; maximized: boolean } {
-  const defaults = { width: 1024, height: 768, maximized: false };
-  try {
-    const configDir = app.getPath('userData');
-    const configPath = path.join(configDir, 'zeeb-config.json');
-    const raw = fs.readFileSync(configPath, 'utf-8');
-    const config = JSON.parse(raw);
-    return {
-      width: typeof config.windowWidth === 'number' ? config.windowWidth : defaults.width,
-      height: typeof config.windowHeight === 'number' ? config.windowHeight : defaults.height,
-      maximized: typeof config.windowMaximized === 'boolean' ? config.windowMaximized : defaults.maximized,
-    };
-  } catch {
-    return defaults;
-  }
-}
 
 function createWindow(): BrowserWindow {
   const windowState = loadWindowState();
@@ -157,18 +141,17 @@ function createWindow(): BrowserWindow {
     if (resizeTimer) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       const [width, height] = mainWindow.getSize();
-      mainWindow.webContents.send('config:window-state', { windowWidth: width, windowHeight: height });
+      saveWindowState({ width, height });
     }, 500);
   });
 
   mainWindow.on('maximize', () => {
-    mainWindow.webContents.send('config:window-state', { windowMaximized: true });
+    saveWindowState({ maximized: true });
   });
 
   mainWindow.on('unmaximize', () => {
-    mainWindow.webContents.send('config:window-state', { windowMaximized: false });
     const [width, height] = mainWindow.getSize();
-    mainWindow.webContents.send('config:window-state', { windowWidth: width, windowHeight: height });
+    saveWindowState({ maximized: false, width, height });
   });
 
   // Windows-only: flush storage on graceful shutdown/restart/logoff. Windows

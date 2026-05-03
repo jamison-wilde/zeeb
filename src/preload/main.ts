@@ -66,9 +66,4 @@ contextBridge.exposeInMainWorld('zeebMenu', {
   onOpenFolder: (callback: () => void) => ipcRenderer.on('menu:open-folder', callback),
   onAbout: (callback: () => void) => ipcRenderer.on('menu:about', callback),
   sendWebViewState: (visible: boolean) => ipcRenderer.send('webview-state', visible),
-  onWindowStateChanged: (callback: (state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => void) => {
-    const handler = (_event: Electron.IpcRendererEvent, state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => callback(state);
-    ipcRenderer.on('config:window-state', handler);
-    return () => ipcRenderer.removeListener('config:window-state', handler);
-  },
 });
