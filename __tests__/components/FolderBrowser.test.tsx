@@ -48,4 +48,21 @@ describe('FolderBrowser', () => {
     render(<FolderBrowser onFolderSelected={vi.fn()} recentFolders={[]} />);
     expect(screen.getByText(/listing movies can take/i)).toBeDefined();
   });
+
+  it('disables List Movies button when path is empty', () => {
+    render(<FolderBrowser onFolderSelected={vi.fn()} recentFolders={[]} />);
+    expect((screen.getByTestId('list-movies-button') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('disables List Movies button when path is whitespace only', () => {
+    render(<FolderBrowser onFolderSelected={vi.fn()} recentFolders={[]} />);
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: '   ' } });
+    expect((screen.getByTestId('list-movies-button') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('enables List Movies button once a path is entered', () => {
+    render(<FolderBrowser onFolderSelected={vi.fn()} recentFolders={[]} />);
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: '/movies' } });
+    expect((screen.getByTestId('list-movies-button') as HTMLButtonElement).disabled).toBe(false);
+  });
 });

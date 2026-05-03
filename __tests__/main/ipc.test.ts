@@ -26,7 +26,15 @@ vi.mock('node:fs/promises', () => ({
 }));
 
 import { ipcMain } from 'electron';
+import * as fsPromises from 'node:fs/promises';
 import { registerIpcHandlers } from '../../src/main/ipc';
+
+function getHandler(channel: string): (...args: unknown[]) => unknown {
+  const handleMock = ipcMain.handle as ReturnType<typeof vi.fn>;
+  const call = handleMock.mock.calls.find((c: unknown[]) => c[0] === channel);
+  if (!call) throw new Error(`Handler not registered: ${channel}`);
+  return call[1] as (...args: unknown[]) => unknown;
+}
 
 describe('IPC handlers', () => {
   beforeEach(() => {
@@ -46,5 +54,13 @@ describe('IPC handlers', () => {
     expect(channels).toContain('fs:exists');
     expect(channels).toContain('dialog:openDirectory');
     expect(channels).toContain('app:getPath');
+  });
+
+  it('fs:readdir returns empty array for empty path without hitting fs', async () => {
+    registerIpcHandlers();
+    const handler = getHandler('fs:readdir');
+    const result = await handler({}, '');
+    expect(result).toEqual([]);
+    expect(fsPromises.readdir).not.toHaveBeenCalled();
   });
 });

@@ -46,7 +46,8 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
         </button>
         <button
           data-testid="list-movies-button"
-          className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 shrink-0"
+          disabled={!folderPath.trim()}
+          className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 shrink-0 disabled:bg-gray-300 disabled:cursor-not-allowed"
           onClick={() => onFolderSelected(folderPath, recursionMode)}
         >
           List Movies

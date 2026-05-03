@@ -4,6 +4,7 @@ import * as path from 'node:path';
 
 export function registerIpcHandlers(): void {
   ipcMain.handle('fs:readdir', async (_event, dirPath: string) => {
+    if (!dirPath) return [];
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     return entries.map((e) => ({
       name: e.name,
