@@ -25,6 +25,11 @@ import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
 
+interface WebviewIpcMessageEvent {
+  channel: string;
+  args?: unknown[];
+}
+
 interface RenamerProps {
   instanceId: number;
   visible: boolean;
@@ -236,16 +241,16 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
       } catch { /* ignore */ }
     };
 
-    const handleNavigate = (_event: any) => {
+    const handleNavigate = (_event: Event) => {
       try {
         setUrlInput(webview.getURL());
       } catch { /* ignore */ }
     };
 
-    const handleIpcMessage = (event: any) => {
+    const handleIpcMessage = (event: WebviewIpcMessageEvent) => {
       if (event.channel !== 'extraction-result') return;
       const message = event.args?.[0];
-      if (!message) return;
+      if (typeof message !== 'string') return;
 
       // Handle "moreAkas" — append full AKA list from /releaseinfo
       try {
@@ -620,7 +625,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
           <div className="flex-1 min-h-0 relative">
             {webviewPreloadPath && (
               <webview
-                ref={(el: any) => { if (el && el !== webviewEl) setWebviewEl(el); }}
+                ref={(el: WebviewTag | null) => { if (el && el !== webviewEl) setWebviewEl(el); }}
                 data-testid="imdb-webview"
                 src="about:blank"
                 preload={webviewPreloadPath}

@@ -4,12 +4,19 @@ interface WebviewTag extends HTMLElement {
   getURL(): string;
   goBack(): void;
   canGoBack(): boolean;
-  executeJavaScript(code: string): Promise<unknown>;
-  send(channel: string, ...args: any[]): void;
+  setZoomFactor(factor: number): void;
+  send(channel: string, ...args: unknown[]): void;
   addEventListener(event: string, handler: (...args: any[]) => void): void;
   removeEventListener(event: string, handler: (...args: any[]) => void): void;
   src: string;
   preload: string;
+}
+
+interface UpdateData {
+  version: string;
+  releaseNotes: string;
+  releaseUrl: string;
+  assets: Array<{ name: string; url: string; size: number }>;
 }
 
 // APIs exposed by preload scripts via contextBridge
@@ -36,12 +43,7 @@ interface Window {
     getVersion(): Promise<string>;
   };
   zeebUpdate: {
-    onUpdateAvailable(callback: (data: {
-      version: string;
-      releaseNotes: string;
-      releaseUrl: string;
-      assets: Array<{ name: string; url: string; size: number }>;
-    }) => void): () => void;
+    onUpdateAvailable(callback: (data: UpdateData) => void): () => void;
     downloadUpdate(assetUrl: string): Promise<void>;
     onDownloadProgress(callback: (progress: { percent: number; bytesDownloaded: number; totalBytes: number }) => void): () => void;
     onDownloadComplete(callback: (data: { filePath: string }) => void): () => void;

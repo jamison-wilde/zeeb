@@ -27,7 +27,7 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showTt, setShowTt] = useState(false);
   const [showSample, setShowSample] = useState(false);
-  const [updateData, setUpdateData] = useState<any>(null);
+  const [updateData, setUpdateData] = useState<UpdateData | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [appVersion, setAppVersion] = useState('');
 

@@ -28,25 +28,29 @@ contextBridge.exposeInMainWorld('zeebImdb', {
   suggest: (query: string) => ipcRenderer.invoke('imdb:suggest', query),
 });
 
+interface DownloadProgress { percent: number; bytesDownloaded: number; totalBytes: number; }
+interface DownloadComplete { filePath: string; }
+interface DownloadError { message: string; }
+
 contextBridge.exposeInMainWorld('zeebUpdate', {
-  onUpdateAvailable: (callback: (data: any) => void) => {
-    const handler = (_event: any, data: any) => callback(data);
+  onUpdateAvailable: (callback: (data: UpdateData) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: UpdateData) => callback(data);
     ipcRenderer.on('update:available', handler);
     return () => ipcRenderer.removeListener('update:available', handler);
   },
   downloadUpdate: (assetUrl: string) => ipcRenderer.invoke('update:download', assetUrl),
-  onDownloadProgress: (callback: (progress: any) => void) => {
-    const handler = (_event: any, progress: any) => callback(progress);
+  onDownloadProgress: (callback: (progress: DownloadProgress) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, progress: DownloadProgress) => callback(progress);
     ipcRenderer.on('update:download-progress', handler);
     return () => ipcRenderer.removeListener('update:download-progress', handler);
   },
-  onDownloadComplete: (callback: (data: any) => void) => {
-    const handler = (_event: any, data: any) => callback(data);
+  onDownloadComplete: (callback: (data: DownloadComplete) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: DownloadComplete) => callback(data);
     ipcRenderer.on('update:download-complete', handler);
     return () => ipcRenderer.removeListener('update:download-complete', handler);
   },
-  onDownloadError: (callback: (data: any) => void) => {
-    const handler = (_event: any, data: any) => callback(data);
+  onDownloadError: (callback: (data: DownloadError) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: DownloadError) => callback(data);
     ipcRenderer.on('update:download-error', handler);
     return () => ipcRenderer.removeListener('update:download-error', handler);
   },
@@ -62,8 +66,8 @@ contextBridge.exposeInMainWorld('zeebMenu', {
   onOpenFolder: (callback: () => void) => ipcRenderer.on('menu:open-folder', callback),
   onAbout: (callback: () => void) => ipcRenderer.on('menu:about', callback),
   sendWebViewState: (visible: boolean) => ipcRenderer.send('webview-state', visible),
-  onWindowStateChanged: (callback: (state: any) => void) => {
-    const handler = (_event: any, state: any) => callback(state);
+  onWindowStateChanged: (callback: (state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: Partial<{ windowWidth: number; windowHeight: number; windowMaximized: boolean }>) => callback(state);
     ipcRenderer.on('config:window-state', handler);
     return () => ipcRenderer.removeListener('config:window-state', handler);
   },
