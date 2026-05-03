@@ -63,9 +63,9 @@ npm run make     # Build installers for your platform
 
 CI automatically builds Windows and macOS installers and creates a GitHub Release.
 
+GitHub Actions will automatically build Windows and macOS installers and create a GitHub Release.
 </details>
 
-GitHub Actions will automatically build Windows and macOS installers and create a GitHub Release.
 
 ## Credits
 
