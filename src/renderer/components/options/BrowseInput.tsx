@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { usePlatform } from '../../PlatformContext';
 
 interface BrowseInputProps {
   value: string;
@@ -8,14 +9,15 @@ interface BrowseInputProps {
 }
 
 export function BrowseInput({ value, onChange, placeholder, mode }: BrowseInputProps): React.JSX.Element {
+  const platform = usePlatform();
   const handleBrowse = useCallback(async () => {
     const result = mode === 'directory'
-      ? await window.zeebDialog.openDirectory()
-      : await window.zeebDialog.openFile();
+      ? await platform.dialog.openDirectory()
+      : await platform.dialog.openFile();
     if (result) {
       onChange(result);
     }
-  }, [mode, onChange]);
+  }, [platform, mode, onChange]);
 
   return (
     <div className="flex gap-2">

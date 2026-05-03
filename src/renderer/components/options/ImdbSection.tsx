@@ -2,6 +2,7 @@
 import React, { useCallback } from 'react';
 import type { ZeebConfig } from '../../../types';
 import { KeyValueTable } from './KeyValueTable';
+import { usePlatform } from '../../PlatformContext';
 
 interface ImdbSectionProps {
   config: ZeebConfig;
@@ -9,6 +10,7 @@ interface ImdbSectionProps {
 }
 
 export function ImdbSection({ config, updateConfig }: ImdbSectionProps): React.JSX.Element {
+  const platform = usePlatform();
   const handleMpaaChange = useCallback(
     (pairs: Array<[string, string]>) => {
       updateConfig({ mpaaMap: pairs });
@@ -56,7 +58,7 @@ export function ImdbSection({ config, updateConfig }: ImdbSectionProps): React.J
           </div>
           <button
             className="text-xs text-blue-500 hover:underline"
-            onClick={() => window.zeebUpdate.openExternal('https://www.themoviedb.org/settings/api')}
+            onClick={() => platform.update.openExternal('https://www.themoviedb.org/settings/api')}
           >
             Get your own API key
           </button>

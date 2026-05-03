@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { usePlatform } from '../PlatformContext';
 
 interface FolderBrowserProps {
   onFolderSelected: (path: string, recursionMode: string) => void;
@@ -16,15 +17,13 @@ const RECURSION_OPTIONS: { label: string; value: RecursionMode; tooltip: string 
 ];
 
 export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentFolder, initialRecursionMode = 'none' }: FolderBrowserProps): React.JSX.Element {
+  const platform = usePlatform();
   const [folderPath, setFolderPath] = useState(recentFolders[0] ?? '');
   const [recursionMode, setRecursionMode] = useState<RecursionMode>(initialRecursionMode);
 
   const handleBrowse = async (): Promise<void> => {
-    const zeebDialog = (window as any).zeebDialog;
-    if (zeebDialog) {
-      const path = await zeebDialog.openDirectory();
-      if (path) setFolderPath(path);
-    }
+    const path = await platform.dialog.openDirectory();
+    if (path) setFolderPath(path);
   };
 
   return (
