@@ -50,7 +50,9 @@ npm start        # Run in development mode
 npm test         # Run tests
 npm run make     # Build installers for your platform
 ```
+</details>
 
+<details>
 <summary><strong>Releasing</strong></summary>
 
 1. Update `version` in `package.json`
