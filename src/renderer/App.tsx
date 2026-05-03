@@ -9,7 +9,7 @@ import { ReleaseNotes } from './components/ReleaseNotes';
 import { UpdateModal } from './components/UpdateModal';
 import { AboutModal } from './components/AboutModal';
 import { NotificationToast } from './components/NotificationToast';
-import { useConfigStore, getConfigStore } from '../stores/configStore';
+import { useConfigStore } from '../stores/configStore';
 import { useFileStore } from '../stores/fileStore';
 import { scanDirectory } from '../services/fileScanner';
 import { useDualCursor } from './hooks/useDualCursor';
@@ -50,7 +50,7 @@ function App({ fs }: AppProps): React.JSX.Element {
   useEffect(() => {
     void load().then(() => {
       // Sync menu checkbox with config on startup
-      window.zeebMenu.sendWebViewState(getConfigStore().getState().config.showWebView);
+      window.zeebMenu.sendWebViewState(useConfigStore.getState().config.showWebView);
     });
   }, [load]);
 
@@ -62,7 +62,7 @@ function App({ fs }: AppProps): React.JSX.Element {
     window.zeebMenu.onOptions(() => setShowOptions(true));
     window.zeebMenu.onUndoRename(() => setShowUndo(true));
     window.zeebMenu.onToggleWebView(() => {
-      const store = getConfigStore().getState();
+      const store = useConfigStore.getState();
       const newVal = !store.config.showWebView;
       store.updateConfig({ showWebView: newVal });
       void store.save();
@@ -140,7 +140,7 @@ function App({ fs }: AppProps): React.JSX.Element {
   }, [updateConfig, save]);
 
   const handleRescan = useCallback(async () => {
-    const cfg = getConfigStore().getState().config;
+    const cfg = useConfigStore.getState().config;
     const folder = cfg.recentFolders[0];
     if (!folder) return;
     const results = await scanDirectory(

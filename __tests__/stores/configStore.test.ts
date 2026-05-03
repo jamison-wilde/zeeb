@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createConfigStore, DEFAULT_CONFIG } from '../../src/stores/configStore';
+import { useConfigStore, DEFAULT_CONFIG } from '../../src/stores/configStore';
 import { createMockFsAdapter } from '../../src/adapters/fs';
 import type { FsAdapter } from '../../src/adapters/fs';
 
@@ -13,28 +13,27 @@ describe('configStore', () => {
       writeFile: vi.fn().mockResolvedValue(undefined),
       getConfigDir: vi.fn().mockResolvedValue('/mock/docs'),
     });
+    useConfigStore.getState().setFs(fs);
+    useConfigStore.setState({ config: { ...DEFAULT_CONFIG } });
   });
 
   it('initializes with defaults when no config file exists', async () => {
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.formatStandard).toBe(DEFAULT_CONFIG.formatStandard);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.formatStandard).toBe(DEFAULT_CONFIG.formatStandard);
   });
 
   it('loads config from JSON file', async () => {
     const saved = { ...DEFAULT_CONFIG, removeThe: true };
     (fs.exists as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify(saved));
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.removeThe).toBe(true);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.removeThe).toBe(true);
   });
 
   it('saves config to JSON file', async () => {
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    store.getState().updateConfig({ removeThe: true });
-    await store.getState().save();
+    await useConfigStore.getState().load();
+    useConfigStore.getState().updateConfig({ removeThe: true });
+    await useConfigStore.getState().save();
     expect(fs.writeFile).toHaveBeenCalledWith(
       expect.stringContaining('zeeb-config.json'),
       expect.stringContaining('"removeThe": true'),
@@ -43,15 +42,18 @@ describe('configStore', () => {
   });
 
   it('merges partial updates without losing other fields', async () => {
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    const original = store.getState().config.formatStandard;
-    store.getState().updateConfig({ removeThe: true });
-    expect(store.getState().config.formatStandard).toBe(original);
+    await useConfigStore.getState().load();
+    const original = useConfigStore.getState().config.formatStandard;
+    useConfigStore.getState().updateConfig({ removeThe: true });
+    expect(useConfigStore.getState().config.formatStandard).toBe(original);
   });
 });
 
 describe('mpaaMap migration', () => {
+  beforeEach(() => {
+    useConfigStore.setState({ config: { ...DEFAULT_CONFIG } });
+  });
+
   it('migrates legacy Record<string,string> mpaaMap to Array<[string,string]>', async () => {
     const legacyConfig = {
       mpaaMap: { R: 'R', PG: 'PG', 'PG-13': 'PG-13' },
@@ -60,11 +62,11 @@ describe('mpaaMap migration', () => {
       exists: vi.fn().mockResolvedValue(true),
       readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
     });
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(Array.isArray(store.getState().config.mpaaMap)).toBe(true);
-    expect(store.getState().config.mpaaMap).toContainEqual(['R', 'R']);
-    expect(store.getState().config.mpaaMap).toContainEqual(['PG', 'PG']);
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(Array.isArray(useConfigStore.getState().config.mpaaMap)).toBe(true);
+    expect(useConfigStore.getState().config.mpaaMap).toContainEqual(['R', 'R']);
+    expect(useConfigStore.getState().config.mpaaMap).toContainEqual(['PG', 'PG']);
   });
 
   it('falls back to DEFAULT_MPAA_MAP when legacy mpaaMap is empty object', async () => {
@@ -73,10 +75,10 @@ describe('mpaaMap migration', () => {
       exists: vi.fn().mockResolvedValue(true),
       readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
     });
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.mpaaMap).toHaveLength(16);
-    expect(store.getState().config.mpaaMap[0]).toEqual(['NF', 'NR']);
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.mpaaMap).toHaveLength(16);
+    expect(useConfigStore.getState().config.mpaaMap[0]).toEqual(['NF', 'NR']);
   });
 
   it('falls back to DEFAULT_MPAA_MAP when mpaaMap is empty array', async () => {
@@ -85,10 +87,10 @@ describe('mpaaMap migration', () => {
       exists: vi.fn().mockResolvedValue(true),
       readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
     });
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.mpaaMap).toHaveLength(16);
-    expect(store.getState().config.mpaaMap[0]).toEqual(['NF', 'NR']);
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.mpaaMap).toHaveLength(16);
+    expect(useConfigStore.getState().config.mpaaMap[0]).toEqual(['NF', 'NR']);
   });
 
   it('preserves non-empty Array<[string,string]> mpaaMap', async () => {
@@ -99,9 +101,9 @@ describe('mpaaMap migration', () => {
       exists: vi.fn().mockResolvedValue(true),
       readFile: vi.fn().mockResolvedValue(JSON.stringify(migratedConfig)),
     });
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.mpaaMap).toEqual([
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.mpaaMap).toEqual([
       ['R', 'Restricted'],
       ['PG', 'Parental Guidance'],
     ]);
@@ -109,6 +111,10 @@ describe('mpaaMap migration', () => {
 });
 
 describe('keepTerms migration', () => {
+  beforeEach(() => {
+    useConfigStore.setState({ config: { ...DEFAULT_CONFIG } });
+  });
+
   it('converts legacy string[] keepTerms to [string, string][] on load', async () => {
     const legacyConfig = {
       keepTerms: ['720p', '1080p', "Director's Cut"],
@@ -117,9 +123,9 @@ describe('keepTerms migration', () => {
       exists: vi.fn().mockResolvedValue(true),
       readFile: vi.fn().mockResolvedValue(JSON.stringify(legacyConfig)),
     });
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.keepTerms).toEqual([
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.keepTerms).toEqual([
       ['720p', '720p'],
       ['1080p', '1080p'],
       ["Director's Cut", "Director's Cut"],
@@ -134,9 +140,9 @@ describe('keepTerms migration', () => {
       exists: vi.fn().mockResolvedValue(true),
       readFile: vi.fn().mockResolvedValue(JSON.stringify(migratedConfig)),
     });
-    const store = createConfigStore(fs);
-    await store.getState().load();
-    expect(store.getState().config.keepTerms).toEqual([
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.keepTerms).toEqual([
       ['720', '720p'],
       ['dc', "Director's Cut"],
     ]);

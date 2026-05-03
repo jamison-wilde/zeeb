@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Renamer } from '../../src/renderer/components/Renamer';
 import { createMockFsAdapter } from '../../src/adapters/fs';
-import { initConfigStore } from '../../src/stores/configStore';
+import { useConfigStore } from '../../src/stores/configStore';
 import type { MovieFile } from '../../src/types';
 
 const mockFs = createMockFsAdapter();
@@ -25,7 +25,7 @@ const testFile: MovieFile = {
 
 describe('Renamer', () => {
   beforeEach(() => {
-    initConfigStore(mockFs);
+    useConfigStore.getState().setFs(mockFs);
     Object.defineProperty(window, 'zeebApp', {
       value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue('') },
       writable: true,

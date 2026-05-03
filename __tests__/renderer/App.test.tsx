@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../../src/renderer/App';
 import { createMockFsAdapter } from '../../src/adapters/fs';
-import { initConfigStore } from '../../src/stores/configStore';
+import { useConfigStore } from '../../src/stores/configStore';
 
 const mockFs = createMockFsAdapter();
 
@@ -18,7 +18,7 @@ const mockZeebMenu = {
 
 describe('App', () => {
   beforeEach(() => {
-    initConfigStore(mockFs);
+    useConfigStore.getState().setFs(mockFs);
     Object.defineProperty(window, 'zeebMenu', { value: mockZeebMenu, writable: true, configurable: true });
     Object.defineProperty(window, 'zeebApp', {
       value: { getPath: vi.fn(), getWebviewPreloadPath: vi.fn().mockResolvedValue(''), getVersion: vi.fn().mockResolvedValue('0.0.0') },

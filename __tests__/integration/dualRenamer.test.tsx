@@ -3,13 +3,13 @@ import React from 'react';
 import { render, fireEvent, screen, act } from '@testing-library/react';
 import App from '../../src/renderer/App';
 import { createMockFsAdapter } from '../../src/adapters/fs';
-import { initConfigStore } from '../../src/stores/configStore';
+import { useConfigStore } from '../../src/stores/configStore';
 
 const mockFs = createMockFsAdapter();
 
 describe('Dual Renamer integration', () => {
   beforeEach(() => {
-    initConfigStore(mockFs);
+    useConfigStore.getState().setFs(mockFs);
     Object.defineProperty(window, 'zeebMenu', {
       value: { onOptions: vi.fn(), onUndoRename: vi.fn(), onToggleWebView: vi.fn(), onReleaseNotes: vi.fn(), onOpenFolder: vi.fn(), onAbout: vi.fn(), sendWebViewState: vi.fn() },
       writable: true,

@@ -3,13 +3,13 @@ import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { OptionsModal } from '../../src/renderer/components/OptionsModal';
 import { createMockFsAdapter } from '../../src/adapters/fs';
-import { initConfigStore } from '../../src/stores/configStore';
+import { useConfigStore } from '../../src/stores/configStore';
 
 const mockFs = createMockFsAdapter();
 
 describe('OptionsModal', () => {
   beforeEach(() => {
-    initConfigStore(mockFs);
+    useConfigStore.getState().setFs(mockFs);
   });
 
   it('renders nothing when not visible', () => {
