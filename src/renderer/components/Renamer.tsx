@@ -16,7 +16,7 @@ import {
   parseTitleData,
 } from '../../services/imdbExtractor';
 import { extractImdbFromNfo } from '../../services/nfoParser';
-import { interpolateFormat } from '../../services/formatEngine';
+import { useFilenamePreview } from '../hooks/useFilenamePreview';
 import { createLogger } from '../../services/logger';
 import { searchPosters } from '../../services/tmdbService';
 import { executeRename } from '../../services/renamePipeline';
@@ -162,33 +162,15 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     }
   }, [metadata, instanceId]);
 
-  useEffect(() => {
-    if (!metadata || !currentFile) {
-      setPreviewFilename('');
-      return;
-    }
-    const format = currentFile.isDvdFolder && config.separateDvdFormat
-      ? (useAka && selectedAka ? config.formatDvdAka : config.formatDvd)
-      : (useAka && selectedAka ? config.formatAka : config.formatStandard);
-    const ext = currentFile.isDvdFolder ? '' : `.${currentFile.extension}`;
-    const keepParts = searchParts
-      .filter((p) => p.state === 'keep' || p.state === 'keepAlways')
-      .map((p) => p.text);
-    const saved = keepParts.join(config.savedPartSeparator ?? ' ');
-    const formatted = interpolateFormat(format, metadata, {
-      saved,
-      selectedAka: useAka ? selectedAka : undefined,
-      directorSeparator: config.directorSeparator,
-      genreSeparator: config.genreSeparator,
-      starSeparator: config.starSeparator,
-      removeThe: config.removeThe,
-      swapThe: config.swapThe,
-      titleSpaceChar: config.titleSpaceChar,
-      mpaaMap: config.mpaaMap,
-      theWord: config.theWord,
-    });
-    setPreviewFilename(formatted + ext);
-  }, [metadata, currentFile, config, searchParts, useAka, selectedAka, setPreviewFilename]);
+  useFilenamePreview({
+    metadata,
+    currentFile,
+    searchParts,
+    useAka,
+    selectedAka,
+    config,
+    setPreviewFilename,
+  });
 
   // Auto-select a search result whose year matches the year detected in the filename
   // Skip if NFO already auto-selected a title
