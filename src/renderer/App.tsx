@@ -11,7 +11,6 @@ import { AboutModal } from './components/AboutModal';
 import { NotificationToast } from './components/NotificationToast';
 import { useConfigStore, getConfigStore } from '../stores/configStore';
 import { useFileStore } from '../stores/fileStore';
-import { createUndoStore } from '../stores/undoStore';
 import { scanDirectory } from '../services/fileScanner';
 import { useDualCursor } from './hooks/useDualCursor';
 
@@ -31,8 +30,6 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [updateData, setUpdateData] = useState<UpdateData | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [appVersion, setAppVersion] = useState('');
-
-  const undoStoreRef = useRef(createUndoStore(fs));
 
   const files = useFileStore((s) => s.files);
   const setFiles = useFileStore((s) => s.setFiles);
@@ -178,7 +175,6 @@ function App({ fs }: AppProps): React.JSX.Element {
               files={files}
               isFileVisible={isFileVisible}
               fs={fs}
-              undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
               onComplete={cursor.advance}
               onFileSelect={cursor.selectAt}
@@ -195,7 +191,6 @@ function App({ fs }: AppProps): React.JSX.Element {
               files={files}
               isFileVisible={isFileVisible}
               fs={fs}
-              undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
               onComplete={cursor.advance}
               onFileSelect={cursor.selectAt}
@@ -212,7 +207,6 @@ function App({ fs }: AppProps): React.JSX.Element {
       <UndoModal
         visible={showUndo}
         onClose={() => setShowUndo(false)}
-        undoStore={undoStoreRef.current}
         onRescan={handleRescan}
       />
       <ReleaseNotes

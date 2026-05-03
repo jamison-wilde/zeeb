@@ -1,15 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { useStore } from 'zustand';
-import type { StoreApi } from 'zustand/vanilla';
 import type { RenameTransaction, UndoEntry, UndoResult } from '../../types';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyStore = StoreApi<any>;
+import { useUndoStore } from '../../stores/undoStore';
 
 interface UndoModalProps {
   visible: boolean;
   onClose: () => void;
-  undoStore: AnyStore;
   onRescan: () => void;
 }
 
@@ -71,9 +66,9 @@ function resultDescription(result: UndoResult, basePath: string): React.JSX.Elem
   );
 }
 
-export function UndoModal({ visible, onClose, undoStore, onRescan }: UndoModalProps): React.JSX.Element | null {
-  const transactions: RenameTransaction[] = useStore(undoStore, (s: any) => s.transactions);
-  const undoTransaction = useStore(undoStore, (s: any) => s.undoTransaction) as (id: string) => Promise<UndoResult[]>;
+export function UndoModal({ visible, onClose, onRescan }: UndoModalProps): React.JSX.Element | null {
+  const transactions = useUndoStore((s) => s.transactions);
+  const undoTransaction = useUndoStore((s) => s.undoTransaction);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   // Maps transaction id -> results (including fully-succeeded ones that were removed from store)

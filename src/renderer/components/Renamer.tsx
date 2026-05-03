@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
-import type { StoreApi } from 'zustand/vanilla';
 import type { FsAdapter } from '../../adapters/fs';
 import { FileList } from './FileList';
 import { SearchParts } from './SearchParts';
@@ -9,7 +8,8 @@ import { RenamePreview } from './RenamePreview';
 import { createRenamerStore } from '../../stores/renamerStore';
 import { useConfigStore } from '../../stores/configStore';
 import { useTesterStore } from '../../stores/testerStore';
-import type { MovieFile, SearchPartState, UndoEntry } from '../../types';
+import { useUndoStore } from '../../stores/undoStore';
+import type { MovieFile, SearchPartState } from '../../types';
 import { parseFilename } from '../../services/filenameParser';
 import { useFilenamePreview } from '../hooks/useFilenamePreview';
 import { createLogger } from '../../services/logger';
@@ -28,11 +28,6 @@ interface RenamerProps {
   files?: MovieFile[];
   isFileVisible?: (file: MovieFile) => boolean;
   fs: FsAdapter;
-  undoStore?: StoreApi<{
-    beginTransaction: () => void;
-    addEntry: (entry: UndoEntry) => void;
-    commitTransaction: (basePath: string, maxUndos?: number) => void;
-  }>;
   onFileRenamed?: (fileId: string, newName: string, newPath: string) => void;
   onComplete?: () => void;
   onFileSelect?: (index: number) => void;
@@ -42,7 +37,7 @@ interface RenamerProps {
   onShowSampleChange?: (v: boolean) => void;
 }
 
-export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
+export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [selectedTt, setSelectedTt] = useState('');
@@ -254,9 +249,9 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
         platform,
       });
 
-      undoStore?.getState().beginTransaction();
-      result.entries.forEach((e) => undoStore?.getState().addEntry(e));
-      undoStore?.getState().commitTransaction(currentFile.folder, config.maxUndos);
+      useUndoStore.getState().beginTransaction();
+      result.entries.forEach((e) => useUndoStore.getState().addEntry(e));
+      useUndoStore.getState().commitTransaction(currentFile.folder, config.maxUndos);
 
       onFileRenamed?.(currentFile.id, previewFilename, result.finalPath);
 
@@ -279,7 +274,6 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
     previewFilename,
     metadata,
     fs,
-    undoStore,
     onFileRenamed,
     config,
     advance,
