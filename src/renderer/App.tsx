@@ -229,7 +229,6 @@ function App({ fs }: AppProps): React.JSX.Element {
           <div data-testid="renamer-0" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 0 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={0}
-              visible={activeRenamer === 0}
               fileIndex={fileIndex0}
               files={files}
               isFileVisible={isFileVisible}
@@ -247,7 +246,6 @@ function App({ fs }: AppProps): React.JSX.Element {
           <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 1 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={1}
-              visible={activeRenamer === 1}
               fileIndex={fileIndex1}
               files={files}
               isFileVisible={isFileVisible}

@@ -24,7 +24,6 @@ import { useNotificationStore } from '../../stores/notificationStore';
 
 interface RenamerProps {
   instanceId: number;
-  visible: boolean;
   fileIndex: number;
   files?: MovieFile[];
   isFileVisible?: (file: MovieFile) => boolean;
@@ -43,7 +42,7 @@ interface RenamerProps {
   onShowSampleChange?: (v: boolean) => void;
 }
 
-export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
+export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [selectedTt, setSelectedTt] = useState('');

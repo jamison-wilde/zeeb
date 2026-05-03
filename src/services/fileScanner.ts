@@ -1,5 +1,5 @@
-import type { FsAdapter, DirEntry } from '../adapters/fs';
-import { MovieFile } from '../types';
+import type { FsAdapter } from '../adapters/fs';
+import type { MovieFile } from '../types';
 
 type RecursionMode = 'none' | 'subfolders' | 'full';
 
