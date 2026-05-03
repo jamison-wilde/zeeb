@@ -21,6 +21,7 @@ import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
 import { useNotificationStore } from '../../stores/notificationStore';
+import { usePlatform } from '../PlatformContext';
 
 interface RenamerProps {
   instanceId: number;
@@ -38,6 +39,7 @@ interface RenamerProps {
 }
 
 export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
+  const platform = usePlatform();
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
   const [selectedTt, setSelectedTt] = useState('');
@@ -98,9 +100,9 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
 
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
-    const results = await window.zeebImdb.suggest(query);
+    const results = await platform.imdb.suggest(query);
     setMovieMatches(results);
-  }, [setMovieMatches]);
+  }, [platform, setMovieMatches]);
 
   // Auto-trigger search when parts are set from a new file
   useEffect(() => {

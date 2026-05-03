@@ -13,6 +13,7 @@ import { useConfigStore } from '../stores/configStore';
 import { useFileStore } from '../stores/fileStore';
 import { scanDirectory } from '../services/fileScanner';
 import { useDualCursor } from './hooks/useDualCursor';
+import { usePlatform } from './PlatformContext';
 
 type ViewName = 'folderBrowser' | 'process';
 
@@ -21,6 +22,7 @@ interface AppProps {
 }
 
 function App({ fs }: AppProps): React.JSX.Element {
+  const platform = usePlatform();
   const [view, setView] = useState<ViewName>('folderBrowser');
   const [showOptions, setShowOptions] = useState(false);
   const [showUndo, setShowUndo] = useState(false);
@@ -50,37 +52,37 @@ function App({ fs }: AppProps): React.JSX.Element {
   useEffect(() => {
     void load().then(() => {
       // Sync menu checkbox with config on startup
-      window.zeebMenu.sendWebViewState(useConfigStore.getState().config.showWebView);
+      platform.menu.sendWebViewState(useConfigStore.getState().config.showWebView);
     });
-  }, [load]);
+  }, [load, platform]);
 
   useEffect(() => {
-    window.zeebApp.getVersion().then(setAppVersion);
-  }, []);
+    platform.appMeta.getVersion().then(setAppVersion);
+  }, [platform]);
 
   useEffect(() => {
-    window.zeebMenu.onOptions(() => setShowOptions(true));
-    window.zeebMenu.onUndoRename(() => setShowUndo(true));
-    window.zeebMenu.onToggleWebView(() => {
+    platform.menu.onOptions(() => setShowOptions(true));
+    platform.menu.onUndoRename(() => setShowUndo(true));
+    platform.menu.onToggleWebView(() => {
       const store = useConfigStore.getState();
       const newVal = !store.config.showWebView;
       store.updateConfig({ showWebView: newVal });
       void store.save();
-      window.zeebMenu.sendWebViewState(newVal);
+      platform.menu.sendWebViewState(newVal);
     });
-    window.zeebMenu.onReleaseNotes(() => setShowReleaseNotes(true));
-    window.zeebMenu.onOpenFolder(() => {
+    platform.menu.onReleaseNotes(() => setShowReleaseNotes(true));
+    platform.menu.onOpenFolder(() => {
       setFiles([]);
       setView('folderBrowser');
     });
-    window.zeebMenu.onAbout(() => setShowAbout(true));
-  }, []);
+    platform.menu.onAbout(() => setShowAbout(true));
+  }, [platform, setFiles]);
 
   useEffect(() => {
-    return window.zeebUpdate.onUpdateAvailable((data) => {
+    return platform.update.onUpdateAvailable((data) => {
       setUpdateData(data);
     });
-  }, []);
+  }, [platform]);
 
   const recentFolders = useMemo(() => config.recentFolders, [config.recentFolders]);
 

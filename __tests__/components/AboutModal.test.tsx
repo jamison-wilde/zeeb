@@ -1,37 +1,41 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { AboutModal } from '../../src/renderer/components/AboutModal';
+import { PlatformProvider } from '../../src/renderer/PlatformContext';
+import { createMockPlatformAdapter } from '../../src/adapters/platform';
 
-beforeEach(() => {
-  (window as any).zeebUpdate = {
-    ...(window as any).zeebUpdate,
-    openExternal: vi.fn().mockResolvedValue(undefined),
-  };
-});
+function renderModal(visible = true) {
+  return render(
+    <PlatformProvider value={createMockPlatformAdapter()}>
+      <AboutModal visible={visible} onClose={vi.fn()} version="4.0.0" />
+    </PlatformProvider>,
+  );
+}
 
 describe('AboutModal', () => {
   it('renders app name', () => {
-    render(<AboutModal visible={true} onClose={vi.fn()} version="4.0.0" />);
+    renderModal();
     expect(screen.getByText('Zeeb Movie Renamer')).toBeTruthy();
   });
 
   it('renders version', () => {
-    render(<AboutModal visible={true} onClose={vi.fn()} version="4.0.0" />);
+    renderModal();
     expect(screen.getByText(/4\.0\.0/)).toBeTruthy();
   });
 
   it('renders TMDB attribution', () => {
-    render(<AboutModal visible={true} onClose={vi.fn()} version="4.0.0" />);
+    renderModal();
     expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeTruthy();
   });
 
   it('renders icon credit', () => {
-    render(<AboutModal visible={true} onClose={vi.fn()} version="4.0.0" />);
+    renderModal();
     expect(screen.getByText(/Kristof Polleunis/)).toBeTruthy();
   });
 
   it('returns null when not visible', () => {
-    const { container } = render(<AboutModal visible={false} onClose={vi.fn()} version="4.0.0" />);
+    const { container } = renderModal(false);
     expect(container.innerHTML).toBe('');
   });
 });

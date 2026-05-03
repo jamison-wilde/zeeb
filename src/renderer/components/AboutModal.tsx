@@ -1,6 +1,7 @@
 import React from 'react';
 import zeebIcon from '../assets/zeeb512.png';
 import tmdbLogo from '../assets/tmdb-logo.svg';
+import { usePlatform } from '../PlatformContext';
 
 interface AboutModalProps {
   visible: boolean;
@@ -9,6 +10,7 @@ interface AboutModalProps {
 }
 
 export function AboutModal({ visible, onClose, version }: AboutModalProps): React.JSX.Element | null {
+  const platform = usePlatform();
   if (!visible) return null;
 
   return (
@@ -29,7 +31,7 @@ export function AboutModal({ visible, onClose, version }: AboutModalProps): Reac
             A rewrite of the original{' '}
             <button
               className="text-blue-500 hover:underline"
-              onClick={() => window.zeebUpdate.openExternal('https://sourceforge.net/projects/zeeb/')}
+              onClick={() => platform.update.openExternal('https://sourceforge.net/projects/zeeb/')}
             >
               Zeeb
             </button>{' '}

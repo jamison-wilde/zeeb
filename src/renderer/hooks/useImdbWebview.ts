@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ZeebConfig, MovieMetadata } from '../../types';
 import { buildTitleUrl, parseTitleData } from '../../services/imdbExtractor';
 import { useTesterStore } from '../../stores/testerStore';
+import { usePlatform } from '../PlatformContext';
 
 interface WebviewIpcMessageEvent {
   channel: string;
@@ -27,6 +28,7 @@ interface UseImdbWebviewResult {
 
 export function useImdbWebview(args: UseImdbWebviewArgs): UseImdbWebviewResult {
   const { webviewEl, config, instanceId, onTitleData, onAkasReceived } = args;
+  const platform = usePlatform();
 
   const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -39,8 +41,8 @@ export function useImdbWebview(args: UseImdbWebviewArgs): UseImdbWebviewResult {
 
   // Fetch webview preload path once
   useEffect(() => {
-    window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
-  }, []);
+    platform.appMeta.getWebviewPreloadPath().then(setWebviewPreloadPath);
+  }, [platform]);
 
   // Send extraction patterns when they change
   useEffect(() => {

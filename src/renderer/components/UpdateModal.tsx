@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { renderMarkdown } from '../../services/markdownRenderer';
+import { usePlatform } from '../PlatformContext';
 
 interface UpdateData {
   version: string;
@@ -15,6 +16,7 @@ interface UpdateModalProps {
 }
 
 export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.JSX.Element {
+  const platform = usePlatform();
   const [downloadState, setDownloadState] = useState<'idle' | 'downloading' | 'complete' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [downloadedPath, setDownloadedPath] = useState('');
@@ -22,19 +24,19 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
 
   useEffect(() => {
     const unsubs: Array<() => void> = [];
-    unsubs.push(window.zeebUpdate.onDownloadProgress((p) => {
+    unsubs.push(platform.update.onDownloadProgress((p) => {
       setProgress(p.percent);
     }));
-    unsubs.push(window.zeebUpdate.onDownloadComplete((d) => {
+    unsubs.push(platform.update.onDownloadComplete((d) => {
       setDownloadedPath(d.filePath);
       setDownloadState('complete');
     }));
-    unsubs.push(window.zeebUpdate.onDownloadError((e) => {
+    unsubs.push(platform.update.onDownloadError((e) => {
       setErrorMessage(e.message);
       setDownloadState('error');
     }));
     return () => unsubs.forEach((fn) => fn());
-  }, []);
+  }, [platform]);
 
   const platformAsset = data.assets.find((a) => {
     if (process.platform === 'win32') return a.name.endsWith('.exe');
@@ -47,16 +49,16 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
     setDownloadState('downloading');
     setProgress(0);
     setErrorMessage('');
-    window.zeebUpdate.downloadUpdate(platformAsset.url);
-  }, [platformAsset]);
+    platform.update.downloadUpdate(platformAsset.url);
+  }, [platform, platformAsset]);
 
   const handleShowInFolder = useCallback(() => {
-    window.zeebUpdate.showInFolder(downloadedPath);
-  }, [downloadedPath]);
+    platform.update.showInFolder(downloadedPath);
+  }, [platform, downloadedPath]);
 
   const handleViewOnGithub = useCallback(() => {
-    window.zeebUpdate.openExternal(data.releaseUrl);
-  }, [data.releaseUrl]);
+    platform.update.openExternal(data.releaseUrl);
+  }, [platform, data.releaseUrl]);
 
   const handleSkip = useCallback(() => {
     onSkip(data.version);

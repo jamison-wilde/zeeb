@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { renderMarkdown } from '../../services/markdownRenderer';
+import { usePlatform } from '../PlatformContext';
 
 interface ReleaseNotesProps {
   visible: boolean;
@@ -7,14 +8,15 @@ interface ReleaseNotesProps {
 }
 
 export function ReleaseNotes({ visible, onClose }: ReleaseNotesProps): React.JSX.Element | null {
+  const platform = usePlatform();
   const [html, setHtml] = useState('');
 
   useEffect(() => {
     if (!visible) return;
-    window.zeebApp.getReleaseNotes().then((md) => {
+    platform.appMeta.getReleaseNotes().then((md) => {
       setHtml(renderMarkdown(md));
     });
-  }, [visible]);
+  }, [visible, platform]);
 
   if (!visible) return null;
 
