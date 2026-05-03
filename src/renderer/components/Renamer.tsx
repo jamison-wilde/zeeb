@@ -11,25 +11,16 @@ import { useConfigStore } from '../../stores/configStore';
 import { useTesterStore } from '../../stores/testerStore';
 import type { MovieFile, SearchPartState, UndoEntry } from '../../types';
 import { parseFilename } from '../../services/filenameParser';
-import {
-  buildTitleUrl,
-  parseTitleData,
-} from '../../services/imdbExtractor';
-import { extractImdbFromNfo } from '../../services/nfoParser';
 import { useFilenamePreview } from '../hooks/useFilenamePreview';
 import { createLogger } from '../../services/logger';
 import { executeRename } from '../../services/renamePipeline';
 import { usePosterFetch } from '../hooks/usePosterFetch';
 import { useAutoSelect } from '../hooks/useAutoSelect';
+import { useImdbWebview } from '../hooks/useImdbWebview';
 import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
 import { useNotificationStore } from '../../stores/notificationStore';
-
-interface WebviewIpcMessageEvent {
-  channel: string;
-  args?: unknown[];
-}
 
 interface RenamerProps {
   instanceId: number;
@@ -55,8 +46,6 @@ interface RenamerProps {
 export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisible, fs, undoStore, onFileRenamed, onComplete, onFileSelect, showTt, onShowTtChange, showSample, onShowSampleChange }: RenamerProps): React.JSX.Element | null {
   const storeRef = useRef(createRenamerStore());
   const [webviewEl, setWebviewEl] = useState<WebviewTag | null>(null);
-  const [webviewPreloadPath, setWebviewPreloadPath] = useState('');
-  const [urlInput, setUrlInput] = useState('');
   const [selectedTt, setSelectedTt] = useState('');
   const [useAka, setUseAka] = useState(false);
   const [selectedAka, setSelectedAka] = useState('');
@@ -82,18 +71,22 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const saveConfig = useConfigStore((s) => s.save);
 
-  const testerRequest = useTesterStore((s) => s.testerRequest);
-  const setTesterResult = useTesterStore((s) => s.setResult);
-  const setTesterError = useTesterStore((s) => s.setError);
-
   const currentFile = useMemo(() => files[fileIndex] ?? null, [files, fileIndex]);
 
-  const navigationMode = useRef<'title' | 'idle' | 'tester'>('idle');
-  const webviewReady = useRef(false);
-
-  useEffect(() => {
-    window.zeebApp.getWebviewPreloadPath().then(setWebviewPreloadPath);
-  }, []);
+  const {
+    urlInput,
+    setUrlInput,
+    navigateToTitle,
+    navigateToUrl,
+    goBack,
+    webviewPreloadPath,
+  } = useImdbWebview({
+    webviewEl,
+    config,
+    instanceId,
+    onTitleData: setMetadata,
+    onAkasReceived: appendAkas,
+  });
 
   const autoSearchRef = useRef(false);
 
@@ -150,117 +143,11 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     setPreviewFilename,
   });
 
-
-  // Send extraction patterns to webview preload whenever they change
-  useEffect(() => {
-    if (!webviewEl) return;
-    try {
-      webviewEl.send('set-extraction-patterns', config.extractionPatterns);
-    } catch { /* webview not ready yet — patterns will be sent on next nav */ }
-  }, [webviewEl, config.extractionPatterns]);
-
-  // Re-apply zoom when htmlZoom config changes
-  useEffect(() => {
-    if (!webviewEl || !webviewReady.current) return;
-    try {
-      webviewEl.setZoomFactor(config.htmlZoom / 100);
-    } catch { /* webview not ready */ }
-  }, [webviewEl, config.htmlZoom]);
-
-  useEffect(() => {
-    if (!webviewEl) return;
-    const webview = webviewEl;
-
-    const handleDomReady = () => {
-      webviewReady.current = true;
-      try {
-        const url = webview.getURL();
-        setUrlInput(url);
-      } catch { /* ignore */ }
-      // Apply zoom factor
-      try {
-        webview.setZoomFactor(config.htmlZoom / 100);
-      } catch { /* ignore */ }
-      // Send extraction patterns to the newly loaded preload context
-      try {
-        webview.send('set-extraction-patterns', config.extractionPatterns);
-      } catch { /* ignore */ }
-    };
-
-    const handleNavigate = (_event: Event) => {
-      try {
-        setUrlInput(webview.getURL());
-      } catch { /* ignore */ }
-    };
-
-    const handleIpcMessage = (event: WebviewIpcMessageEvent) => {
-      if (event.channel !== 'extraction-result') return;
-      const message = event.args?.[0];
-      if (typeof message !== 'string') return;
-
-      // Handle "moreAkas" — append full AKA list from /releaseinfo
-      try {
-        const parsed = JSON.parse(message);
-        if (parsed.type === 'moreAkas' && Array.isArray(parsed.akas)) {
-          appendAkas(parsed.akas);
-          return;
-        }
-      } catch { /* not JSON or not moreAkas — fall through */ }
-
-      const titleData = parseTitleData(message);
-      if (titleData) {
-        if (navigationMode.current === 'tester') {
-          setTesterResult(titleData);
-          navigationMode.current = 'idle';
-          // Clear only the request so the effect doesn't re-trigger (preserve result)
-          useTesterStore.setState({ testerRequest: null });
-        } else {
-          setMetadata(titleData);
-        }
-      }
-    };
-
-    // Recover from webview renderer crashes (blank page)
-    const handleCrash = () => {
-      webviewReady.current = false;
-    };
-
-    webview.addEventListener('dom-ready', handleDomReady);
-    webview.addEventListener('did-navigate', handleNavigate);
-    webview.addEventListener('ipc-message', handleIpcMessage);
-    webview.addEventListener('render-process-gone', handleCrash);
-
-    return () => {
-      webview.removeEventListener('dom-ready', handleDomReady);
-      webview.removeEventListener('did-navigate', handleNavigate);
-      webview.removeEventListener('ipc-message', handleIpcMessage);
-      webview.removeEventListener('render-process-gone', handleCrash);
-    };
-  }, [webviewEl, instanceId, config.extractionPatterns, config.htmlZoom, setMovieMatches, setMetadata, setTesterResult]);
-
   const { selectedPosterIndex, setSelectedPosterIndex } = usePosterFetch({
     metadata,
     config,
     setPosterPaths,
   });
-
-  // Handle Format Tester requests — only first Renamer instance responds
-  useEffect(() => {
-    if (!testerRequest || !webviewEl || instanceId !== 0) return;
-    navigationMode.current = 'tester';
-    const url = `${config.urlImdbTT}${testerRequest.tt}/`;
-    webviewEl.loadURL(url);
-
-    // Timeout after 10 seconds
-    const timer = setTimeout(() => {
-      if (navigationMode.current === 'tester') {
-        setTesterError(`Timed out fetching data for ${testerRequest.tt}`);
-        navigationMode.current = 'idle';
-      }
-    }, 10000);
-
-    return () => clearTimeout(timer);
-  }, [testerRequest, webviewEl, instanceId, config.urlImdbTT, setTesterError]);
 
   const handleFileSelect = useCallback(
     (index: number) => {
@@ -311,11 +198,9 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   const handleMovieSelect = useCallback(
     (tt: string) => {
       setSelectedTt(tt);
-      const url = buildTitleUrl(tt, config.urlImdbTT);
-      navigationMode.current = 'title';
-      webviewEl?.loadURL(url);
+      navigateToTitle(tt);
     },
-    [webviewEl, config.urlImdbTT],
+    [navigateToTitle],
   );
 
   useAutoSelect({
@@ -328,20 +213,13 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
     navigateToTitle: handleMovieSelect,
   });
 
-  const handleBack = useCallback(() => {
-    webviewEl?.goBack();
-  }, [webviewEl]);
-
   const handleUrlSubmit = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       let url = urlInput.trim();
       if (url && !url.startsWith('http')) url = 'https://' + url;
-      if (url) {
-        navigationMode.current = 'idle';
-        webviewEl?.loadURL(url);
-      }
+      if (url) navigateToUrl(url);
     }
-  }, [webviewEl, urlInput]);
+  }, [navigateToUrl, urlInput]);
 
   const handlePreviewChange = useCallback(
     (name: string) => {
@@ -460,7 +338,7 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
             <div className="flex items-center gap-1 px-1 py-0.5 bg-gray-100 border-b border-gray-300">
               <button
                 className="px-1.5 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 rounded"
-                onClick={handleBack}
+                onClick={goBack}
                 title="Back"
               >
                 ←
