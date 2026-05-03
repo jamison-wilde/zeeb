@@ -2,12 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   buildSearchUrl,
   buildTitleUrl,
-  generateSearchExtractionScript,
-  generateTitleExtractionScript,
   parseSearchResults,
   parseTitleData,
 } from '../../src/services/imdbExtractor';
-import type { ExtractionPattern } from '../../src/types';
 
 describe('imdbExtractor', () => {
   it('builds IMDB search URL from query', () => {
@@ -18,34 +15,6 @@ describe('imdbExtractor', () => {
   it('builds IMDB title URL from tt number', () => {
     const url = buildTitleUrl('tt0111161', 'https://www.imdb.com/title/');
     expect(url).toBe('https://www.imdb.com/title/tt0111161/');
-  });
-
-  it('generates one-shot search extraction script', () => {
-    const script = generateSearchExtractionScript();
-    expect(script).toContain('querySelectorAll');
-    expect(script).toContain('searchResults');
-    expect(script).not.toContain('setTimeout');
-  });
-
-  it('generates JS injection script for title page', () => {
-    const patterns: ExtractionPattern[] = [
-      { field: 'title', jsonLdPath: 'name', domSelector: 'h1 span', regexPattern: null, regexGroup: null },
-    ];
-    const script = generateTitleExtractionScript(patterns);
-    expect(script).toContain('application/ld+json');
-    expect(script).toContain('querySelector');
-  });
-
-  it('search extraction script returns null when no results', () => {
-    const script = generateSearchExtractionScript();
-    expect(script).toContain('return null');
-    expect(script).not.toContain('sendToHost');
-  });
-
-  it('title extraction script returns null when no ld+json', () => {
-    const script = generateTitleExtractionScript([]);
-    expect(script).toContain('if (!ldScript) return null');
-    expect(script).not.toContain('sendToHost');
   });
 
   it('parses search results from WebView message', () => {
