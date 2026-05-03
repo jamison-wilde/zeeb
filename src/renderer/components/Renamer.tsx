@@ -17,10 +17,9 @@ import {
 } from '../../services/imdbExtractor';
 import { extractImdbFromNfo } from '../../services/nfoParser';
 import { interpolateFormat } from '../../services/formatEngine';
-import { renameFile, findSubtitles, renameSubtitles } from '../../services/fileRenamer';
-import { generateUrlFileContent, generateWeblocContent } from '../../services/urlFileWriter';
 import { createLogger } from '../../services/logger';
-import { searchPosters, buildPosterUrl } from '../../services/tmdbService';
+import { searchPosters } from '../../services/tmdbService';
+import { executeRename } from '../../services/renamePipeline';
 import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
 import { cp437StringToUnicode } from '../../utils/cp437';
@@ -412,155 +411,60 @@ export function Renamer({ instanceId, visible, fileIndex, files = [], isFileVisi
   }, [reset, onComplete]);
 
   const handleRename = useCallback(async () => {
-    if (!currentFile || !previewFilename) return;
-
-    undoStore?.getState().beginTransaction();
+    if (!currentFile || !previewFilename || !metadata) return;
+    const posterRemotePath =
+      selectedPosterIndex != null && posterPaths.length > 0
+        ? posterPaths[selectedPosterIndex]
+        : null;
+    const platform: 'mac' | 'win' =
+      navigator.userAgent.includes('Macintosh') ? 'mac' : 'win';
 
     try {
-      const sep = currentFile.nativePath.includes('\\') ? '\\' : '/';
-      let workingFolder = currentFile.folder;
-      const newPath = `${workingFolder}${sep}${previewFilename}`;
-      const entry = await renameFile(fs, currentFile.nativePath, newPath);
-      undoStore?.getState().addEntry(entry);
+      const result = await executeRename({
+        fs,
+        currentFile,
+        previewFilename,
+        metadata,
+        posterRemotePath,
+        selectedAka: useAka ? selectedAka : null,
+        config,
+        platform,
+      });
 
-      // Rename subtitles
-      const baseName = currentFile.name.replace(/\.[^.]+$/, '');
-      const newBase = previewFilename.replace(/\.[^.]+$/, '');
-      const subs = await findSubtitles(fs, workingFolder, baseName, config.subtitleExtensions);
-      if (subs.length > 0) {
-        const subEntries = await renameSubtitles(fs, subs, baseName, newBase);
-        for (const subEntry of subEntries) {
-          undoStore?.getState().addEntry(subEntry);
-        }
-      }
-
-      // Rename folder if enabled
-      if (config.renameFolder) {
-        const parentParts = workingFolder.split(/[\\/]/);
-        if (parentParts.length > 1 && parentParts[parentParts.length - 1] !== '') {
-          const parentDir = parentParts.slice(0, -1).join(sep);
-          const newFolderName = newBase;
-          const currentFolderName = parentParts[parentParts.length - 1];
-          if (currentFolderName !== newFolderName) {
-            const newFolderPath = `${parentDir}${sep}${newFolderName}`;
-            await fs.rename(workingFolder, newFolderPath);
-            undoStore?.getState().addEntry({
-              type: 'rename',
-              sourcePath: workingFolder,
-              destPath: newFolderPath,
-            });
-            workingFolder = newFolderPath;
-          }
-        }
-      }
-
-      // Create URL file if enabled
-      let nfoContent: string | null = null;
-      if (config.createUrlFile && metadata) {
-        if (config.includeNfoInUrl && currentFile.nfoPath) {
-          try {
-            const nfoName = currentFile.nfoPath.split(/[\\/]/).pop()!;
-            const nfoPath = workingFolder !== currentFile.folder
-              ? `${workingFolder}${sep}${nfoName}`
-              : currentFile.nfoPath;
-            nfoContent = await fs.readFile(nfoPath, 'utf-8');
-          } catch { /* NFO read failed — skip */ }
-        }
-
-        const isMac = navigator.userAgent.includes('Macintosh');
-        const urlExt = isMac ? '.webloc' : '.url';
-        const urlPath = `${workingFolder}${sep}${newBase}${urlExt}`;
-        const imdbUrl = buildTitleUrl(metadata.tt, config.urlImdbTT);
-
-        const urlContent = isMac
-          ? generateWeblocContent({
-              url: imdbUrl,
-              originalPath: config.includeOriginalInUrl ? currentFile.nativePath : undefined,
-              includeOriginal: config.includeOriginalInUrl,
-              nfoContent,
-            })
-          : generateUrlFileContent({
-              url: imdbUrl,
-              originalPath: config.includeOriginalInUrl ? currentFile.nativePath : undefined,
-              nfoContent,
-              includeOriginal: config.includeOriginalInUrl,
-            });
-
-        await fs.writeFile(urlPath, urlContent, 'utf-8');
-        undoStore?.getState().addEntry({
-          type: 'create',
-          sourcePath: urlPath,
-          destPath: urlPath,
-        });
-
-        // Delete NFO after including in URL file
-        if (config.deleteNfoAfterInclude && nfoContent != null && currentFile.nfoPath) {
-          const nfoName = currentFile.nfoPath.split(/[\\/]/).pop()!;
-          const nfoPath = workingFolder !== currentFile.folder
-            ? `${workingFolder}${sep}${nfoName}`
-            : currentFile.nfoPath;
-          await fs.unlink(nfoPath);
-          undoStore?.getState().addEntry({
-            type: 'delete',
-            sourcePath: nfoPath,
-            destPath: null,
-            content: nfoContent,
-          });
-        }
-      }
-
-      // Save poster if enabled and selected
-      if (config.createPoster && selectedPosterIndex !== null && posterPaths.length > 0 && metadata) {
-        try {
-          const posterUrl = buildPosterUrl(posterPaths[selectedPosterIndex], config.posterSaveSize);
-
-          let posterFolder = workingFolder;
-          if (currentFile.isDvdFolder && !config.posterInDvdFolder) {
-            const parts = workingFolder.split(/[\\/]/);
-            posterFolder = parts.slice(0, -1).join(sep);
-          }
-
-          let posterBaseName = newBase;
-          if (config.separatePosterFormat && config.formatPoster) {
-            posterBaseName = interpolateFormat(config.formatPoster, metadata!, {
-              saved: '',
-              directorSeparator: config.directorSeparator,
-              genreSeparator: config.genreSeparator,
-              starSeparator: config.starSeparator,
-              removeThe: config.removeThe,
-              swapThe: config.swapThe,
-              titleSpaceChar: config.titleSpaceChar,
-              mpaaMap: config.mpaaMap,
-              theWord: config.theWord,
-            });
-          }
-
-          const posterSavePath = `${posterFolder}${sep}${posterBaseName}.jpg`;
-          await fs.downloadToFile(posterUrl, posterSavePath);
-          undoStore?.getState().addEntry({
-            type: 'create',
-            sourcePath: posterSavePath,
-            destPath: posterSavePath,
-          });
-        } catch (err) {
-          console.error('[Renamer] Poster save failed:', err);
-          useNotificationStore.getState().notify('error', 'Poster save failed');
-        }
-      }
-
+      undoStore?.getState().beginTransaction();
+      result.entries.forEach((e) => undoStore?.getState().addEntry(e));
       undoStore?.getState().commitTransaction(currentFile.folder, config.maxUndos);
-      onFileRenamed?.(currentFile.id, previewFilename, `${workingFolder}${sep}${previewFilename}`);
+
+      onFileRenamed?.(currentFile.id, previewFilename, result.finalPath);
 
       if (config.logFilePath) {
         const logger = createLogger(fs, config.logFilePath);
-        await logger.log('rename', currentFile.nativePath, `${workingFolder}${sep}${previewFilename}`);
+        await logger.log('rename', currentFile.nativePath, result.finalPath);
       }
-    } catch {
-      // Transaction stays pending for inspection
+
+      if (result.posterSaveError) {
+        useNotificationStore.getState().notify('error', 'Poster save failed');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useNotificationStore.getState().notify('error', `Rename failed: ${msg}`);
     }
 
     advance();
-  }, [currentFile, previewFilename, metadata, fs, undoStore, onFileRenamed, config, advance, selectedPosterIndex, posterPaths]);
+  }, [
+    currentFile,
+    previewFilename,
+    metadata,
+    fs,
+    undoStore,
+    onFileRenamed,
+    config,
+    advance,
+    selectedPosterIndex,
+    posterPaths,
+    useAka,
+    selectedAka,
+  ]);
 
   const handleSkip = useCallback(() => {
     advance();
