@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0] - 2026-03-14
+## [4.0.0] - 2026-05-03
 
 ### Added
 - Complete rewrite from Adobe Flex to Electron + React
@@ -17,3 +17,5 @@
 - Format tester in Options
 - Recent folders with delete
 - Window state persistence
+- Notification toast for poster-save and rename failures
+- Top-level ErrorBoundary with reload and copy-error recovery
