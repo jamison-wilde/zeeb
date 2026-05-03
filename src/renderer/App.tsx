@@ -13,6 +13,7 @@ import { useConfigStore, getConfigStore } from '../stores/configStore';
 import { createFileStore } from '../stores/fileStore';
 import { createUndoStore } from '../stores/undoStore';
 import { scanDirectory } from '../services/fileScanner';
+import { useDualCursor } from './hooks/useDualCursor';
 
 type ViewName = 'folderBrowser' | 'process';
 
@@ -22,7 +23,6 @@ interface AppProps {
 
 function App({ fs }: AppProps): React.JSX.Element {
   const [view, setView] = useState<ViewName>('folderBrowser');
-  const [activeRenamer, setActiveRenamer] = useState<0 | 1>(0);
   const [showOptions, setShowOptions] = useState(false);
   const [showUndo, setShowUndo] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
@@ -31,10 +31,6 @@ function App({ fs }: AppProps): React.JSX.Element {
   const [updateData, setUpdateData] = useState<UpdateData | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [appVersion, setAppVersion] = useState('');
-
-  // Each renamer gets its own file index; they interleave (0,2,4... and 1,3,5...)
-  const [fileIndex0, setFileIndex0] = useState(0);
-  const [fileIndex1, setFileIndex1] = useState(1);
 
   const fileStoreRef = useRef(createFileStore());
   const undoStoreRef = useRef(createUndoStore(fs));
@@ -49,14 +45,7 @@ function App({ fs }: AppProps): React.JSX.Element {
     return true;
   }, [showTt, showSample]);
 
-  const findNextVisible = useCallback((fromIndex: number, step: number): number => {
-    let idx = fromIndex;
-    const allFiles = fileStoreRef.current.getState().files;
-    while (idx < allFiles.length && !isFileVisible(allFiles[idx])) {
-      idx += step;
-    }
-    return idx;
-  }, [isFileVisible]);
+  const cursor = useDualCursor({ files, isFileVisible });
 
   const config = useConfigStore((s) => s.config);
   const load = useConfigStore((s) => s.load);
@@ -119,54 +108,11 @@ function App({ fs }: AppProps): React.JSX.Element {
         { detectDvd: config.detectDvd },
       );
       setFiles(results);
-      // Find first two visible files for the interleaved renamers
-      let idx0 = 0;
-      while (idx0 < results.length && !isFileVisible(results[idx0])) idx0++;
-      let idx1 = idx0 + 1;
-      while (idx1 < results.length && !isFileVisible(results[idx1])) idx1++;
-      setFileIndex0(idx0);
-      setFileIndex1(idx1);
-      setActiveRenamer(0);
+      cursor.setFromList(results);
       setView('process');
     },
-    [fs, config.movieExtensions, config.recentFolders, setFiles, updateConfig, save],
+    [fs, config.movieExtensions, config.recentFolders, setFiles, updateConfig, save, cursor],
   );
-
-  // After the active renamer completes (rename/skip), advance it past the
-  // other renamer's file so both always point at distinct visible files.
-  const handleComplete0 = useCallback(() => {
-    setFileIndex0((prev) => {
-      // Advance past current file, then skip any invisible files and also
-      // skip the file that renamer 1 is sitting on
-      const otherIdx = fileIndex1;
-      let next = findNextVisible(prev + 1, 1);
-      if (next === otherIdx) next = findNextVisible(next + 1, 1);
-      return next;
-    });
-    setActiveRenamer(1);
-  }, [findNextVisible, fileIndex1]);
-
-  const handleComplete1 = useCallback(() => {
-    setFileIndex1((prev) => {
-      const otherIdx = fileIndex0;
-      let next = findNextVisible(prev + 1, 1);
-      if (next === otherIdx) next = findNextVisible(next + 1, 1);
-      return next;
-    });
-    setActiveRenamer(0);
-  }, [findNextVisible, fileIndex0]);
-
-  const handleFileSelect0 = useCallback((clickedIndex: number) => {
-    setFileIndex0(clickedIndex);
-    const next1 = findNextVisible(clickedIndex + 1, 1);
-    setFileIndex1(next1);
-  }, [findNextVisible]);
-
-  const handleFileSelect1 = useCallback((clickedIndex: number) => {
-    setFileIndex1(clickedIndex);
-    const next0 = findNextVisible(clickedIndex + 1, 1);
-    setFileIndex0(next0);
-  }, [findNextVisible]);
 
   const handleFileRenamed = useCallback(
     (fileId: string, newName: string, newPath: string) => {
@@ -226,34 +172,34 @@ function App({ fs }: AppProps): React.JSX.Element {
 
       {view === 'process' && (
         <div data-testid="renamer-view" className="flex-1 flex flex-col min-h-0">
-          <div data-testid="renamer-0" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 0 ? '' : 'hidden'}`}>
+          <div data-testid="renamer-0" className={`flex-1 flex flex-col min-h-0 ${cursor.active === 0 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={0}
-              fileIndex={fileIndex0}
+              fileIndex={cursor.index0}
               files={files}
               isFileVisible={isFileVisible}
               fs={fs}
               undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
-              onComplete={handleComplete0}
-              onFileSelect={handleFileSelect0}
+              onComplete={cursor.advance}
+              onFileSelect={cursor.selectAt}
               showTt={showTt}
               onShowTtChange={setShowTt}
               showSample={showSample}
               onShowSampleChange={setShowSample}
             />
           </div>
-          <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${activeRenamer === 1 ? '' : 'hidden'}`}>
+          <div data-testid="renamer-1" className={`flex-1 flex flex-col min-h-0 ${cursor.active === 1 ? '' : 'hidden'}`}>
             <Renamer
               instanceId={1}
-              fileIndex={fileIndex1}
+              fileIndex={cursor.index1}
               files={files}
               isFileVisible={isFileVisible}
               fs={fs}
               undoStore={undoStoreRef.current}
               onFileRenamed={handleFileRenamed}
-              onComplete={handleComplete1}
-              onFileSelect={handleFileSelect1}
+              onComplete={cursor.advance}
+              onFileSelect={cursor.selectAt}
               showTt={showTt}
               onShowTtChange={setShowTt}
               showSample={showSample}
