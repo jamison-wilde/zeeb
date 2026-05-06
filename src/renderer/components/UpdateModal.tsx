@@ -41,6 +41,7 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
   const platformAsset = data.assets.find((a) => {
     if (process.platform === 'win32') return a.name.endsWith('.exe');
     if (process.platform === 'darwin') return a.name.endsWith('.dmg');
+    if (process.platform === 'linux') return a.name.endsWith('.AppImage');
     return false;
   });
 
