@@ -14,7 +14,7 @@ export interface ExecuteRenameArgs {
   posterRemotePath: string | null;
   selectedAka: string | null;
   config: ZeebConfig;
-  platform: 'mac' | 'win';
+  platform: 'mac' | 'win' | 'linux';
 }
 
 export interface ExecuteRenameResult {

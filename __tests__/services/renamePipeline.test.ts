@@ -301,4 +301,21 @@ describe('renamePipeline', () => {
     const fs = createMockFsAdapter({ rename: renameMock });
     await expect(executeRename(makeArgs({ fs }))).rejects.toThrow(/EACCES/);
   });
+
+  // --- Test 13: Linux uses .url like Windows ---
+  it('writes a .url file when platform is linux (same as windows)', async () => {
+    const writeFileMock = vi.fn().mockResolvedValue(undefined);
+    const fs = createMockFsAdapter({
+      rename: vi.fn().mockResolvedValue(undefined),
+      writeFile: writeFileMock,
+    });
+    await executeRename(makeArgs({
+      fs,
+      platform: 'linux',
+      config: makeConfig({ createUrlFile: true }),
+    }));
+    const [path, content] = writeFileMock.mock.calls[0];
+    expect(path).toBe('/movies/New Movie (1994).url');
+    expect(content).toContain('[InternetShortcut]');
+  });
 });
