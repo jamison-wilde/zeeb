@@ -49,8 +49,24 @@ jobs:
           name: macos-artifacts
           path: out/make/*.dmg
 
+  build-linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: out/make/**/*.AppImage
+
   release:
-    needs: [build-windows, build-macos]
+    needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -80,11 +96,17 @@ jobs:
           name: macos-artifacts
           path: artifacts/macos
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+          path: artifacts/linux
+
       - name: Rename artifacts
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
           mv artifacts/windows/*Setup*.exe "artifacts/Zeeb-Movie-Renamer-${VERSION}-Setup.exe" 2>/dev/null || true
           mv artifacts/macos/*.dmg "artifacts/Zeeb-Movie-Renamer-${VERSION}.dmg" 2>/dev/null || true
+          find artifacts/linux -name "*.AppImage" -exec mv {} "artifacts/Zeeb-Movie-Renamer-${VERSION}.AppImage" \; 2>/dev/null || true
           # Keep Squirrel nupkg and RELEASES for future auto-update support
           cp artifacts/windows/*.nupkg artifacts/ 2>/dev/null || true
           cp artifacts/windows/RELEASES artifacts/ 2>/dev/null || true
@@ -97,3 +119,4 @@ jobs:
             artifacts/Zeeb-Movie-Renamer-*
             artifacts/*.nupkg
             artifacts/RELEASES
+            artifacts/*.AppImage
