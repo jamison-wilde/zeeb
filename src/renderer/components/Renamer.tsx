@@ -236,8 +236,10 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
       selectedPosterIndex != null && posterPaths.length > 0
         ? posterPaths[selectedPosterIndex]
         : null;
-    const platform: 'mac' | 'win' =
-      navigator.userAgent.includes('Macintosh') ? 'mac' : 'win';
+    const platform: 'mac' | 'win' | 'linux' =
+      navigator.userAgent.includes('Macintosh') ? 'mac'
+      : navigator.userAgent.includes('Linux') ? 'linux'
+      : 'win';
 
     try {
       const result = await executeRename({
