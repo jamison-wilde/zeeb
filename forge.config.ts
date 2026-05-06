@@ -2,6 +2,7 @@ import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerZIP } from '@electron-forge/maker-zip';
+import { MakerAppImage } from '@reforged/maker-appimage';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 
 const config: ForgeConfig = {
@@ -20,6 +21,13 @@ const config: ForgeConfig = {
       icon: 'assets/zeeb.icns',
     }),
     new MakerZIP({}, ['darwin']),
+    new MakerAppImage({
+      options: {
+        bin: 'Zeeb Movie Renamer',
+        icon: 'assets/zeeb512.png',
+        categories: ['Utility', 'AudioVideo'],
+      },
+    }, ['linux']),
   ],
   hooks: {
     generateAssets: async () => {
