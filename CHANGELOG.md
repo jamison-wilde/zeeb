@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.1] - 2026-05-06
+
+### Added
+- Linux release as AppImage; runs on most distributions without dependency setup.
+
 ## [4.0.0] - 2026-05-03
 
 ### Added
