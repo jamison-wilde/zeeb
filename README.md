@@ -14,12 +14,15 @@ A complete rewrite of the original [Zeeb](https://sourceforge.net/projects/zeeb/
 
 Get the latest release from the [Releases page](https://github.com/jamison-wilde/zeeb/releases):
 
-- **Windows:** Download the `.exe` installer (no admin rights needed)
-- **macOS:** Download the `.dmg` disk image
+- **Windows:** download the `.exe` installer (no admin rights needed)
+- **macOS:** download the `.dmg` disk image
+- **Linux:** download the `.AppImage`, then `chmod +x Zeeb-Movie-Renamer-*.AppImage` and run it
 
 No Node.js or other runtime is required — the installer is self-contained.
 
-> **Note:** The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt. On macOS, right-click → Open → confirm.
+> **Notes:**
+> - The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt. On macOS, right-click → Open → confirm.
+> - On Linux, if the AppImage fails to launch with a FUSE error, install `libfuse2` (Ubuntu/Debian: `sudo apt install libfuse2`).
 
 ## Features
 
@@ -61,9 +64,7 @@ npm run make     # Build installers for your platform
 4. Tag: `git tag vx.y.z`
 5. Push: `git push origin main --tags`
 
-CI automatically builds Windows and macOS installers and creates a GitHub Release.
-
-GitHub Actions will automatically build Windows and macOS installers and create a GitHub Release.
+GitHub Actions automatically builds Windows, macOS, and Linux installers and creates a GitHub Release.
 </details>
 
 

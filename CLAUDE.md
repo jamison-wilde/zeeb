@@ -21,6 +21,7 @@ EOF
 - Body explains *why*, not *what*
 - Squash WIP commits before pushing to main
 - Never commit secrets, keys, or `.env` files
+- Never push to `origin` (commits, tags, branches) without explicit human approval. Local commits and merges are fine; pushes are not.
 
 ### Worktrees
 - Use worktrees for parallel feature work: `git worktree add ../project-feat feat/name`
@@ -38,7 +39,7 @@ EOF
 3. Commit: `chore: bump version to x.y.z`
 4. Tag: `git tag vx.y.z`
 5. Push: `git push origin main --tags`
-6. CI builds Win+Mac installers and creates GitHub Release with changelog as body
+6. CI builds Windows, macOS, and Linux installers and creates GitHub Release with changelog as body
 - Never push a tag without a matching CHANGELOG.md entry — the build will fail
 - Version in package.json must match the tag (minus the `v` prefix)
 
