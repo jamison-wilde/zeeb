@@ -15,13 +15,13 @@ A complete rewrite of the original [Zeeb](https://sourceforge.net/projects/zeeb/
 Get the latest release from the [Releases page](https://github.com/jamison-wilde/zeeb/releases):
 
 - **Windows:** download the `.exe` installer (no admin rights needed)
-- **macOS:** download the `.dmg` disk image
+- **macOS:** download the `.dmg` disk image then `xattr -dr com.apple.quarantine "/Applications/Zeeb Movie Renamer.app"` and run it. 
 - **Linux:** download the `.AppImage`, then `chmod +x Zeeb-Movie-Renamer-*.AppImage` and run it
 
 No Node.js or other runtime is required — the installer is self-contained.
 
 > **Notes:**
-> - The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt. On macOS, right-click → Open → confirm.
+> - The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt. On macOS, run the xttr command above as I don't have a paid Apple developer account currently.
 > - On Linux, if the AppImage fails to launch with a FUSE error, install `libfuse2` (Ubuntu/Debian: `sudo apt install libfuse2`).
 
 ## Features
