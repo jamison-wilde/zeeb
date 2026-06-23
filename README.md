@@ -21,7 +21,7 @@ Get the latest release from the [Releases page](https://github.com/jamison-wilde
 No Node.js or other runtime is required — the installer is self-contained.
 
 > **Notes:**
-> - The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt. On macOS, run the xttr command above as I don't have a paid Apple developer account currently.
+> - The app is not code-signed. On Windows, click "More info" → "Run anyway" on the SmartScreen prompt, or right click in Explorer, choose Properties and check Unblock. On macOS, run the xttr command above as I don't have a paid Apple developer account currently.
 > - On Linux, if the AppImage fails to launch with a FUSE error, install `libfuse2` (Ubuntu/Debian: `sudo apt install libfuse2`).
 
 ## Features
