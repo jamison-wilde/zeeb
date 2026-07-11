@@ -40,6 +40,7 @@ test-data/
 
 # Local temp / scratch files
 tmp/
+.superpowers/
 
 .aideck/
 .claude/
