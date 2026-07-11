@@ -63,7 +63,7 @@ describe('PosterGrid', () => {
     );
     // No images rendered yet — only placeholder divs
     expect(screen.queryAllByRole('img')).toHaveLength(0);
-    const placeholders = container.querySelectorAll('.bg-gray-200');
+    const placeholders = container.querySelectorAll('.bg-chip');
     expect(placeholders.length).toBe(3);
 
     // Simulate first element becoming visible
@@ -73,12 +73,12 @@ describe('PosterGrid', () => {
     expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
-  it('highlights selected poster with blue border', () => {
+  it('highlights selected poster with accent border', () => {
     render(
       <PosterGrid posterPaths={paths} selectedIndex={1} onSelect={vi.fn()} compact={false} />,
     );
     const images = screen.getAllByRole('img');
-    expect(images[1].parentElement?.className).toContain('border-blue-500');
+    expect(images[1].parentElement?.className).toContain('border-accent');
   });
 
   it('calls onSelect when poster clicked', () => {

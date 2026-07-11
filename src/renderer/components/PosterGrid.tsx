@@ -45,8 +45,8 @@ function LazyPosterThumb({ path, size, index, selected, onSelect, onMouseEnter, 
   return (
     <div
       ref={ref}
-      className={`shrink-0 cursor-pointer border-2 rounded ${
-        selected ? 'border-blue-500' : 'border-transparent'
+      className={`shrink-0 cursor-pointer border-2 rounded-[3px] ${
+        selected ? 'border-accent' : 'border-transparent'
       }`}
       onClick={() => onSelect(index)}
       onMouseEnter={() => onMouseEnter(index)}
@@ -59,7 +59,7 @@ function LazyPosterThumb({ path, size, index, selected, onSelect, onMouseEnter, 
           className={className}
         />
       ) : (
-        <div className={`${className} bg-gray-200`} />
+        <div className={`${className} bg-chip`} />
       )}
     </div>
   );
@@ -79,7 +79,7 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
   if (posterPaths.length === 0) return null;
 
   const thumbSize = compact ? 'w92' : 'w185';
-  const thumbClass = compact ? 'w-[92px] h-[138px] object-cover rounded' : 'w-[185px] h-[278px] object-cover rounded';
+  const thumbClass = compact ? 'w-[92px] h-[138px] object-cover rounded-[3px]' : 'w-[185px] h-[278px] object-cover rounded-[3px]';
 
   // Position tooltip near cursor using viewport coordinates (rendered via portal)
   const tipStyle: React.CSSProperties = {
@@ -132,7 +132,7 @@ export function PosterGrid({ posterPaths, selectedIndex, onSelect, compact }: Po
         />
       ))}
       {hoverIndex !== null && createPortal(
-        <div style={tipStyle} className="bg-white shadow-lg rounded border border-gray-200 p-1">
+        <div style={tipStyle} className="bg-panel shadow-lg rounded border border-line p-1">
           <img
             data-testid="poster-hover-preview"
             src={buildPosterUrl(posterPaths[hoverIndex], 'w780')}

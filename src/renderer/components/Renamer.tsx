@@ -299,7 +299,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
       {/* Top area: left panel + right panel */}
       <div className="flex-1 flex flex-row min-h-0">
         {/* Left panel: file list + search results */}
-        <div className="w-[420px] flex flex-col border-r border-gray-300 shrink-0">
+        <div className="w-[420px] flex flex-col border-r border-line bg-panel shrink-0">
           <div className="flex items-center gap-2 px-2 py-1 bg-raised text-ink-2 border-b border-line shrink-0">
             <span className="section-header">Movie Files</span>
             <span className="flex-1" />
@@ -345,16 +345,16 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
         {/* Right panel: URL bar + webview */}
         <div className="flex-1 flex flex-col min-h-0">
           {config.showWebView && (
-            <div className="flex items-center gap-1 px-1 py-0.5 bg-gray-100 border-b border-gray-300">
+            <div className="flex items-center gap-1 px-1 py-0.5 bg-raised border-b border-line">
               <button
-                className="px-1.5 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+                className="px-1.5 py-0.5 text-xs border border-toggle-off text-ink-2 rounded-[3px]"
                 onClick={goBack}
                 title="Back"
               >
                 ←
               </button>
               <input
-                className="flex-1 px-2 py-0.5 text-xs border border-gray-300 rounded bg-white"
+                className="flex-1 px-2 py-0.5 text-xs border border-line rounded-[3px] bg-panel text-ink"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={handleUrlSubmit}
@@ -362,7 +362,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
               />
             </div>
           )}
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative bg-well">
             {webviewPreloadPath && (
               <webview
                 ref={(el: WebviewTag | null) => { if (el && el !== webviewEl) setWebviewEl(el); }}
@@ -378,8 +378,8 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
             {!config.showWebView && (
               <>
                 {selectedTt && !metadata && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-                    <div className="text-sm text-gray-500 animate-pulse">Loading movie data...</div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-surface/80 z-10">
+                    <div className="text-sm text-ink-dim animate-pulse">Loading movie data...</div>
                   </div>
                 )}
                 <PosterGrid
@@ -391,7 +391,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
               </>
             )}
             {config.showWebView && posterPaths.length > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-white/95 border-t border-gray-300 z-10">
+              <div className="absolute bottom-0 left-0 right-0 bg-panel/95 border-t border-line z-10">
                 <PosterGrid
                   posterPaths={posterPaths}
                   selectedIndex={selectedPosterIndex}
@@ -405,13 +405,13 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
       </div>
 
       {/* Bottom area: fixed — filename info + search parts + rename (full width) */}
-      <div className="shrink-0 border-t border-gray-300">
+      <div className="shrink-0 border-t border-line bg-panel">
         {currentFile && (
-          <div className="flex items-center gap-2 px-2 py-0.5 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center gap-2 px-2 py-0.5 bg-raised border-b border-line">
             {currentFile.nfoPath && (
               <button
                 data-testid="nfo-button"
-                className="px-2 py-0.5 bg-gray-600 text-white text-[11px] font-bold rounded hover:bg-gray-700 shrink-0"
+                className="bg-ink-dim text-surface font-mono text-[9px] font-bold rounded-[3px] px-[5px] py-[2px] shrink-0"
                 onClick={async () => {
                   try {
                     const raw = await fs.readFile(currentFile.nfoPath!, 'latin1');
@@ -423,16 +423,16 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
                 NFO
               </button>
             )}
-            <span className="text-xs text-gray-600 truncate">
+            <span className="font-mono text-[11px] text-ink-2 truncate">
               {currentFile.name}
             </span>
-            <span className="text-xs text-gray-400 shrink-0">
+            <span className="font-mono text-[10px] text-ink-faint shrink-0">
               {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : ''}
             </span>
             <span className="flex-1" />
             <button
               data-testid="search-button"
-              className="px-2 py-0.5 bg-blue-500 text-white text-[11px] font-bold rounded hover:bg-blue-600 shrink-0"
+              className="bg-accent text-on-accent text-[10px] font-bold rounded-[3px] px-3 py-[3px] shrink-0"
               onClick={handleSearch}
             >
               Search
@@ -450,20 +450,20 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
           />
         </div>
         {metadata && metadata.aka.length > 0 && (
-          <div className="flex items-center gap-2 px-2 py-0.5 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center gap-2 px-2 py-0.5 border-b border-line-subtle bg-raised">
             <button
-              className={`px-2 py-0.5 text-[11px] font-bold rounded shrink-0 ${
+              className={`px-2 py-0.5 text-[11px] font-bold rounded-[3px] shrink-0 ${
                 useAka
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                  ? 'bg-part-keep text-on-accent'
+                  : 'border border-toggle-off text-ink-2'
               }`}
               onClick={() => setUseAka(!useAka)}
             >
               Use AKA
             </button>
-            <span className="text-[11px] text-gray-500 shrink-0">Also Known As</span>
+            <span className="text-[11px] text-ink-faint shrink-0">Also Known As</span>
             <select
-              className="flex-1 px-1 py-0.5 text-xs border border-gray-300 rounded bg-white"
+              className="flex-1 px-1 py-0.5 text-[11px] border border-line rounded-[3px] bg-panel text-ink"
               value={selectedAka}
               onChange={(e) => {
                 setSelectedAka(e.target.value);

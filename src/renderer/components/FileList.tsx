@@ -16,14 +16,20 @@ export function FileList({ files, selectedIndex, onSelect, isFileVisible }: File
         return (
           <button
             key={file.id}
-            className={`w-full text-left px-2 py-1.5 border-b border-gray-200 flex items-center ${
-              index === selectedIndex ? 'bg-blue-100' : 'hover:bg-gray-50'
+            className={`w-full text-left px-2 py-0.5 flex items-center gap-1.5 ${
+              index === selectedIndex ? 'bg-row-selected' : ''
             } ${!visible ? 'opacity-30' : ''}`}
             onClick={() => onSelect(index)}
           >
-            <span className="flex-1 text-xs truncate">{file.name}</span>
+            <span className={`flex-1 font-mono text-[11px] truncate ${index === selectedIndex ? 'text-ink-bright' : 'text-ink-2'}`}>
+              {file.name}
+            </span>
             {file.hasNfo && (
-              <span className="text-[10px] text-blue-500 font-bold ml-1 shrink-0">NFO</span>
+              <span className={`font-mono font-bold text-[8px] border rounded-[3px] px-[3px] py-px shrink-0 ${
+                index === selectedIndex ? 'text-accent border-accent-muted' : 'text-ink-faint border-line'
+              }`}>
+                NFO
+              </span>
             )}
           </button>
         );
