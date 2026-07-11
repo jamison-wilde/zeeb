@@ -12,7 +12,7 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">URL File</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">URL File</h3>
         <div className="space-y-2">
           <label className="flex items-center gap-2">
             <input
@@ -32,7 +32,7 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
                 disabled={!config.createUrlFile}
                 onChange={(e) => updateConfig({ includeOriginalInUrl: e.target.checked })}
               />
-              <span className={`text-sm ${!config.createUrlFile ? 'text-gray-400' : ''}`}>
+              <span className={`text-sm ${!config.createUrlFile ? 'text-ink-faint' : ''}`}>
                 Include original filename in .url
               </span>
             </label>
@@ -44,7 +44,7 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
                 disabled={!config.createUrlFile}
                 onChange={(e) => updateConfig({ includeNfoInUrl: e.target.checked })}
               />
-              <span className={`text-sm ${!config.createUrlFile ? 'text-gray-400' : ''}`}>
+              <span className={`text-sm ${!config.createUrlFile ? 'text-ink-faint' : ''}`}>
                 Include NFO content in .url
               </span>
             </label>
@@ -58,7 +58,7 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
               />
               <span
                 className={`text-sm ${
-                  !config.createUrlFile || !config.includeNfoInUrl ? 'text-gray-400' : ''
+                  !config.createUrlFile || !config.includeNfoInUrl ? 'text-ink-faint' : ''
                 }`}
               >
                 Delete original NFO after including
@@ -69,7 +69,7 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Poster</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">Poster</h3>
         <div className="space-y-2">
           <label className="flex items-center gap-2">
             <input
@@ -89,17 +89,17 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
                 disabled={!config.createPoster}
                 onChange={(e) => updateConfig({ posterInDvdFolder: e.target.checked })}
               />
-              <span className={`text-sm ${!config.createPoster ? 'text-gray-400' : ''}`}>
+              <span className={`text-sm ${!config.createPoster ? 'text-ink-faint' : ''}`}>
                 Place poster inside DVD folder
               </span>
             </label>
             <div className="flex items-center gap-2 mt-2">
-              <label className={`text-sm ${!config.createPoster ? 'text-gray-400' : ''}`}>
+              <label className={`text-sm ${!config.createPoster ? 'text-ink-faint' : ''}`}>
                 Save size:
               </label>
               <select
                 data-testid="poster-save-size"
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                className="border border-line rounded px-2 py-1 text-sm bg-panel text-ink"
                 value={config.posterSaveSize}
                 disabled={!config.createPoster}
                 onChange={(e) => updateConfig({ posterSaveSize: e.target.value })}
@@ -116,13 +116,13 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">TMDB</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">TMDB</h3>
         <div className="space-y-2">
-          <label className="text-sm text-gray-600">API Key:</label>
+          <label className="text-sm text-ink-2">API Key:</label>
           <input
             data-testid="tmdb-api-key"
             type="text"
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono"
+            className="w-full border border-line rounded px-2 py-1 text-sm font-mono bg-panel text-ink"
             value={config.tmdbApiKey}
             onChange={(e) => updateConfig({ tmdbApiKey: e.target.value })}
             placeholder="TMDB API key..."
@@ -131,9 +131,9 @@ export function CompanionsSection({ config, updateConfig }: CompanionsSectionPro
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">NFO</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">NFO</h3>
         <div className="space-y-2">
-          <label className="text-sm text-gray-600">Additional NFO folder:</label>
+          <label className="text-sm text-ink-2">Additional NFO folder:</label>
           <BrowseInput
             value={config.nfoFolder}
             onChange={(v) => updateConfig({ nfoFolder: v })}

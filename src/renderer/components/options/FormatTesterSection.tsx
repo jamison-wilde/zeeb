@@ -119,21 +119,21 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
     <div className="space-y-4">
       <div className="flex gap-2">
         <input
-          className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm"
+          className="flex-1 border border-line rounded px-2 py-1.5 text-sm bg-panel text-ink"
           placeholder="Enter tt#"
           value={ttInput}
           onChange={(e) => setTtInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleTest()}
         />
         <button
-          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+          className="px-3 py-1.5 border border-toggle-off text-ink-2 rounded-[3px] text-sm"
           onClick={() => setTtInput('tt0068646')}
           title="The Godfather (tt0068646)"
         >
           Godfather
         </button>
         <button
-          className="px-4 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+          className="px-4 py-1.5 bg-accent text-on-accent rounded-[3px] text-sm hover:opacity-90"
           onClick={handleTest}
           disabled={isLoading}
         >
@@ -141,40 +141,40 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
         </button>
       </div>
 
-      {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}
+      {errorMsg && <p className="text-part-remove text-sm">{errorMsg}</p>}
 
       {testerResult && (
         <div className="space-y-4">
-          <table className="w-full text-sm border border-gray-200 rounded">
+          <table className="w-full text-sm border border-line-subtle rounded">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left px-3 py-2 font-semibold text-gray-600">Token</th>
-                <th className="text-left px-3 py-2 font-semibold text-gray-600">Value</th>
+              <tr className="bg-raised">
+                <th className="text-left px-3 py-2 font-semibold text-ink-2">Token</th>
+                <th className="text-left px-3 py-2 font-semibold text-ink-2">Value</th>
               </tr>
             </thead>
             <tbody>
               {TOKEN_LABELS.map(({ token, label }) => (
-                <tr key={token} className="border-t border-gray-100">
+                <tr key={token} className="border-t border-line-subtle">
                   <td className="px-3 py-1.5 font-mono text-purple-600">{label}</td>
-                  <td className="px-3 py-1.5">{getTokenValue(token, testerResult, config)}</td>
+                  <td className="px-3 py-1.5 text-ink">{getTokenValue(token, testerResult, config)}</td>
                 </tr>
               ))}
-              <tr className="border-t border-gray-100">
+              <tr className="border-t border-line-subtle">
                 <td className="px-3 py-1.5 font-mono text-purple-600">{`<saved>`}</td>
-                <td className="px-3 py-1.5 text-gray-400">(from current file)</td>
+                <td className="px-3 py-1.5 text-ink-faint">(from current file)</td>
               </tr>
-              <tr className="border-t border-gray-100">
+              <tr className="border-t border-line-subtle">
                 <td className="px-3 py-1.5 font-mono text-purple-600">{`<original>`}</td>
-                <td className="px-3 py-1.5 text-gray-400">{testerResult.tt}</td>
+                <td className="px-3 py-1.5 text-ink-faint">{testerResult.tt}</td>
               </tr>
             </tbody>
           </table>
 
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h4 className="text-xs font-semibold text-gray-600">Preview</h4>
+              <h4 className="text-xs font-semibold text-ink-2">Preview</h4>
               <select
-                className="text-xs border border-gray-300 rounded px-1.5 py-0.5"
+                className="text-xs border border-line rounded px-1.5 py-0.5 bg-panel text-ink"
                 value={previewFormat}
                 onChange={(e) => setPreviewFormat(e.target.value)}
                 data-testid="format-mode-select"
@@ -184,7 +184,7 @@ export function FormatTesterSection({ config }: FormatTesterSectionProps): React
                 ))}
               </select>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm font-mono">
+            <div className="bg-raised border border-line-subtle rounded px-3 py-2 text-sm font-mono text-ink">
               {preview}
             </div>
           </div>

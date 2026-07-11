@@ -23,8 +23,8 @@ describe('NotificationToast', () => {
     });
     const toasts = screen.getAllByTestId('notification-toast');
     expect(toasts).toHaveLength(2);
-    expect(toasts[0].className).toMatch(/red/);
-    expect(toasts[1].className).toMatch(/green/);
+    expect(toasts[0].className).toContain('bg-part-remove');
+    expect(toasts[1].className).toContain('bg-part-keep');
     expect(toasts[0]).toHaveTextContent('Boom');
     expect(toasts[1]).toHaveTextContent('Yay');
   });

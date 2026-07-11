@@ -52,9 +52,9 @@ function CopyableUrl({ url, index }: { url: string; index: number }): React.JSX.
       onMouseLeave={() => { setHovered(false); setCopied(false); }}
       onClick={handleCopy}
     >
-      <span className="text-blue-400 underline">{url}</span>
+      <span className="text-accent underline">{url}</span>
       {hovered && (
-        <span className="absolute -top-3 left-0 text-[10px] text-gray-300 select-none bg-gray-800 px-1 rounded">
+        <span className="absolute -top-3 left-0 text-[10px] text-ink-2 select-none bg-well px-1 rounded">
           {copied ? 'Copied!' : '📋'}
         </span>
       )}
@@ -78,15 +78,15 @@ export function NfoViewer({ visible, content, onClose }: NfoViewerProps): React.
   let urlIndex = 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
-      <div className="flex justify-between items-center p-4 border-b border-gray-700">
-        <h2 className="text-lg font-bold text-white">NFO Viewer</h2>
-        <button data-testid="close-nfo" className="text-blue-400" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-panel flex flex-col">
+      <div className="flex justify-between items-center p-4 border-b border-line">
+        <h2 className="text-lg font-bold text-ink">NFO Viewer</h2>
+        <button data-testid="close-nfo" className="text-accent" onClick={onClose}>
           Close
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        <pre className="font-mono text-xs text-green-400 leading-4 whitespace-pre">
+        <pre className="font-mono text-xs text-ink leading-4 whitespace-pre">
           {segments.map((seg, i) => {
             if (seg.type === 'url') {
               const idx = urlIndex++;

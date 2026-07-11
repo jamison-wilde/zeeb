@@ -3,9 +3,9 @@ import { useNotificationStore } from '../../stores/notificationStore';
 import type { NotificationKind } from '../../stores/notificationStore';
 
 const KIND_CLASSES: Record<NotificationKind, string> = {
-  error: 'bg-red-600 text-white',
-  success: 'bg-green-600 text-white',
-  info: 'bg-gray-700 text-white',
+  error: 'bg-part-remove text-on-accent',
+  success: 'bg-part-keep text-on-accent',
+  info: 'bg-raised text-ink',
 };
 
 export function NotificationToast(): React.JSX.Element | null {
@@ -21,7 +21,7 @@ export function NotificationToast(): React.JSX.Element | null {
           key={n.id}
           data-testid="notification-toast"
           onClick={() => dismiss(n.id)}
-          className={`pointer-events-auto px-3 py-2 rounded shadow text-xs font-medium text-left max-w-xs cursor-pointer ${KIND_CLASSES[n.kind]}`}
+          className={`pointer-events-auto px-3 py-2 rounded-[3px] shadow text-xs font-medium text-left max-w-xs cursor-pointer ${KIND_CLASSES[n.kind]}`}
         >
           {n.message}
         </button>

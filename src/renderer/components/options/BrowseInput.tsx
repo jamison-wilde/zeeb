@@ -22,13 +22,13 @@ export function BrowseInput({ value, onChange, placeholder, mode }: BrowseInputP
   return (
     <div className="flex gap-2">
       <input
-        className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm"
+        className="flex-1 border border-line rounded px-2 py-1.5 text-sm bg-panel text-ink"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
       <button
-        className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+        className="px-3 py-1.5 border border-toggle-off text-ink-2 rounded-[3px] text-sm"
         onClick={handleBrowse}
       >
         Browse

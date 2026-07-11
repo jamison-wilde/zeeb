@@ -57,7 +57,7 @@ function entryDescription(entry: UndoEntry, basePath: string): string {
 function resultDescription(result: UndoResult, basePath: string): React.JSX.Element {
   const src = getRelativePath(result.entry.sourcePath, basePath);
   const icon = result.success ? '\u2713' : '\u2717';
-  const color = result.success ? 'text-green-600' : 'text-red-600';
+  const color = result.success ? 'text-part-keep' : 'text-part-remove';
   const suffix = result.success ? '' : ` \u2014 ${result.error ?? 'unknown error'}`;
   return (
     <div className={`text-xs pl-6 py-0.5 ${color}`}>
@@ -139,15 +139,15 @@ export function UndoModal({ visible, onClose, onRescan }: UndoModalProps): React
   const isEmpty = displayItems.length === 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 bg-panel flex flex-col">
+      <div className="flex justify-between items-center p-4 border-b border-line-subtle">
         <h2 className="text-lg font-bold">Undo History</h2>
-        <button data-testid="close-undo" className="text-blue-500" onClick={handleClose}>
+        <button data-testid="close-undo" className="text-accent" onClick={handleClose}>
           Close
         </button>
       </div>
       {isEmpty ? (
-        <div className="flex-1 flex items-center justify-center p-6 text-gray-500">
+        <div className="flex-1 flex items-center justify-center p-6 text-ink-faint">
           No undo history
         </div>
       ) : (
@@ -158,27 +158,27 @@ export function UndoModal({ visible, onClose, onRescan }: UndoModalProps): React
             const movieNames = extractMovieNames(txn.entries);
 
             return (
-              <div key={txn.id} className="border-b border-gray-200">
+              <div key={txn.id} className="border-b border-line-subtle">
                 <div className="flex items-center px-3 py-2.5">
                   <button
                     data-testid={`expand-toggle-${index}`}
-                    className="mr-2 text-gray-400 hover:text-gray-600 w-4"
+                    className="mr-2 text-ink-faint hover:text-ink-2 w-4"
                     onClick={() => toggleExpand(txn.id)}
                   >
                     {isExpanded ? '\u25BC' : '\u25B6'}
                   </button>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">{formatMovieNames(movieNames)}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-ink-dim mt-0.5">
                       {txn.entries.length} {txn.entries.length === 1 ? 'file' : 'files'}
                     </p>
                   </div>
                   {results ? (
-                    <span className="px-4 py-1.5 text-gray-400 font-bold text-sm">DONE</span>
+                    <span className="px-4 py-1.5 text-ink-faint font-bold text-sm">DONE</span>
                   ) : (
                     <button
                       data-testid={`undo-button-${index}`}
-                      className="px-4 py-1.5 bg-red-500 text-white rounded font-bold text-sm hover:bg-red-600 disabled:opacity-50"
+                      className="px-4 py-1.5 bg-part-remove text-on-accent rounded-[3px] font-bold text-sm hover:opacity-90 disabled:opacity-50"
                       onClick={() => handleUndo(txn.id)}
                       disabled={isPending}
                     >
@@ -189,7 +189,7 @@ export function UndoModal({ visible, onClose, onRescan }: UndoModalProps): React
                 {isExpanded && !results && (
                   <div className="pb-2">
                     {txn.entries.map((entry, i) => (
-                      <div key={i} className="text-xs text-gray-600 pl-6 py-0.5">
+                      <div key={i} className="text-xs text-ink-2 pl-6 py-0.5">
                         {entryDescription(entry, txn.basePath)}
                       </div>
                     ))}

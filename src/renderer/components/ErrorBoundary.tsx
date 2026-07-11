@@ -13,13 +13,14 @@ const PANEL_STYLE: React.CSSProperties = {
   padding: '32px',
   maxWidth: '720px',
   margin: '40px auto',
-  background: '#fff',
-  border: '1px solid #ddd',
+  background: 'var(--z-panel)',
+  color: 'var(--z-ink)',
+  border: '1px solid var(--z-line)',
   borderRadius: '6px',
 };
 
 const PRE_STYLE: React.CSSProperties = {
-  background: '#f6f6f6',
+  background: 'var(--z-raised)',
   padding: '12px',
   borderRadius: '4px',
   overflowX: 'auto',
@@ -31,9 +32,9 @@ const PRE_STYLE: React.CSSProperties = {
 const BUTTON_STYLE: React.CSSProperties = {
   padding: '8px 14px',
   marginRight: '8px',
-  border: '1px solid #888',
-  borderRadius: '4px',
-  background: '#f0f0f0',
+  border: '1px solid var(--z-toggle-off)',
+  borderRadius: '3px',
+  color: 'var(--z-ink-2)',
   cursor: 'pointer',
   fontSize: '13px',
 };
@@ -68,7 +69,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return (
       <div style={PANEL_STYLE}>
         <h1 style={{ margin: '0 0 12px', fontSize: '20px' }}>Something went wrong</h1>
-        <p style={{ margin: '0 0 16px', color: '#444' }}>{error.name}: {error.message}</p>
+        <p style={{ margin: '0 0 16px', color: 'var(--z-ink-2)' }}>{error.name}: {error.message}</p>
         <pre style={PRE_STYLE}>{formatError(error)}</pre>
         <div style={{ marginTop: '16px' }}>
           <button type="button" style={BUTTON_STYLE} onClick={this.handleReload}>Reload</button>

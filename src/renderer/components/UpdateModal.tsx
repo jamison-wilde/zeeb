@@ -69,10 +69,10 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-4/5 max-w-2xl max-h-[80%] bg-white rounded-lg overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+      <div className="w-4/5 max-w-2xl max-h-[80%] bg-panel rounded-lg overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b border-line-subtle">
           <h2 className="text-lg font-bold">Zeeb Movie Renamer v{data.version} Available</h2>
-          <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={onClose}>×</button>
+          <button className="text-ink-faint hover:text-ink-2 text-xl" onClick={onClose}>×</button>
         </div>
 
         <div
@@ -80,11 +80,11 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
           dangerouslySetInnerHTML={{ __html: notesHtml }}
         />
 
-        <div className="p-4 border-t border-gray-200 space-y-3">
+        <div className="p-4 border-t border-line-subtle space-y-3">
           <div className="flex gap-2">
             {downloadState === 'idle' && platformAsset && (
               <button
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-accent text-on-accent text-sm font-bold rounded-[3px] hover:opacity-90"
                 onClick={handleDownload}
               >
                 Download Update
@@ -92,9 +92,9 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
             )}
             {downloadState === 'downloading' && (
               <div className="flex-1">
-                <div className="w-full bg-gray-200 rounded h-8 overflow-hidden">
+                <div className="w-full bg-well rounded h-8 overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 transition-all flex items-center justify-center text-white text-xs font-bold"
+                    className="h-full bg-accent transition-all flex items-center justify-center text-on-accent text-xs font-bold"
                     style={{ width: `${progress}%` }}
                   >
                     {progress}%
@@ -104,7 +104,7 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
             )}
             {downloadState === 'complete' && (
               <button
-                className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700"
+                className="px-4 py-2 bg-part-keep text-on-accent text-sm font-bold rounded-[3px] hover:opacity-90"
                 onClick={handleShowInFolder}
               >
                 Show in Folder
@@ -113,23 +113,23 @@ export function UpdateModal({ data, onClose, onSkip }: UpdateModalProps): React.
             {downloadState === 'error' && (
               <>
                 <button
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700"
+                  className="px-4 py-2 bg-accent text-on-accent text-sm font-bold rounded-[3px] hover:opacity-90"
                   onClick={handleDownload}
                 >
                   Retry Download
                 </button>
-                <span className="text-red-500 text-sm self-center">{errorMessage}</span>
+                <span className="text-part-remove text-sm self-center">{errorMessage}</span>
               </>
             )}
             <button
-              className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded hover:bg-gray-300"
+              className="px-4 py-2 border border-toggle-off text-ink-2 text-sm font-bold rounded-[3px]"
               onClick={handleViewOnGithub}
             >
               View on GitHub
             </button>
           </div>
           <button
-            className="text-xs text-gray-400 hover:text-gray-600"
+            className="text-xs text-ink-faint hover:text-ink-2"
             onClick={handleSkip}
           >
             Skip this version

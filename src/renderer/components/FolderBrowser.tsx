@@ -31,14 +31,14 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
       <div className="flex gap-2 mb-3">
         <input
           data-testid="folder-path-input"
-          className="flex-1 border border-gray-300 rounded px-2 py-1.5"
+          className="flex-1 border border-line rounded px-2 py-1.5 bg-panel text-ink"
           value={folderPath}
           onChange={(e) => setFolderPath(e.target.value)}
           placeholder="Enter folder path..."
         />
         <button
           data-testid="browse-button"
-          className="px-3 py-1.5 bg-gray-200 rounded hover:bg-gray-300 shrink-0"
+          className="px-3 py-1.5 border border-toggle-off text-ink-2 rounded-[3px] shrink-0"
           onClick={handleBrowse}
         >
           Browse...
@@ -46,7 +46,7 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
         <button
           data-testid="list-movies-button"
           disabled={!folderPath.trim()}
-          className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 shrink-0 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 bg-accent text-on-accent rounded-[3px] hover:opacity-90 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => onFolderSelected(folderPath, recursionMode)}
         >
           List Movies
@@ -55,15 +55,15 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
 
       <div data-testid="recent-folders" className="flex gap-2 mb-3 overflow-x-auto max-h-10">
         {recentFolders.map((folder, index) => (
-          <div key={index} className="flex items-center bg-gray-200 rounded text-sm shrink-0">
+          <div key={index} className="flex items-center bg-well rounded text-sm shrink-0">
             <button
-              className="px-2 py-1 whitespace-nowrap hover:bg-gray-300 rounded-l"
+              className="px-2 py-1 whitespace-nowrap hover:bg-raised rounded-l-[3px]"
               onClick={() => onFolderSelected(folder, recursionMode)}
             >
               {folder}
             </button>
             <button
-              className="px-1 py-1 text-red-500 hover:text-red-700 hover:bg-gray-300 rounded-r text-xs font-bold"
+              className="px-1 py-1 text-part-remove hover:text-part-remove-always hover:bg-raised rounded-r-[3px] text-xs font-bold"
               onClick={() => onRemoveRecentFolder?.(folder)}
               title="Remove"
             >
@@ -78,10 +78,10 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
           <button
             key={option.value}
             title={option.tooltip}
-            className={`px-2 py-1 border rounded ${
+            className={`px-2 py-1 border rounded-[3px] ${
               recursionMode === option.value
-                ? 'bg-blue-500 border-blue-500 text-white'
-                : 'border-gray-300'
+                ? 'bg-accent border-accent text-on-accent'
+                : 'border-line text-ink-2'
             }`}
             onClick={() => setRecursionMode(option.value)}
           >
@@ -90,7 +90,7 @@ export function FolderBrowser({ onFolderSelected, recentFolders, onRemoveRecentF
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 italic">
+      <p className="text-xs text-ink-faint italic">
         Note: Listing movies can take several seconds or more, especially on network shares or when including subfolders.
       </p>
     </div>

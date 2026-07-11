@@ -12,7 +12,7 @@ export function FileTypesSection({ config, updateConfig }: FileTypesSectionProps
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-2">Movie Extensions</h3>
+        <h3 className="text-sm font-bold text-ink mb-2">Movie Extensions</h3>
         <TagInput
           values={config.movieExtensions}
           onChange={(v) => updateConfig({ movieExtensions: v })}
@@ -20,7 +20,7 @@ export function FileTypesSection({ config, updateConfig }: FileTypesSectionProps
         />
       </div>
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-2">Subtitle Extensions</h3>
+        <h3 className="text-sm font-bold text-ink mb-2">Subtitle Extensions</h3>
         <TagInput
           values={config.subtitleExtensions}
           onChange={(v) => updateConfig({ subtitleExtensions: v })}

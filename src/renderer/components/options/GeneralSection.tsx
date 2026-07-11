@@ -28,7 +28,7 @@ export function GeneralSection({ config, updateConfig }: GeneralSectionProps): R
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Title Handling</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">Title Handling</h3>
         <div className="space-y-2">
           <label className="flex items-center gap-2">
             <input
@@ -49,19 +49,19 @@ export function GeneralSection({ config, updateConfig }: GeneralSectionProps): R
             <span className="text-sm">Swap &quot;The&quot; to end after comma</span>
           </label>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 w-40">Custom &quot;The&quot; word:</label>
+            <label className="text-sm text-ink-2 w-40">Custom &quot;The&quot; word:</label>
             <input
               data-testid="the-word-input"
-              className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
+              className="border border-line rounded px-2 py-1 text-sm w-32 bg-panel text-ink"
               value={config.theWord}
               onChange={(e) => updateConfig({ theWord: e.target.value })}
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 w-40">Replace title spaces with:</label>
+            <label className="text-sm text-ink-2 w-40">Replace title spaces with:</label>
             <input
               data-testid="title-space-char"
-              className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
+              className="border border-line rounded px-2 py-1 text-sm w-32 bg-panel text-ink"
               value={config.titleSpaceChar}
               onChange={(e) => updateConfig({ titleSpaceChar: e.target.value })}
               placeholder="(blank = keep spaces)"
@@ -71,7 +71,7 @@ export function GeneralSection({ config, updateConfig }: GeneralSectionProps): R
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Separators</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">Separators</h3>
         <div className="space-y-2">
           {[
             { key: 'savedPartSeparator', label: 'Saved parts separator', testId: 'saved-part-separator' },
@@ -80,10 +80,10 @@ export function GeneralSection({ config, updateConfig }: GeneralSectionProps): R
             { key: 'starSeparator', label: 'Star separator', testId: 'star-separator' },
           ].map((s) => (
             <div key={s.key} className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 w-40">{s.label}:</label>
+              <label className="text-sm text-ink-2 w-40">{s.label}:</label>
               <input
                 data-testid={s.testId}
-                className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
+                className="border border-line rounded px-2 py-1 text-sm w-32 bg-panel text-ink"
                 value={config[s.key as keyof ZeebConfig] as string}
                 onChange={(e) => updateConfig({ [s.key]: e.target.value })}
               />
@@ -93,7 +93,7 @@ export function GeneralSection({ config, updateConfig }: GeneralSectionProps): R
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Behavior</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">Behavior</h3>
         <div className="space-y-2">
           <label className="flex items-center gap-2">
             <input

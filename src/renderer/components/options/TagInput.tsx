@@ -43,16 +43,16 @@ export function TagInput({ values, onChange, placeholder, filter }: TagInputProp
     : values.map((v, i) => [i, v] as const);
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 border border-gray-300 rounded bg-white min-h-[38px]">
+    <div className="flex flex-wrap gap-1.5 p-2 border border-line rounded bg-panel min-h-[38px]">
       {visibleTags.map(([originalIndex, v]) => (
         <span
           key={`${v}-${originalIndex}`}
-          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-sm"
+          className="inline-flex items-center gap-1 px-2 py-0.5 bg-row-selected text-accent rounded text-sm"
         >
           {v}
           <button
             data-testid="tag-remove"
-            className="text-blue-500 hover:text-blue-700 font-bold leading-none"
+            className="text-accent hover:opacity-70 font-bold leading-none"
             onClick={() => removeTag(originalIndex)}
           >
             ×
@@ -60,7 +60,7 @@ export function TagInput({ values, onChange, placeholder, filter }: TagInputProp
         </span>
       ))}
       <input
-        className="flex-1 min-w-[80px] outline-none text-sm"
+        className="flex-1 min-w-[80px] outline-none text-sm bg-transparent text-ink"
         placeholder={placeholder}
         value={input}
         onChange={(e) => setInput(e.target.value)}

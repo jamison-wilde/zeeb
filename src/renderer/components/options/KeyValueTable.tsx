@@ -43,21 +43,21 @@ export function KeyValueTable({
     : values.map((pair, i) => [i, pair] as const);
 
   return (
-    <div className="border border-gray-300 rounded overflow-hidden">
-      <div className="grid grid-cols-[3fr_5fr_32px] bg-gray-100 text-xs font-semibold text-gray-600">
-        <div className="px-2 py-1.5 border-r border-gray-200">{leftHeader}</div>
-        <div className="px-2 py-1.5 border-r border-gray-200">{rightHeader}</div>
+    <div className="border border-line rounded overflow-hidden">
+      <div className="grid grid-cols-[3fr_5fr_32px] bg-raised text-xs font-semibold text-ink-2">
+        <div className="px-2 py-1.5 border-r border-line-subtle">{leftHeader}</div>
+        <div className="px-2 py-1.5 border-r border-line-subtle">{rightHeader}</div>
         <div />
       </div>
       {visibleRows.map(([originalIndex, [left, right]]) => (
-        <div key={originalIndex} className="grid grid-cols-[3fr_5fr_32px] border-t border-gray-200">
-          <input className="px-2 py-1 text-sm border-r border-gray-200 outline-none" placeholder={leftPlaceholder} value={left} onChange={(e) => handleCellChange(originalIndex, 0, e.target.value)} />
-          <input className="px-2 py-1 text-sm border-r border-gray-200 outline-none" placeholder={rightPlaceholder} value={right} onChange={(e) => handleCellChange(originalIndex, 1, e.target.value)} />
-          <button data-testid="kv-remove" className="text-red-400 hover:text-red-600 text-sm font-bold" onClick={() => handleRemove(originalIndex)}>×</button>
+        <div key={originalIndex} className="grid grid-cols-[3fr_5fr_32px] border-t border-line-subtle">
+          <input className="px-2 py-1 text-sm border-r border-line-subtle outline-none bg-panel text-ink" placeholder={leftPlaceholder} value={left} onChange={(e) => handleCellChange(originalIndex, 0, e.target.value)} />
+          <input className="px-2 py-1 text-sm border-r border-line-subtle outline-none bg-panel text-ink" placeholder={rightPlaceholder} value={right} onChange={(e) => handleCellChange(originalIndex, 1, e.target.value)} />
+          <button data-testid="kv-remove" className="text-part-remove hover:text-part-remove-always text-sm font-bold" onClick={() => handleRemove(originalIndex)}>×</button>
         </div>
       ))}
-      <div className="border-t border-gray-200 p-1.5">
-        <button data-testid="kv-add" className="text-sm text-blue-500 hover:text-blue-700" onClick={handleAdd}>+ Add</button>
+      <div className="border-t border-line-subtle p-1.5">
+        <button data-testid="kv-add" className="text-sm text-accent hover:underline" onClick={handleAdd}>+ Add</button>
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ export function LoggingSection({ config, updateConfig }: LoggingSectionProps): R
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-2">Log File</h3>
+        <h3 className="text-sm font-bold text-ink mb-2">Log File</h3>
         <BrowseInput
           value={config.logFilePath}
           onChange={(v) => updateConfig({ logFilePath: v })}
@@ -29,15 +29,15 @@ export function LoggingSection({ config, updateConfig }: LoggingSectionProps): R
         />
       </div>
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-2">Undo History</h3>
+        <h3 className="text-sm font-bold text-ink mb-2">Undo History</h3>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Maximum undos remembered:</label>
+          <label className="text-sm text-ink-2">Maximum undos remembered:</label>
           <input
             data-testid="max-undos"
             type="number"
             min={0}
             max={1000}
-            className="border border-gray-300 rounded px-2 py-1 text-sm w-24"
+            className="border border-line rounded px-2 py-1 text-sm w-24 bg-panel text-ink"
             value={config.maxUndos}
             onChange={handleMaxUndos}
           />

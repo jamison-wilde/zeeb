@@ -22,10 +22,10 @@ export function ReleaseNotes({ visible, onClose }: ReleaseNotesProps): React.JSX
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-4/5 max-w-2xl max-h-[70%] bg-white rounded-lg overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+      <div className="w-4/5 max-w-2xl max-h-[70%] bg-panel rounded-lg overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b border-line-subtle">
           <h2 className="text-lg font-bold">Release Notes</h2>
-          <button data-testid="release-notes-close" className="text-blue-500" onClick={onClose}>
+          <button data-testid="release-notes-close" className="text-accent" onClick={onClose}>
             Close
           </button>
         </div>

@@ -83,21 +83,21 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
   return (
     <div className="flex gap-6">
       <div className="flex-1 space-y-3">
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-ink-faint mb-3">
           Use <code>/</code> in format strings to create subfolders.
         </p>
         <div className="space-y-1 mb-3">
-          <label className="flex items-center gap-2 text-xs text-gray-600">
+          <label className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={config.separateDvdFormat}
               onChange={(e) => updateConfig({ separateDvdFormat: e.target.checked })} />
             Use separate DVD folder format.
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-600">
+          <label className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={config.separatePosterFormat}
               onChange={(e) => updateConfig({ separatePosterFormat: e.target.checked })} />
             Use separate poster format.
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-600">
+          <label className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={config.separateUrlFormat}
               onChange={(e) => updateConfig({ separateUrlFormat: e.target.checked })} />
             Use separate URL file format.
@@ -105,11 +105,11 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
         </div>
         {visibleFields.map((f) => (
           <div key={f.key}>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">{f.label}</label>
+            <label className="block text-xs font-semibold text-ink-2 mb-1">{f.label}</label>
             <input
               ref={(el) => { inputRefs.current[f.key] = el; }}
               data-testid={f.testId}
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono"
+              className="w-full border border-line rounded px-2 py-1.5 text-sm font-mono bg-panel text-ink"
               value={(config as unknown as Record<string, unknown>)[f.key] as string}
               onChange={(e) => updateConfig({ [f.key]: e.target.value })}
               onFocus={() => setFocusedField(f.key as FormatKey)}
@@ -117,24 +117,24 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
           </div>
         ))}
       </div>
-      <div className="w-56 flex-shrink-0 bg-gray-50 border border-gray-200 rounded-lg p-3">
-        <div className="text-xs font-bold text-gray-700 mb-2">Available Tokens</div>
+      <div className="w-56 flex-shrink-0 bg-raised border border-line-subtle rounded-lg p-3">
+        <div className="text-xs font-bold text-ink mb-2">Available Tokens</div>
         <div className="space-y-0.5">
           {TOKENS.map((t) => (
             <button
               key={t.token}
               data-testid={t.testId}
-              className={`w-full text-left flex justify-between items-center px-1.5 py-0.5 rounded text-xs hover:bg-blue-50 ${
+              className={`w-full text-left flex justify-between items-center px-1.5 py-0.5 rounded text-xs hover:bg-row-selected ${
                 focusedField ? 'cursor-pointer' : 'opacity-50 cursor-default'
               }`}
               onClick={() => handleTokenClick(t.token)}
             >
               <code className="text-purple-600">{t.token}</code>
-              <span className="text-gray-500 text-[10px] ml-2">{t.desc}</span>
+              <span className="text-ink-dim text-[10px] ml-2">{t.desc}</span>
             </button>
           ))}
         </div>
-        <div className="mt-2 text-[10px] text-gray-400">
+        <div className="mt-2 text-[10px] text-ink-faint">
           {focusedField ? 'Click to insert at cursor' : 'Focus an input first'}
         </div>
       </div>

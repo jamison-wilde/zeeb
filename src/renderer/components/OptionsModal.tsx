@@ -38,22 +38,22 @@ export function OptionsModal({ visible, onClose }: OptionsModalProps): React.JSX
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col" data-testid="options-modal">
-      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 bg-panel flex flex-col" data-testid="options-modal">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-line-subtle">
         <h2 className="text-lg font-bold">Options</h2>
-        <button data-testid="close-options" className="text-blue-500 hover:text-blue-700" onClick={onClose}>
+        <button data-testid="close-options" className="text-accent hover:underline" onClick={onClose}>
           Close
         </button>
       </div>
       <div className="flex flex-1 min-h-0">
-        <nav className="w-48 border-r border-gray-200 bg-gray-50 overflow-y-auto">
+        <nav className="w-48 border-r border-line-subtle bg-raised overflow-y-auto">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               className={`w-full text-left px-4 py-2.5 text-sm ${
                 activeSection === s.id
-                  ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-500'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-row-selected text-ink font-semibold border-r-2 border-accent'
+                  : 'text-ink-2 hover:bg-well'
               }`}
               onClick={() => setActiveSection(s.id)}
             >

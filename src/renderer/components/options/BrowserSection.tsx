@@ -18,7 +18,7 @@ export function BrowserSection({ config, updateConfig }: BrowserSectionProps): R
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Visibility</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">Visibility</h3>
         <label className="flex items-center gap-2">
           <input
             data-testid="show-webview"
@@ -31,10 +31,10 @@ export function BrowserSection({ config, updateConfig }: BrowserSectionProps): R
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Browser Zoom</h3>
+        <h3 className="text-sm font-bold text-ink mb-3">Browser Zoom</h3>
         <div className="flex items-center gap-3">
           <button
-            className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm font-bold"
+            className="px-2 py-1 border border-toggle-off text-ink-2 rounded-[3px] text-sm font-bold"
             onClick={() => updateConfig({ htmlZoom: Math.max(50, config.htmlZoom - 10) })}
           >
             −
@@ -44,13 +44,13 @@ export function BrowserSection({ config, updateConfig }: BrowserSectionProps): R
             type="number"
             min={50}
             max={200}
-            className="border border-gray-300 rounded px-2 py-1 text-sm w-20 text-center"
+            className="border border-line rounded px-2 py-1 text-sm w-20 text-center bg-panel text-ink"
             value={config.htmlZoom}
             onChange={handleZoom}
           />
-          <span className="text-sm text-gray-500">%</span>
+          <span className="text-sm text-ink-2">%</span>
           <button
-            className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm font-bold"
+            className="px-2 py-1 border border-toggle-off text-ink-2 rounded-[3px] text-sm font-bold"
             onClick={() => updateConfig({ htmlZoom: Math.min(200, config.htmlZoom + 10) })}
           >
             +
