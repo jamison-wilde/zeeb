@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUiZoom, clampUiZoom } from '../../../src/renderer/hooks/useUiZoom';
 import { createMockPlatformAdapter } from '../../../src/adapters/platform';
+import { DEFAULT_CONFIG } from '../../../src/services/configDefaults';
 
 describe('useUiZoom', () => {
   it('applies the configured zoom percent as a factor and follows changes', () => {
@@ -28,6 +29,6 @@ describe('clampUiZoom', () => {
     expect(clampUiZoom(10)).toBe(50);
     expect(clampUiZoom(400)).toBe(250);
     expect(clampUiZoom(130)).toBe(130);
-    expect(clampUiZoom(Number.NaN)).toBe(130);
+    expect(clampUiZoom(Number.NaN)).toBe(DEFAULT_CONFIG.uiZoom);
   });
 });

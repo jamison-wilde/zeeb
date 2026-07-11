@@ -7,7 +7,7 @@
 - Drag search-part chips onto a neighbor to merge them, or between chips to reorder
 - Search results show poster thumbnails (toggle in the header), a year pill that lights up when it matches the filename, and the cast line
 - TT and Sample filter toggles replace the old checkboxes
-- Adjustable UI scale: Ctrl+= / Ctrl+- resize the whole interface, Ctrl+0 resets to the new 130% default, and the setting persists across restarts
+- Adjustable UI scale: Ctrl+= / Ctrl+- resize the whole interface, Ctrl+0 resets to the new 120% default, and the setting persists across restarts
 
 ### Changed
 - Full visual redesign ("Console" theme): semantic color tokens, redesigned search-part chips with state underline and two-row buttons, restyled panels, modals, and options
