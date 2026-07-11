@@ -66,4 +66,16 @@ contextBridge.exposeInMainWorld('zeebMenu', {
   onOpenFolder: (callback: () => void) => ipcRenderer.on('menu:open-folder', callback),
   onAbout: (callback: () => void) => ipcRenderer.on('menu:about', callback),
   sendWebViewState: (visible: boolean) => ipcRenderer.send('webview-state', visible),
+  onSetTheme: (callback: (theme: string) => void) =>
+    ipcRenderer.on('menu:set-theme', (_event, theme: string) => callback(theme)),
+  sendThemeState: (theme: string) => ipcRenderer.send('theme-state', theme),
+});
+
+contextBridge.exposeInMainWorld('zeebTheme', {
+  getSystemIsDark: () => ipcRenderer.invoke('theme:get-system'),
+  onSystemThemeChanged: (callback: (isDark: boolean) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, isDark: boolean) => callback(isDark);
+    ipcRenderer.on('theme:system-changed', handler);
+    return () => ipcRenderer.removeListener('theme:system-changed', handler);
+  },
 });

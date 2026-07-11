@@ -13,6 +13,7 @@ import { useConfigStore } from '../stores/configStore';
 import { useFileStore } from '../stores/fileStore';
 import { scanDirectory } from '../services/fileScanner';
 import { useDualCursor } from './hooks/useDualCursor';
+import { useTheme } from './hooks/useTheme';
 import { usePlatform } from './PlatformContext';
 
 type ViewName = 'folderBrowser' | 'process';
@@ -49,6 +50,8 @@ function App({ fs }: AppProps): React.JSX.Element {
   const load = useConfigStore((s) => s.load);
   const save = useConfigStore((s) => s.save);
 
+  useTheme(config.theme, platform);
+
   useEffect(() => {
     void load().then(() => {
       // Sync menu checkbox with config on startup
@@ -76,7 +79,16 @@ function App({ fs }: AppProps): React.JSX.Element {
       setView('folderBrowser');
     });
     platform.menu.onAbout(() => setShowAbout(true));
+    platform.menu.onSetTheme((t) => {
+      const store = useConfigStore.getState();
+      store.updateConfig({ theme: t });
+      void store.save();
+    });
   }, [platform, setFiles]);
+
+  useEffect(() => {
+    platform.menu.sendThemeState(config.theme);
+  }, [config.theme, platform]);
 
   useEffect(() => {
     return platform.update.onUpdateAvailable((data) => {

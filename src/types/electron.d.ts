@@ -62,5 +62,11 @@ interface Window {
     onOpenFolder(callback: () => void): void;
     onAbout(callback: () => void): void;
     sendWebViewState(visible: boolean): void;
+    onSetTheme(callback: (theme: 'dark' | 'light' | 'system') => void): void;
+    sendThemeState(theme: string): void;
+  };
+  zeebTheme: {
+    getSystemIsDark(): Promise<boolean>;
+    onSystemThemeChanged(callback: (isDark: boolean) => void): () => void;
   };
 }

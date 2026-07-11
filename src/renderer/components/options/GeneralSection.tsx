@@ -11,6 +11,23 @@ export function GeneralSection({ config, updateConfig }: GeneralSectionProps): R
   return (
     <div className="space-y-6">
       <div>
+        <h3 className="text-sm font-bold text-ink mb-3">Appearance</h3>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-ink-2 w-40">Theme:</label>
+          <select
+            data-testid="theme-select"
+            className="border border-line rounded px-2 py-1 text-sm w-32 bg-panel text-ink"
+            value={config.theme}
+            onChange={(e) => updateConfig({ theme: e.target.value as ZeebConfig['theme'] })}
+          >
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
         <h3 className="text-sm font-bold text-gray-700 mb-3">Title Handling</h3>
         <div className="space-y-2">
           <label className="flex items-center gap-2">

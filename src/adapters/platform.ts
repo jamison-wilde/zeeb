@@ -19,6 +19,8 @@ export interface MenuAdapter {
   onOpenFolder(cb: () => void): void;
   onAbout(cb: () => void): void;
   sendWebViewState(visible: boolean): void;
+  onSetTheme(cb: (theme: 'dark' | 'light' | 'system') => void): void;
+  sendThemeState(theme: string): void;
 }
 
 export interface AppMetaAdapter {
@@ -47,12 +49,18 @@ export interface DialogAdapter {
   openFile(): Promise<string | null>;
 }
 
+export interface ThemeAdapter {
+  getSystemIsDark(): Promise<boolean>;
+  onSystemThemeChanged(cb: (isDark: boolean) => void): () => void;
+}
+
 export interface PlatformAdapter {
   menu: MenuAdapter;
   appMeta: AppMetaAdapter;
   update: UpdateAdapter;
   imdb: ImdbAdapter;
   dialog: DialogAdapter;
+  theme: ThemeAdapter;
 }
 
 export function createElectronPlatformAdapter(): PlatformAdapter {
@@ -65,6 +73,8 @@ export function createElectronPlatformAdapter(): PlatformAdapter {
       onOpenFolder: (cb) => window.zeebMenu.onOpenFolder(cb),
       onAbout: (cb) => window.zeebMenu.onAbout(cb),
       sendWebViewState: (visible) => window.zeebMenu.sendWebViewState(visible),
+      onSetTheme: (cb) => window.zeebMenu.onSetTheme(cb),
+      sendThemeState: (theme) => window.zeebMenu.sendThemeState(theme),
     },
     appMeta: {
       getPath: (name) => window.zeebApp.getPath(name),
@@ -88,6 +98,10 @@ export function createElectronPlatformAdapter(): PlatformAdapter {
       openDirectory: () => window.zeebDialog.openDirectory(),
       openFile: () => window.zeebDialog.openFile(),
     },
+    theme: {
+      getSystemIsDark: () => window.zeebTheme.getSystemIsDark(),
+      onSystemThemeChanged: (cb) => window.zeebTheme.onSystemThemeChanged(cb),
+    },
   };
 }
 
@@ -103,6 +117,8 @@ export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter
       onOpenFolder: () => {},
       onAbout: () => {},
       sendWebViewState: () => {},
+      onSetTheme: () => {},
+      sendThemeState: () => {},
     },
     appMeta: {
       getPath: async () => '/mock',
@@ -126,6 +142,10 @@ export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter
       openDirectory: async () => null,
       openFile: async () => null,
     },
+    theme: {
+      getSystemIsDark: async () => true,
+      onSystemThemeChanged: () => () => {},
+    },
   };
 
   return {
@@ -134,5 +154,6 @@ export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter
     update: { ...defaults.update, ...(overrides.update ?? {}) },
     imdb: { ...defaults.imdb, ...(overrides.imdb ?? {}) },
     dialog: { ...defaults.dialog, ...(overrides.dialog ?? {}) },
+    theme: { ...defaults.theme, ...(overrides.theme ?? {}) },
   };
 }

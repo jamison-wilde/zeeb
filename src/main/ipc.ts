@@ -1,4 +1,4 @@
-import { ipcMain, dialog, app } from 'electron';
+import { ipcMain, dialog, app, nativeTheme } from 'electron';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
@@ -99,6 +99,8 @@ export function registerIpcHandlers(): void {
         stars: item.s ?? null,
       }));
   });
+
+  ipcMain.handle('theme:get-system', () => nativeTheme.shouldUseDarkColors);
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
 

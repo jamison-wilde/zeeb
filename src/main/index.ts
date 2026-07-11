@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, session } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeTheme, session } from 'electron';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import { registerIpcHandlers } from './ipc';
@@ -89,6 +89,17 @@ function createWindow(): BrowserWindow {
             mainWindow.webContents.send('menu:toggle-webview');
           },
         },
+        {
+          label: 'Theme',
+          submenu: [
+            { id: 'theme-dark', label: 'Dark', type: 'radio', checked: true,
+              click: () => mainWindow.webContents.send('menu:set-theme', 'dark') },
+            { id: 'theme-light', label: 'Light', type: 'radio',
+              click: () => mainWindow.webContents.send('menu:set-theme', 'light') },
+            { id: 'theme-system', label: 'System', type: 'radio',
+              click: () => mainWindow.webContents.send('menu:set-theme', 'system') },
+          ],
+        },
         { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },
@@ -129,9 +140,18 @@ function createWindow(): BrowserWindow {
   ]);
   Menu.setApplicationMenu(menu);
 
+  nativeTheme.on('updated', () => {
+    mainWindow.webContents.send('theme:system-changed', nativeTheme.shouldUseDarkColors);
+  });
+
   ipcMain.on('webview-state', (_event, visible: boolean) => {
     const menuItem = menu.getMenuItemById('toggle-webview');
     if (menuItem) menuItem.checked = visible;
+  });
+
+  ipcMain.on('theme-state', (_event, theme: string) => {
+    const item = menu.getMenuItemById(`theme-${theme}`);
+    if (item) item.checked = true;
   });
 
   let resizeTimer: ReturnType<typeof setTimeout> | null = null;

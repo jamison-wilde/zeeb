@@ -28,4 +28,11 @@ describe('GeneralSection', () => {
     render(<GeneralSection config={DEFAULT_CONFIG} updateConfig={vi.fn()} />);
     expect(screen.getByTestId('the-word-input')).toBeDefined();
   });
+
+  it('changes the theme via the appearance select', () => {
+    const updateConfig = vi.fn();
+    render(<GeneralSection config={DEFAULT_CONFIG} updateConfig={updateConfig} />);
+    fireEvent.change(screen.getByTestId('theme-select'), { target: { value: 'light' } });
+    expect(updateConfig).toHaveBeenCalledWith({ theme: 'light' });
+  });
 });
