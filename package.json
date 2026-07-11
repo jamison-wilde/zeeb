@@ -1,7 +1,7 @@
 {
   "name": "zeeb",
   "productName": "Zeeb Movie Renamer",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "Batch movie file renamer with IMDB integration",
   "author": "jamison-wilde",
   "license": "MIT",

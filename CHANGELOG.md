@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.1.0] - 2026-07-11
 
 ### Added
 - Dark/Light/System theme switching (View → Theme menu and Options → General), dark by default
