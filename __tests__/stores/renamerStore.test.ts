@@ -27,7 +27,7 @@ describe('renamerStore', () => {
   it('stores movie matches and selected metadata', () => {
     const store = createRenamerStore();
     store.getState().setMovieMatches([
-      { tt: 'tt0111161', title: 'Shawshank', year: 1994, aka: null, thumbnailUrl: null },
+      { tt: 'tt0111161', title: 'Shawshank', year: 1994, aka: null, thumbnailUrl: null, stars: null },
     ]);
     expect(store.getState().movieMatches).toHaveLength(1);
   });

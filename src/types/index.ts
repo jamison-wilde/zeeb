@@ -32,6 +32,7 @@ export interface MovieMatch {
   year: number | null;
   aka: string | null;
   thumbnailUrl: string | null;
+  stars: string | null;
 }
 
 export interface MovieMetadata {

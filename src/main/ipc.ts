@@ -96,6 +96,7 @@ export function registerIpcHandlers(): void {
         year: item.y ?? null,
         aka: null,
         thumbnailUrl: item.i?.imageUrl ?? null,
+        stars: item.s ?? null,
       }));
   });
 

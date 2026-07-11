@@ -63,4 +63,24 @@ describe('IPC handlers', () => {
     expect(result).toEqual([]);
     expect(fsPromises.readdir).not.toHaveBeenCalled();
   });
+
+  it('imdb:suggest maps stars credit line when present, null when absent', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        d: [
+          { id: 'tt0060827', l: 'La Jetée', y: 1962, s: 'Georges Méliès', i: { imageUrl: 'https://example.com/jetee.jpg' } },
+          { id: 'tt0055630', l: 'Yojimbo', y: 1961 },
+        ],
+      }),
+    }) as unknown as typeof fetch;
+
+    registerIpcHandlers();
+    const handler = getHandler('imdb:suggest');
+    const results = (await handler({}, 'jetee')) as Array<{ stars: string | null }>;
+
+    expect(results).toHaveLength(2);
+    expect(results[0].stars).toBe('Georges Méliès');
+    expect(results[1].stars).toBeNull();
+  });
 });

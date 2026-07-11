@@ -5,8 +5,8 @@ import { MovieResults } from '../../src/renderer/components/MovieResults';
 import type { MovieMatch } from '../../src/types';
 
 const matches: MovieMatch[] = [
-  { tt: 'tt0111161', title: 'The Shawshank Redemption', year: 1994, aka: null, thumbnailUrl: null },
-  { tt: 'tt0068646', title: 'The Godfather', year: 1972, aka: null, thumbnailUrl: null },
+  { tt: 'tt0111161', title: 'The Shawshank Redemption', year: 1994, aka: null, thumbnailUrl: null, stars: null },
+  { tt: 'tt0068646', title: 'The Godfather', year: 1972, aka: null, thumbnailUrl: null, stars: null },
 ];
 
 describe('MovieResults', () => {
