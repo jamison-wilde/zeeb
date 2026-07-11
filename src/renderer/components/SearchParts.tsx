@@ -187,7 +187,7 @@ export function SearchParts({
       )}
       {drag && (
         <span
-          className="pointer-events-none fixed z-50 font-mono text-chip font-semibold px-2 py-0.5 rounded border border-accent bg-chip text-ink-bright"
+          className="pointer-events-none fixed z-50 font-mono text-chip-title font-semibold px-2 py-0.5 rounded border border-accent bg-chip text-ink-bright"
           style={{
             left: drag.x + 8,
             top: containerRef.current

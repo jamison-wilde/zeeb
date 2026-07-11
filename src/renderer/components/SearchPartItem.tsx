@@ -80,7 +80,7 @@ export function SearchPartItem({
       } ${dragging ? 'opacity-50' : ''}`}
     >
       <input
-        className={`px-1.5 pt-px pb-0 text-center text-chip font-mono font-semibold bg-transparent border-b-2 outline-none ${UNDERLINE[part.state]} ${TEXT_TREATMENT[part.state]}`}
+        className={`px-1.5 pt-px pb-0 text-center text-chip-title font-mono font-semibold bg-transparent border-b-2 outline-none ${UNDERLINE[part.state]} ${TEXT_TREATMENT[part.state]}`}
         value={part.text}
         onChange={(e) => onTextChange(part.id, e.target.value)}
         size={Math.max(part.text.length, 2)}
