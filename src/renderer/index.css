@@ -1,1 +1,102 @@
 @import "tailwindcss";
+
+@theme inline {
+  --color-surface: var(--z-surface);
+  --color-panel: var(--z-panel);
+  --color-raised: var(--z-raised);
+  --color-well: var(--z-well);
+  --color-line: var(--z-line);
+  --color-line-subtle: var(--z-line-subtle);
+  --color-ink: var(--z-ink);
+  --color-ink-bright: var(--z-ink-bright);
+  --color-ink-2: var(--z-ink-2);
+  --color-ink-dim: var(--z-ink-dim);
+  --color-ink-faint: var(--z-ink-faint);
+  --color-accent: var(--z-accent);
+  --color-on-accent: var(--z-on-accent);
+  --color-accent-muted: var(--z-accent-muted);
+  --color-row-selected: var(--z-row-selected);
+  --color-toggle-off: var(--z-toggle-off);
+  --color-toggle-knob-off: var(--z-toggle-knob-off);
+  --color-chip: var(--z-chip);
+  --color-ghost: var(--z-ghost);
+  --color-part-search: var(--z-part-search);
+  --color-part-keep: var(--z-part-keep);
+  --color-part-keep-always: var(--z-part-keep-always);
+  --color-part-remove: var(--z-part-remove);
+  --color-part-remove-always: var(--z-part-remove-always);
+  --color-pill-year-bg: var(--z-pill-year-bg);
+  --color-pill-year-fg: var(--z-pill-year-fg);
+  --color-pill-year-line: var(--z-pill-year-line);
+}
+
+/* Dark is the default theme (spec: dark primary). */
+:root,
+:root[data-theme='dark'] {
+  --z-surface: #1b1d20;
+  --z-panel: #1b1d20;
+  --z-raised: #222428;
+  --z-well: #17181b;
+  --z-line: #33363b;
+  --z-line-subtle: #33363b;
+  --z-ink: #d7dade;
+  --z-ink-bright: #e3ecf5;
+  --z-ink-2: #a9aeb5;
+  --z-ink-dim: #8b9098;
+  --z-ink-faint: #6b7076;
+  --z-accent: #4da3ff;
+  --z-on-accent: #101214;
+  --z-accent-muted: #38618c;
+  --z-row-selected: #24384f;
+  --z-toggle-off: #3c4046;
+  --z-toggle-knob-off: #8b9098;
+  --z-chip: #232529;
+  --z-ghost: #5c6167;
+  --z-part-search: #4da3ff;
+  --z-part-keep: #4bbf6b;
+  --z-part-keep-always: #35d07f;
+  --z-part-remove: #f0655e;
+  --z-part-remove-always: #b93832;
+  --z-pill-year-bg: #173d24;
+  --z-pill-year-fg: #4bbf6b;
+  --z-pill-year-line: #2f6b42;
+}
+
+:root[data-theme='light'] {
+  --z-surface: #f5f6f7;
+  --z-panel: #ffffff;
+  --z-raised: #f5f6f7;
+  --z-well: #e9eaec;
+  --z-line: #d8dadd;
+  --z-line-subtle: #e4e6e8;
+  --z-ink: #26282c;
+  --z-ink-bright: #1d2530;
+  --z-ink-2: #565b62;
+  --z-ink-dim: #70757c;
+  --z-ink-faint: #9aa0a6;
+  --z-accent: #2a78d6;
+  --z-on-accent: #ffffff;
+  --z-accent-muted: #a9c9ea;
+  --z-row-selected: #dcebfa;
+  --z-toggle-off: #c9ccd0;
+  --z-toggle-knob-off: #ffffff;
+  --z-chip: #ffffff;
+  --z-ghost: #9aa0a6;
+  --z-part-search: #2a78d6;
+  --z-part-keep: #2c9a4f;
+  --z-part-keep-always: #157347;
+  --z-part-remove: #d64541;
+  --z-part-remove-always: #a32e2a;
+  --z-pill-year-bg: #e2f3e8;
+  --z-pill-year-fg: #157347;
+  --z-pill-year-line: #9fd3ae;
+}
+
+/* 10px bold uppercase section headers (spec §1) */
+@utility section-header {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--z-ink-dim);
+}
