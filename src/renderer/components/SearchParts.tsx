@@ -159,7 +159,7 @@ export function SearchParts({
     <div
       ref={containerRef}
       data-testid="search-parts-row"
-      className="relative flex flex-nowrap gap-[3px] px-2 py-1.5"
+      className="relative flex flex-nowrap gap-1 px-2 py-1.5"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -177,7 +177,7 @@ export function SearchParts({
       ))}
       {drag && drag.caretX !== null && containerRef.current && (
         <span
-          className="pointer-events-none fixed w-[2px] bg-accent z-50"
+          className="pointer-events-none fixed w-[3px] bg-accent z-50"
           style={{
             left: drag.caretX,
             top: containerRef.current.getBoundingClientRect().top + 4,
@@ -187,7 +187,7 @@ export function SearchParts({
       )}
       {drag && (
         <span
-          className="pointer-events-none fixed z-50 font-mono text-[11px] font-semibold px-2 py-0.5 rounded border border-accent bg-chip text-ink-bright"
+          className="pointer-events-none fixed z-50 font-mono text-chip font-semibold px-2 py-0.5 rounded border border-accent bg-chip text-ink-bright"
           style={{
             left: drag.x + 8,
             top: containerRef.current
