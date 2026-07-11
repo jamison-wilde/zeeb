@@ -47,6 +47,11 @@ describe('configStore', () => {
     useConfigStore.getState().updateConfig({ removeThe: true });
     expect(useConfigStore.getState().config.formatStandard).toBe(original);
   });
+
+  it('defaults theme to dark and result thumbnails to on', () => {
+    expect(DEFAULT_CONFIG.theme).toBe('dark');
+    expect(DEFAULT_CONFIG.showResultThumbnails).toBe(true);
+  });
 });
 
 describe('mpaaMap migration', () => {

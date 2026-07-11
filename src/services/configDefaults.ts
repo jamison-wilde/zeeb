@@ -46,6 +46,8 @@ export const DEFAULT_CONFIG: ZeebConfig = {
   titleSpaceChar: ' ',
   htmlZoom: 100,
   showWebView: false,
+  theme: 'dark',
+  showResultThumbnails: true,
   includeOriginalInUrl: true,
   includeNfoInUrl: false,
   deleteNfoAfterInclude: false,

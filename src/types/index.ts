@@ -140,6 +140,8 @@ export interface ZeebConfig {
   titleSpaceChar: string;
   htmlZoom: number;
   showWebView: boolean;
+  theme: 'dark' | 'light' | 'system';
+  showResultThumbnails: boolean;
   includeOriginalInUrl: boolean;
   includeNfoInUrl: boolean;
   deleteNfoAfterInclude: boolean;
