@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Dark/Light/System theme switching (View → Theme menu and Options → General), dark by default
+- Drag search-part chips onto a neighbor to merge them, or between chips to reorder
+- Search results show poster thumbnails (toggle in the header), a year pill that lights up when it matches the filename, and the cast line
+- TT and Sample filter toggles replace the old checkboxes
+
+### Changed
+- Full visual redesign ("Console" theme): semantic color tokens, redesigned search-part chips with state underline and two-row buttons, restyled panels, modals, and options
+
 ## [4.0.1] - 2026-05-06
 
 ### Added
