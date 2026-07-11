@@ -303,7 +303,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
           <div className="flex items-center gap-2 px-2 py-1 bg-raised text-ink-2 border-b border-line shrink-0">
             <span className="section-header">Movie Files</span>
             <span className="flex-1" />
-            <span className="text-[10px] text-ink-faint">Filters</span>
+            <span className="text-label text-ink-faint">Filters</span>
             <Toggle label="TT" data-testid="tt-toggle" checked={showTt ?? false} onChange={(v) => onShowTtChange?.(v)} />
             <Toggle label="Sample" data-testid="sample-toggle" checked={showSample ?? false} onChange={(v) => onShowSampleChange?.(v)} />
           </div>
@@ -412,7 +412,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
             {currentFile.nfoPath && (
               <button
                 data-testid="nfo-button"
-                className="bg-ink-dim text-surface font-mono text-[9px] font-bold rounded-[3px] px-[5px] py-[2px] shrink-0"
+                className="bg-ink-dim text-surface font-mono text-badge font-bold rounded-[3px] px-[5px] py-[2px] shrink-0"
                 onClick={async () => {
                   try {
                     const raw = await fs.readFile(currentFile.nfoPath!, 'latin1');
@@ -424,16 +424,16 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
                 NFO
               </button>
             )}
-            <span className="font-mono text-[11px] text-ink-2 truncate">
+            <span className="font-mono text-body text-ink-2 truncate">
               {currentFile.name}
             </span>
-            <span className="font-mono text-[10px] text-ink-faint shrink-0">
+            <span className="font-mono text-label text-ink-faint shrink-0">
               {currentFile.size > 0 ? `${Math.round(currentFile.size / 1024 / 1024)}MB` : ''}
             </span>
             <span className="flex-1" />
             <button
               data-testid="search-button"
-              className="bg-accent text-on-accent text-[10px] font-bold rounded-[3px] px-3 py-[3px] shrink-0"
+              className="bg-accent text-on-accent text-label font-bold rounded-[3px] px-3 py-[3px] shrink-0"
               onClick={handleSearch}
             >
               Search
@@ -453,7 +453,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
         {metadata && metadata.aka.length > 0 && (
           <div className="flex items-center gap-2 px-2 py-0.5 border-b border-line-subtle bg-raised">
             <button
-              className={`px-2 py-0.5 text-[11px] font-bold rounded-[3px] shrink-0 ${
+              className={`px-2 py-0.5 text-body font-bold rounded-[3px] shrink-0 ${
                 useAka
                   ? 'bg-part-keep text-on-accent'
                   : 'border border-toggle-off text-ink-2'
@@ -462,9 +462,9 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
             >
               Use AKA
             </button>
-            <span className="text-[11px] text-ink-faint shrink-0">Also Known As</span>
+            <span className="text-body text-ink-faint shrink-0">Also Known As</span>
             <select
-              className="flex-1 px-1 py-0.5 text-[11px] border border-line rounded-[3px] bg-panel text-ink"
+              className="flex-1 px-1 py-0.5 text-body border border-line rounded-[3px] bg-panel text-ink"
               value={selectedAka}
               onChange={(e) => {
                 setSelectedAka(e.target.value);

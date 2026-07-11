@@ -30,6 +30,17 @@
   --color-pill-year-line: var(--z-pill-year-line);
 }
 
+/* Typography roles. Static sizes — runtime scaling happens via the persisted
+   UI zoom (config.uiZoom), so each role stays a single edit point. */
+@theme {
+  --text-body: 11px;
+  --text-label: 10px;
+  --text-badge: 9px;
+  --text-micro: 8px;
+  --text-chip: 16px;
+  --text-chip-small: 11px;
+}
+
 /* Dark is the default theme (spec: dark primary). */
 :root,
 :root[data-theme='dark'] {
@@ -94,7 +105,7 @@
 
 /* 10px bold uppercase section headers (spec §1) */
 @utility section-header {
-  font-size: 10px;
+  font-size: var(--text-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;

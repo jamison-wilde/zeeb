@@ -130,11 +130,11 @@ export function FormattingSection({ config, updateConfig }: FormattingSectionPro
               onClick={() => handleTokenClick(t.token)}
             >
               <code className="text-purple-600">{t.token}</code>
-              <span className="text-ink-dim text-[10px] ml-2">{t.desc}</span>
+              <span className="text-ink-dim text-label ml-2">{t.desc}</span>
             </button>
           ))}
         </div>
-        <div className="mt-2 text-[10px] text-ink-faint">
+        <div className="mt-2 text-label text-ink-faint">
           {focusedField ? 'Click to insert at cursor' : 'Focus an input first'}
         </div>
       </div>

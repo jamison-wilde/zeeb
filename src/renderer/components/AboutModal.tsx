@@ -42,12 +42,12 @@ export function AboutModal({ visible, onClose, version }: AboutModalProps): Reac
 
           <div className="w-full border-t border-line-subtle pt-4 flex flex-col items-center space-y-2">
             <img src={tmdbLogo} alt="TMDB" className="h-8" />
-            <p className="text-[10px] text-ink-faint text-center leading-relaxed">
+            <p className="text-label text-ink-faint text-center leading-relaxed">
               This product uses the TMDB API but is not endorsed or certified by TMDB.
             </p>
           </div>
 
-          <p className="text-[10px] text-ink-faint">MIT License</p>
+          <p className="text-label text-ink-faint">MIT License</p>
         </div>
       </div>
     </div>

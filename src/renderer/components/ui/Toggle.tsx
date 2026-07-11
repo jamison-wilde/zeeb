@@ -22,7 +22,7 @@ export function Toggle({ checked, onChange, label, title, 'data-testid': testId,
       onClick={() => onChange(!checked)}
     >
       {label && (
-        <span className={`text-[10px] ${checked ? 'text-ink' : 'text-ink-dim'}`}>{label}</span>
+        <span className={`text-label ${checked ? 'text-ink' : 'text-ink-dim'}`}>{label}</span>
       )}
       <span className={`relative w-[22px] h-3 rounded-md ${checked ? 'bg-accent' : 'bg-toggle-off'}`}>
         <span

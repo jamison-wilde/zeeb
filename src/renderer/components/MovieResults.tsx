@@ -48,12 +48,12 @@ export function MovieResults({
             title={`${item.title}${item.year ? ` (${item.year})` : ''} — ${item.tt}`}
           >
             {showThumbnails && <Thumb url={item.thumbnailUrl} />}
-            <span className={`font-semibold text-[11px] truncate ${selected ? 'text-ink-bright' : 'text-ink-2'}`}>
+            <span className={`font-semibold text-body truncate ${selected ? 'text-ink-bright' : 'text-ink-2'}`}>
               {item.title || item.tt}
             </span>
             {item.year != null && (
               <span
-                className={`font-mono font-bold text-[10px] border rounded-[3px] px-[5px] py-px shrink-0 ${
+                className={`font-mono font-bold text-label border rounded-[3px] px-[5px] py-px shrink-0 ${
                   yearMatched
                     ? 'bg-pill-year-bg text-pill-year-fg border-pill-year-line'
                     : 'text-ink-dim border-line'
@@ -63,11 +63,11 @@ export function MovieResults({
               </span>
             )}
             {item.aka && (
-              <span className="text-[10px] text-ink-faint italic truncate max-w-[30%]">aka {item.aka}</span>
+              <span className="text-label text-ink-faint italic truncate max-w-[30%]">aka {item.aka}</span>
             )}
             <span className="flex-1" />
             {item.stars && (
-              <span className="text-[10px] text-ink-faint truncate max-w-[40%] shrink-0">{item.stars}</span>
+              <span className="text-label text-ink-faint truncate max-w-[40%] shrink-0">{item.stars}</span>
             )}
           </button>
         );

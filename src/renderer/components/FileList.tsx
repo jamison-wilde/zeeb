@@ -21,11 +21,11 @@ export function FileList({ files, selectedIndex, onSelect, isFileVisible }: File
             } ${!visible ? 'opacity-30' : ''}`}
             onClick={() => onSelect(index)}
           >
-            <span className={`flex-1 font-mono text-[11px] truncate ${index === selectedIndex ? 'text-ink-bright' : 'text-ink-2'}`}>
+            <span className={`flex-1 font-mono text-body truncate ${index === selectedIndex ? 'text-ink-bright' : 'text-ink-2'}`}>
               {file.name}
             </span>
             {file.hasNfo && (
-              <span className={`font-mono font-bold text-[8px] border rounded-[3px] px-[3px] py-px shrink-0 ${
+              <span className={`font-mono font-bold text-micro border rounded-[3px] px-[3px] py-px shrink-0 ${
                 index === selectedIndex ? 'text-accent border-accent-muted' : 'text-ink-faint border-line'
               }`}>
                 NFO
