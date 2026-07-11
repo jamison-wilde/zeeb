@@ -6,9 +6,10 @@ interface ToggleProps {
   label?: string;
   title?: string;
   'data-testid'?: string;
+  'aria-label'?: string;
 }
 
-export function Toggle({ checked, onChange, label, title, 'data-testid': testId }: ToggleProps): React.JSX.Element {
+export function Toggle({ checked, onChange, label, title, 'data-testid': testId, 'aria-label': ariaLabel }: ToggleProps): React.JSX.Element {
   return (
     <button
       type="button"
@@ -16,6 +17,7 @@ export function Toggle({ checked, onChange, label, title, 'data-testid': testId 
       aria-checked={checked}
       title={title}
       data-testid={testId}
+      aria-label={ariaLabel}
       className="flex items-center gap-1 shrink-0 cursor-pointer select-none"
       onClick={() => onChange(!checked)}
     >

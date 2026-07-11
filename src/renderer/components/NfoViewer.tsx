@@ -54,7 +54,7 @@ function CopyableUrl({ url, index }: { url: string; index: number }): React.JSX.
     >
       <span className="text-accent underline">{url}</span>
       {hovered && (
-        <span className="absolute -top-3 left-0 text-[10px] text-ink-2 select-none bg-well px-1 rounded">
+        <span className="absolute -top-3 left-0 text-[10px] text-ink-2 select-none bg-raised border border-line px-1 rounded">
           {copied ? 'Copied!' : '📋'}
         </span>
       )}

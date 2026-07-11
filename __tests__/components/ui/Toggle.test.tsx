@@ -16,4 +16,9 @@ describe('Toggle', () => {
     fireEvent.click(screen.getByRole('switch'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
+
+  it('exposes an accessible name via aria-label', () => {
+    render(<Toggle checked={false} onChange={vi.fn()} label="▦" aria-label="Poster thumbnails" />);
+    expect(screen.getByRole('switch', { name: 'Poster thumbnails' })).toBeDefined();
+  });
 });

@@ -322,6 +322,7 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
               <Toggle
                 label="▦"
                 title="Toggle poster thumbnails"
+                aria-label="Poster thumbnails"
                 data-testid="thumbs-toggle"
                 checked={config.showResultThumbnails}
                 onChange={(v) => {
