@@ -37,7 +37,8 @@
   --text-label: 10px;
   --text-badge: 9px;
   --text-micro: 8px;
-  --text-chip: 13px;
+  --text-chip: 11px;
+  --text-chip-glyph: 13px;
   --text-chip-small: 10px;
 }
 
