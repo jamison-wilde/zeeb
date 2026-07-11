@@ -86,8 +86,8 @@ export function SearchPartItem({
         size={Math.max(part.text.length, 2)}
       />
       <div className="flex flex-col items-center gap-px px-[3px] py-[2px]">
-        <div className="flex gap-[2px]">{BIG_BUTTONS.map((b) => renderButton(b, 'w-[30px] h-[22px] text-chip'))}</div>
-        <div className="flex gap-px">{SMALL_BUTTONS.map((b) => renderButton(b, 'w-5 h-[15px] text-chip-small'))}</div>
+        <div className="flex gap-[2px]">{BIG_BUTTONS.map((b) => renderButton(b, 'w-8 h-6 text-chip'))}</div>
+        <div className="flex gap-px">{SMALL_BUTTONS.map((b) => renderButton(b, 'w-5 h-4 text-chip-small'))}</div>
       </div>
     </div>
   );

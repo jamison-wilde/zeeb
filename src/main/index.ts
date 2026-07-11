@@ -122,6 +122,21 @@ function createWindow(): BrowserWindow {
           accelerator: 'CmdOrCtrl+-',
           click: () => mainWindow.webContents.send('menu:zoom-out'),
         },
+        // Hidden aliases keep the secondary bindings the stock zoom roles had.
+        {
+          label: 'Zoom In (numpad)',
+          accelerator: 'CmdOrCtrl+numadd',
+          visible: false,
+          acceleratorWorksWhenHidden: true,
+          click: () => mainWindow.webContents.send('menu:zoom-in'),
+        },
+        {
+          label: 'Zoom Out (numpad)',
+          accelerator: 'CmdOrCtrl+numsub',
+          visible: false,
+          acceleratorWorksWhenHidden: true,
+          click: () => mainWindow.webContents.send('menu:zoom-out'),
+        },
         { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
