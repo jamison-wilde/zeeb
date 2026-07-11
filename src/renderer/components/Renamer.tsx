@@ -334,6 +334,8 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
               matches={movieMatches}
               onSelect={handleMovieSelect}
               selectedTt={selectedTt}
+              searchParts={searchParts}
+              showThumbnails={config.showResultThumbnails}
             />
           </div>
         </div>
