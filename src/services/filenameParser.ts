@@ -7,8 +7,12 @@ export function parseFilename(
 ): SearchPart[] {
   if (!filename) return [];
   const stripped = filename.replace(/\.[a-zA-Z0-9]{2,4}$/, '');
-  const tokens = stripped.split(/[.\s_-]+/).filter(Boolean);
-  if (tokens.length === 0) return [];
+  const pieces: Array<{ token: string; sep: string }> = [];
+  for (const m of stripped.matchAll(/([^.\s_-]+)([.\s_-]*)/g)) {
+    pieces.push({ token: m[1], sep: m[2] ?? '' });
+  }
+  if (pieces.length === 0) return [];
+  const tokens = pieces.map((p) => p.token);
 
   const removeLower = removeTerms.map(t => t.toLowerCase());
   const keepMap = new Map<string, string>();
@@ -29,7 +33,14 @@ export function parseFilename(
       if (slice.length < termWords.length) continue;
       const sliceJoined = slice.join(' ').toLowerCase();
       if (sliceJoined === match.toLowerCase()) {
-        parts.push({ id: String(idCounter++), text: display, originalText: match, state: 'keep', editable: true });
+        parts.push({
+          id: String(idCounter++),
+          text: display,
+          originalText: match,
+          state: 'keep',
+          editable: true,
+          separatorAfter: pieces[i + termWords.length - 1].sep,
+        });
         i += termWords.length;
         matched = true;
         break;
@@ -62,7 +73,14 @@ export function parseFilename(
       }
     }
 
-    parts.push({ id: String(idCounter++), text, originalText: token, state, editable: true });
+    parts.push({
+      id: String(idCounter++),
+      text,
+      originalText: token,
+      state,
+      editable: true,
+      separatorAfter: pieces[i].sep,
+    });
     i++;
   }
 

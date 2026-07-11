@@ -89,3 +89,21 @@ describe('parseFilename', () => {
     expect(kept1080!.text).toBe('1080p');
   });
 });
+
+describe('separatorAfter', () => {
+  it('captures the separator run following each token', () => {
+    const parts = parseFilename('A.Trip_to the-Moon.1902.mkv', [], []);
+    expect(parts.map((p) => p.separatorAfter)).toEqual(['.', '_', ' ', '-', '.', '']);
+  });
+
+  it('captures multi-character separator runs', () => {
+    const parts = parseFilename('Foo..-..Bar.mkv', [], []);
+    expect(parts.map((p) => p.separatorAfter)).toEqual(['..-..', '']);
+  });
+
+  it('multi-token keep terms take the separator after their last token', () => {
+    const parts = parseFilename('Movie.Final.Cut.2001.mkv', [], [['Final Cut', 'Final Cut']]);
+    const keep = parts.find((p) => p.text === 'Final Cut');
+    expect(keep?.separatorAfter).toBe('.');
+  });
+});

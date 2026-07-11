@@ -8,6 +8,7 @@ export interface SearchPart {
   originalText: string;
   state: SearchPartState;
   editable: boolean;
+  separatorAfter?: string;
 }
 
 export interface MovieFile {
