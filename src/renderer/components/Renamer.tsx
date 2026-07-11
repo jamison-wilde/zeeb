@@ -19,6 +19,7 @@ import { useAutoSelect } from '../hooks/useAutoSelect';
 import { useImdbWebview } from '../hooks/useImdbWebview';
 import { PosterGrid } from './PosterGrid';
 import { NfoViewer } from './NfoViewer';
+import { Toggle } from './ui/Toggle';
 import { cp437StringToUnicode } from '../../utils/cp437';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { usePlatform } from '../PlatformContext';
@@ -297,17 +298,12 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
       <div className="flex-1 flex flex-row min-h-0">
         {/* Left panel: file list + search results */}
         <div className="w-[420px] flex flex-col border-r border-gray-300 shrink-0">
-          <div className="flex items-center px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600 border-b border-gray-300 shrink-0">
-            <span>Movie Files</span>
+          <div className="flex items-center gap-2 px-2 py-1 bg-raised text-ink-2 border-b border-line shrink-0">
+            <span className="section-header">Movie Files</span>
             <span className="flex-1" />
-            <label className="flex items-center gap-0.5 font-normal text-gray-500 mr-2">
-              <input type="checkbox" checked={showTt ?? false} onChange={(e) => onShowTtChange?.(e.target.checked)} className="w-3 h-3" />
-              TT?
-            </label>
-            <label className="flex items-center gap-0.5 font-normal text-gray-500">
-              <input type="checkbox" checked={showSample ?? false} onChange={(e) => onShowSampleChange?.(e.target.checked)} className="w-3 h-3" />
-              Sample?
-            </label>
+            <span className="text-[10px] text-ink-faint">Filters</span>
+            <Toggle label="TT" data-testid="tt-toggle" checked={showTt ?? false} onChange={(v) => onShowTtChange?.(v)} />
+            <Toggle label="Sample" data-testid="sample-toggle" checked={showSample ?? false} onChange={(v) => onShowSampleChange?.(v)} />
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <FileList
@@ -317,8 +313,21 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
               isFileVisible={isFileVisible}
             />
           </div>
-          <div className="border-t border-gray-300 shrink-0">
-            <div className="px-2 py-0.5 bg-gray-100 text-xs font-bold text-gray-600">Search Results</div>
+          <div className="border-t border-line shrink-0">
+            <div className="flex items-center gap-2 px-2 py-1 bg-raised">
+              <span className="section-header">Search Results</span>
+              <span className="flex-1" />
+              <Toggle
+                label="▦"
+                title="Toggle poster thumbnails"
+                data-testid="thumbs-toggle"
+                checked={config.showResultThumbnails}
+                onChange={(v) => {
+                  updateConfig({ showResultThumbnails: v });
+                  void saveConfig();
+                }}
+              />
+            </div>
           </div>
           <div data-testid="movie-results" className="overflow-y-auto min-h-[80px] max-h-[30%]">
             <MovieResults
