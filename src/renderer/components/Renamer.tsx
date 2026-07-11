@@ -56,6 +56,8 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
   const setSearchParts = useStore(storeRef.current, (s) => s.setSearchParts);
   const updatePartState = useStore(storeRef.current, (s) => s.updatePartState);
   const updatePartText = useStore(storeRef.current, (s) => s.updatePartText);
+  const mergeParts = useStore(storeRef.current, (s) => s.mergeParts);
+  const reorderParts = useStore(storeRef.current, (s) => s.reorderParts);
   const setMovieMatches = useStore(storeRef.current, (s) => s.setMovieMatches);
   const setMetadata = useStore(storeRef.current, (s) => s.setMetadata);
   const appendAkas = useStore(storeRef.current, (s) => s.appendAkas);
@@ -443,6 +445,8 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
             onPartStateChange={handlePartStateChange}
             onPartTextChange={handlePartTextChange}
             onSearch={handleSearch}
+            onMergeParts={mergeParts}
+            onReorderParts={reorderParts}
           />
         </div>
         {metadata && metadata.aka.length > 0 && (
