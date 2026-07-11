@@ -21,6 +21,9 @@ export interface MenuAdapter {
   sendWebViewState(visible: boolean): void;
   onSetTheme(cb: (theme: 'dark' | 'light' | 'system') => void): void;
   sendThemeState(theme: string): void;
+  onZoomIn(cb: () => void): void;
+  onZoomOut(cb: () => void): void;
+  onZoomReset(cb: () => void): void;
 }
 
 export interface AppMetaAdapter {
@@ -54,6 +57,10 @@ export interface ThemeAdapter {
   onSystemThemeChanged(cb: (isDark: boolean) => void): () => void;
 }
 
+export interface UiAdapter {
+  setZoomFactor(factor: number): void;
+}
+
 export interface PlatformAdapter {
   menu: MenuAdapter;
   appMeta: AppMetaAdapter;
@@ -61,6 +68,7 @@ export interface PlatformAdapter {
   imdb: ImdbAdapter;
   dialog: DialogAdapter;
   theme: ThemeAdapter;
+  ui: UiAdapter;
 }
 
 export function createElectronPlatformAdapter(): PlatformAdapter {
@@ -75,6 +83,9 @@ export function createElectronPlatformAdapter(): PlatformAdapter {
       sendWebViewState: (visible) => window.zeebMenu.sendWebViewState(visible),
       onSetTheme: (cb) => window.zeebMenu.onSetTheme(cb),
       sendThemeState: (theme) => window.zeebMenu.sendThemeState(theme),
+      onZoomIn: (cb) => window.zeebMenu.onZoomIn(cb),
+      onZoomOut: (cb) => window.zeebMenu.onZoomOut(cb),
+      onZoomReset: (cb) => window.zeebMenu.onZoomReset(cb),
     },
     appMeta: {
       getPath: (name) => window.zeebApp.getPath(name),
@@ -102,10 +113,21 @@ export function createElectronPlatformAdapter(): PlatformAdapter {
       getSystemIsDark: () => window.zeebTheme.getSystemIsDark(),
       onSystemThemeChanged: (cb) => window.zeebTheme.onSystemThemeChanged(cb),
     },
+    ui: {
+      setZoomFactor: (factor) => window.zeebUi.setZoomFactor(factor),
+    },
   };
 }
 
-type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
+// Functions are leaf values (an override replaces the whole function), so pass
+// them through unchanged — recursing into them produces uncallable types.
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends (...args: never[]) => unknown
+    ? T[K]
+    : T[K] extends object
+      ? DeepPartial<T[K]>
+      : T[K];
+};
 
 export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter> = {}): PlatformAdapter {
   const defaults: PlatformAdapter = {
@@ -119,6 +141,9 @@ export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter
       sendWebViewState: () => {},
       onSetTheme: () => {},
       sendThemeState: () => {},
+      onZoomIn: () => {},
+      onZoomOut: () => {},
+      onZoomReset: () => {},
     },
     appMeta: {
       getPath: async () => '/mock',
@@ -146,6 +171,9 @@ export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter
       getSystemIsDark: async () => true,
       onSystemThemeChanged: () => () => {},
     },
+    ui: {
+      setZoomFactor: () => {},
+    },
   };
 
   return {
@@ -155,5 +183,6 @@ export function createMockPlatformAdapter(overrides: DeepPartial<PlatformAdapter
     imdb: { ...defaults.imdb, ...(overrides.imdb ?? {}) },
     dialog: { ...defaults.dialog, ...(overrides.dialog ?? {}) },
     theme: { ...defaults.theme, ...(overrides.theme ?? {}) },
+    ui: { ...defaults.ui, ...(overrides.ui ?? {}) },
   };
 }

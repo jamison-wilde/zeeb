@@ -64,9 +64,15 @@ interface Window {
     sendWebViewState(visible: boolean): void;
     onSetTheme(callback: (theme: 'dark' | 'light' | 'system') => void): void;
     sendThemeState(theme: string): void;
+    onZoomIn(callback: () => void): void;
+    onZoomOut(callback: () => void): void;
+    onZoomReset(callback: () => void): void;
   };
   zeebTheme: {
     getSystemIsDark(): Promise<boolean>;
     onSystemThemeChanged(callback: (isDark: boolean) => void): () => void;
+  };
+  zeebUi: {
+    setZoomFactor(factor: number): void;
   };
 }

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 
 contextBridge.exposeInMainWorld('zeebFs', {
   readdir: (dirPath: string) => ipcRenderer.invoke('fs:readdir', dirPath),
@@ -69,6 +69,13 @@ contextBridge.exposeInMainWorld('zeebMenu', {
   onSetTheme: (callback: (theme: string) => void) =>
     ipcRenderer.on('menu:set-theme', (_event, theme: string) => callback(theme)),
   sendThemeState: (theme: string) => ipcRenderer.send('theme-state', theme),
+  onZoomIn: (callback: () => void) => ipcRenderer.on('menu:zoom-in', callback),
+  onZoomOut: (callback: () => void) => ipcRenderer.on('menu:zoom-out', callback),
+  onZoomReset: (callback: () => void) => ipcRenderer.on('menu:zoom-reset', callback),
+});
+
+contextBridge.exposeInMainWorld('zeebUi', {
+  setZoomFactor: (factor: number) => webFrame.setZoomFactor(factor),
 });
 
 contextBridge.exposeInMainWorld('zeebTheme', {

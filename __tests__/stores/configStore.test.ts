@@ -52,6 +52,10 @@ describe('configStore', () => {
     expect(DEFAULT_CONFIG.theme).toBe('dark');
     expect(DEFAULT_CONFIG.showResultThumbnails).toBe(true);
   });
+
+  it('defaults the ui zoom to 130 percent', () => {
+    expect(DEFAULT_CONFIG.uiZoom).toBe(130);
+  });
 });
 
 describe('mpaaMap migration', () => {

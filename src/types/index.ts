@@ -144,6 +144,7 @@ export interface ZeebConfig {
   showWebView: boolean;
   theme: 'dark' | 'light' | 'system';
   showResultThumbnails: boolean;
+  uiZoom: number;
   includeOriginalInUrl: boolean;
   includeNfoInUrl: boolean;
   deleteNfoAfterInclude: boolean;

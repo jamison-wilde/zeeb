@@ -105,9 +105,23 @@ function createWindow(): BrowserWindow {
         { role: 'forceReload' },
         { role: 'toggleDevTools' },
         { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
+        // Custom zoom items: adjust the persisted UI scale (config.uiZoom)
+        // instead of the transient Chromium zoom level.
+        {
+          label: 'Reset Zoom',
+          accelerator: 'CmdOrCtrl+0',
+          click: () => mainWindow.webContents.send('menu:zoom-reset'),
+        },
+        {
+          label: 'Zoom In',
+          accelerator: 'CmdOrCtrl+=',
+          click: () => mainWindow.webContents.send('menu:zoom-in'),
+        },
+        {
+          label: 'Zoom Out',
+          accelerator: 'CmdOrCtrl+-',
+          click: () => mainWindow.webContents.send('menu:zoom-out'),
+        },
         { type: 'separator' },
         { role: 'togglefullscreen' },
       ],

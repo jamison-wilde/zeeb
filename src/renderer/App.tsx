@@ -14,6 +14,8 @@ import { useFileStore } from '../stores/fileStore';
 import { scanDirectory } from '../services/fileScanner';
 import { useDualCursor } from './hooks/useDualCursor';
 import { useTheme } from './hooks/useTheme';
+import { useUiZoom, clampUiZoom, UI_ZOOM_STEP } from './hooks/useUiZoom';
+import { DEFAULT_CONFIG } from '../services/configDefaults';
 import { usePlatform } from './PlatformContext';
 
 type ViewName = 'folderBrowser' | 'process';
@@ -51,6 +53,7 @@ function App({ fs }: AppProps): React.JSX.Element {
   const save = useConfigStore((s) => s.save);
 
   useTheme(config.theme, platform);
+  useUiZoom(config.uiZoom, platform);
 
   useEffect(() => {
     void load().then(() => {
@@ -82,6 +85,21 @@ function App({ fs }: AppProps): React.JSX.Element {
     platform.menu.onSetTheme((t) => {
       const store = useConfigStore.getState();
       store.updateConfig({ theme: t });
+      void store.save();
+    });
+    platform.menu.onZoomIn(() => {
+      const store = useConfigStore.getState();
+      store.updateConfig({ uiZoom: clampUiZoom(store.config.uiZoom + UI_ZOOM_STEP) });
+      void store.save();
+    });
+    platform.menu.onZoomOut(() => {
+      const store = useConfigStore.getState();
+      store.updateConfig({ uiZoom: clampUiZoom(store.config.uiZoom - UI_ZOOM_STEP) });
+      void store.save();
+    });
+    platform.menu.onZoomReset(() => {
+      const store = useConfigStore.getState();
+      store.updateConfig({ uiZoom: DEFAULT_CONFIG.uiZoom });
       void store.save();
     });
   }, [platform, setFiles]);
