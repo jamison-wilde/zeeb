@@ -304,8 +304,22 @@ export function Renamer({ instanceId, fileIndex, files = [], isFileVisible, fs, 
             <span className="section-header">Movie Files</span>
             <span className="flex-1" />
             <span className="text-label text-ink-faint">Filters</span>
-            <Toggle label="TT" data-testid="tt-toggle" checked={showTt ?? false} onChange={(v) => onShowTtChange?.(v)} />
-            <Toggle label="Sample" data-testid="sample-toggle" checked={showSample ?? false} onChange={(v) => onShowSampleChange?.(v)} />
+            {/* Filter semantics: toggle ON = filter engaged = matching files hidden,
+                so the switches display the negation of the show* state. */}
+            <Toggle
+              label="TT"
+              title="Hide files with tt tags"
+              data-testid="tt-toggle"
+              checked={!(showTt ?? false)}
+              onChange={(v) => onShowTtChange?.(!v)}
+            />
+            <Toggle
+              label="Sample"
+              title="Hide sample files"
+              data-testid="sample-toggle"
+              checked={!(showSample ?? false)}
+              onChange={(v) => onShowSampleChange?.(!v)}
+            />
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <FileList

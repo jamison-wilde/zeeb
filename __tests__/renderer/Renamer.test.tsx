@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Renamer } from '../../src/renderer/components/Renamer';
 import { createMockFsAdapter } from '../../src/adapters/fs';
 import { useConfigStore } from '../../src/stores/configStore';
@@ -58,5 +58,40 @@ describe('Renamer', () => {
   it('hides NFO button when file has no nfoPath', () => {
     renderRenamer([testFile]);
     expect(screen.queryByTestId('nfo-button')).toBeNull();
+  });
+
+  it('shows filter toggles ON while matching files are hidden', () => {
+    render(
+      <PlatformProvider value={createMockPlatformAdapter()}>
+        <Renamer
+          instanceId={0}
+          fileIndex={0}
+          files={[testFile]}
+          fs={mockFs}
+          showTt={false}
+          showSample={false}
+        />
+      </PlatformProvider>,
+    );
+    expect(screen.getByTestId('tt-toggle').getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByTestId('sample-toggle').getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('disabling a filter toggle reports the files as visible again', () => {
+    const onShowTtChange = vi.fn();
+    render(
+      <PlatformProvider value={createMockPlatformAdapter()}>
+        <Renamer
+          instanceId={0}
+          fileIndex={0}
+          files={[testFile]}
+          fs={mockFs}
+          showTt={false}
+          onShowTtChange={onShowTtChange}
+        />
+      </PlatformProvider>,
+    );
+    fireEvent.click(screen.getByTestId('tt-toggle'));
+    expect(onShowTtChange).toHaveBeenCalledWith(true);
   });
 });
