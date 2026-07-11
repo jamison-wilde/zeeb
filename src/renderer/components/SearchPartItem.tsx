@@ -80,14 +80,14 @@ export function SearchPartItem({
       } ${dragging ? 'opacity-50' : ''}`}
     >
       <input
-        className={`px-1.5 pt-px pb-0 text-center text-chip font-mono font-semibold bg-transparent border-b-[3px] outline-none ${UNDERLINE[part.state]} ${TEXT_TREATMENT[part.state]}`}
+        className={`px-1.5 pt-px pb-0 text-center text-chip font-mono font-semibold bg-transparent border-b-2 outline-none ${UNDERLINE[part.state]} ${TEXT_TREATMENT[part.state]}`}
         value={part.text}
         onChange={(e) => onTextChange(part.id, e.target.value)}
         size={Math.max(part.text.length, 2)}
       />
       <div className="flex flex-col items-center gap-px px-[3px] py-[2px]">
-        <div className="flex gap-[2px]">{BIG_BUTTONS.map((b) => renderButton(b, 'w-8 h-6 text-chip'))}</div>
-        <div className="flex gap-px">{SMALL_BUTTONS.map((b) => renderButton(b, 'w-5 h-4 text-chip-small'))}</div>
+        <div className="flex gap-[2px]">{BIG_BUTTONS.map((b) => renderButton(b, 'w-6 h-[18px] text-chip'))}</div>
+        <div className="flex gap-px">{SMALL_BUTTONS.map((b) => renderButton(b, 'w-[15px] h-3 text-chip-small'))}</div>
       </div>
     </div>
   );

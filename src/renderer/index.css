@@ -37,8 +37,8 @@
   --text-label: 10px;
   --text-badge: 9px;
   --text-micro: 8px;
-  --text-chip: 17px;
-  --text-chip-small: 13px;
+  --text-chip: 13px;
+  --text-chip-small: 10px;
 }
 
 /* Dark is the default theme (spec: dark primary). */
