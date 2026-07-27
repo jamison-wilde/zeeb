@@ -69,7 +69,6 @@ export const DEFAULT_CONFIG: ZeebConfig = {
   mpaaMap: DEFAULT_MPAA_MAP,
 
   // Recent folders
-  recentFolders: [],
   folderHistory: [],
 
   // Recursion

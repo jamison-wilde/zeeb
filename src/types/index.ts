@@ -174,7 +174,6 @@ export interface ZeebConfig {
   mpaaMap: Array<[string, string]>;
 
   // Recent folders
-  recentFolders: string[];
   folderHistory: FolderHistoryEntry[];
 
   // Recursion

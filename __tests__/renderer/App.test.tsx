@@ -24,7 +24,7 @@ describe('App', () => {
 
   it('renders folder browser view by default', () => {
     renderApp();
-    expect(screen.getByTestId('folder-browser')).toBeDefined();
+    expect(screen.getByTestId('open-folder-modal')).toBeDefined();
   });
 
   it('shows folder path input in folder browser', () => {
