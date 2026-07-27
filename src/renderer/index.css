@@ -5,6 +5,7 @@
   --color-panel: var(--z-panel);
   --color-raised: var(--z-raised);
   --color-well: var(--z-well);
+  --color-modal: var(--z-modal);
   --color-line: var(--z-line);
   --color-line-subtle: var(--z-line-subtle);
   --color-ink: var(--z-ink);
@@ -51,6 +52,7 @@
   --z-panel: #1b1d20;
   --z-raised: #222428;
   --z-well: #17181b;
+  --z-modal: #1f2125;
   --z-line: #33363b;
   --z-line-subtle: #33363b;
   --z-ink: #d7dade;
@@ -81,6 +83,7 @@
   --z-panel: #ffffff;
   --z-raised: #f5f6f7;
   --z-well: #e9eaec;
+  --z-modal: #ffffff;
   --z-line: #d8dadd;
   --z-line-subtle: #e4e6e8;
   --z-ink: #26282c;
