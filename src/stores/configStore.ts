@@ -3,6 +3,7 @@ import { createElectronFsAdapter, type FsAdapter } from '../adapters/fs';
 import type { ZeebConfig } from '../types';
 import { DEFAULT_CONFIG } from '../services/configDefaults';
 import { DEFAULT_MPAA_MAP } from '../utils/defaultTerms';
+import { FOLDER_HISTORY_LIMIT } from '../services/folderHistory';
 
 export { DEFAULT_CONFIG };
 
@@ -47,6 +48,29 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
           saved.mpaaMap = entries.length > 0 ? entries : DEFAULT_MPAA_MAP;
         } else if (Array.isArray(saved.mpaaMap) && (saved.mpaaMap as unknown[]).length === 0) {
           saved.mpaaMap = DEFAULT_MPAA_MAP;
+        }
+        if (!Array.isArray(saved.folderHistory) && Array.isArray(saved.recentFolders)) {
+          const depth =
+            saved.recursionMode === 'subfolders' || saved.recursionMode === 'full'
+              ? saved.recursionMode
+              : 'none';
+          saved.folderHistory = (saved.recentFolders as unknown[])
+            .filter((p): p is string => typeof p === 'string')
+            .map((path) => ({ path, depth, fileCount: null, lastScanned: null }));
+        }
+        if (Array.isArray(saved.folderHistory)) {
+          saved.folderHistory = (saved.folderHistory as unknown[])
+            .filter(
+              (e): e is Record<string, unknown> =>
+                !!e && typeof e === 'object' && typeof (e as Record<string, unknown>).path === 'string',
+            )
+            .map((e) => ({
+              path: e.path as string,
+              depth: e.depth === 'subfolders' || e.depth === 'full' ? e.depth : 'none',
+              fileCount: typeof e.fileCount === 'number' ? e.fileCount : null,
+              lastScanned: typeof e.lastScanned === 'number' ? e.lastScanned : null,
+            }))
+            .slice(0, FOLDER_HISTORY_LIMIT);
         }
         set({ config: { ...DEFAULT_CONFIG, ...(saved as Partial<ZeebConfig>) } });
       } catch {

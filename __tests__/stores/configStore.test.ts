@@ -157,3 +157,43 @@ describe('keepTerms migration', () => {
     ]);
   });
 });
+
+describe('folderHistory migration', () => {
+  beforeEach(() => {
+    useConfigStore.setState({ config: { ...DEFAULT_CONFIG } });
+  });
+
+  it('migrates legacy recentFolders + recursionMode into folderHistory', async () => {
+    const legacy = { recentFolders: ['D:\\Movies', '\\\\nas\\media'], recursionMode: 'subfolders' };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(legacy)),
+    });
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.folderHistory).toEqual([
+      { path: 'D:\\Movies', depth: 'subfolders', fileCount: null, lastScanned: null },
+      { path: '\\\\nas\\media', depth: 'subfolders', fileCount: null, lastScanned: null },
+    ]);
+  });
+
+  it('preserves an already-migrated folderHistory and sanitizes bad entries', async () => {
+    const saved = {
+      folderHistory: [
+        { path: 'D:\\Good', depth: 'full', fileCount: 5, lastScanned: 123 },
+        { path: 'D:\\Odd', depth: 'sideways', fileCount: 'many' },
+        { depth: 'full' },
+      ],
+    };
+    const fs = createMockFsAdapter({
+      exists: vi.fn().mockResolvedValue(true),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(saved)),
+    });
+    useConfigStore.getState().setFs(fs);
+    await useConfigStore.getState().load();
+    expect(useConfigStore.getState().config.folderHistory).toEqual([
+      { path: 'D:\\Good', depth: 'full', fileCount: 5, lastScanned: 123 },
+      { path: 'D:\\Odd', depth: 'none', fileCount: null, lastScanned: null },
+    ]);
+  });
+});

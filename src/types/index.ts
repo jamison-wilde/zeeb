@@ -2,6 +2,15 @@
 
 export type SearchPartState = 'search' | 'keep' | 'remove' | 'keepAlways' | 'removeAlways';
 
+export type RecursionMode = 'none' | 'subfolders' | 'full';
+
+export interface FolderHistoryEntry {
+  path: string;
+  depth: RecursionMode;
+  fileCount: number | null;
+  lastScanned: number | null;
+}
+
 export interface SearchPart {
   id: string;
   text: string;
@@ -166,9 +175,10 @@ export interface ZeebConfig {
 
   // Recent folders
   recentFolders: string[];
+  folderHistory: FolderHistoryEntry[];
 
   // Recursion
-  recursionMode: 'none' | 'subfolders' | 'full';
+  recursionMode: RecursionMode;
 
   // Log
   logFilePath: string;

@@ -70,6 +70,7 @@ export const DEFAULT_CONFIG: ZeebConfig = {
 
   // Recent folders
   recentFolders: [],
+  folderHistory: [],
 
   // Recursion
   recursionMode: 'none',

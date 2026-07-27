@@ -1,7 +1,5 @@
 import type { FsAdapter } from '../adapters/fs';
-import type { MovieFile } from '../types';
-
-type RecursionMode = 'none' | 'subfolders' | 'full';
+import type { MovieFile, RecursionMode } from '../types';
 
 interface ScanOptions {
   detectDvd?: boolean;
