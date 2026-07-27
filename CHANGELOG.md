@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Opening a movie folder is now a modal (startup and Ctrl+O) with one-touch history: each remembered folder keeps its own scan depth, file count, and last-scanned time
+
 ## [4.1.0] - 2026-07-11
 
 ### Added
