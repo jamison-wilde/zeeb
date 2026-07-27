@@ -56,13 +56,13 @@ export function parseFilename(
     if (removeLower.includes(tokenLower)) {
       state = 'remove';
     } else {
-      for (const [matchKey, displayVal] of keepMap.entries()) {
-        const re = new RegExp(`^${matchKey}[a-z]*$`, 'i');
-        if (re.test(tokenLower)) {
-          state = 'keep';
-          text = displayVal;
-          break;
-        }
+      // Exact whole-token match, mirroring the original Flex behavior. The
+      // pairs refactor briefly matched keys as prefixes ("se" ate
+      // "separation"); keys must match the full token.
+      const displayVal = keepMap.get(tokenLower);
+      if (displayVal !== undefined) {
+        state = 'keep';
+        text = displayVal;
       }
     }
 

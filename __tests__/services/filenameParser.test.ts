@@ -1,4 +1,5 @@
 import { parseFilename } from '../../src/services/filenameParser';
+import { DEFAULT_KEEP_TERMS } from '../../src/utils/defaultTerms';
 
 const removeTerms = ['BluRay', 'x264', 'YIFY', '720p', 'DTS'];
 const keepTerms: Array<[string, string]> = [['Directors Cut', 'Directors Cut'], ['Extended', 'Extended']];
@@ -69,24 +70,49 @@ describe('parseFilename', () => {
 
   it('uses match token from keepTerms pairs for matching', () => {
     const result = parseFilename(
-      'Movie.720p.BluRay.mkv',
+      'Movie.DC.BluRay.mkv',
       ['BluRay'],
       [['720', '720p'], ['dc', "Director's Cut"]],
     );
     const kept = result.find(p => p.state === 'keep');
     expect(kept).toBeDefined();
-    expect(kept!.text).toBe('720p'); // display label replaces raw token
+    expect(kept!.text).toBe("Director's Cut"); // display label replaces raw token
   });
 
   it('matches multi-word keep term pairs', () => {
+    // The multi-word branch joins adjacent tokens, so the match key must equal
+    // the joined tokens exactly ("Directors Cut", not "Director's Cut").
     const result = parseFilename(
       'Movie.Directors.Cut.1080p.mkv',
       [],
-      [["Director's Cut", "Director's Cut"], ['1080', '1080p']],
+      [['Directors Cut', "Director's Cut"], ['1080p', '1080p']],
     );
-    const kept1080 = result.find(p => p.state === 'keep');
-    expect(kept1080).toBeDefined();
-    expect(kept1080!.text).toBe('1080p');
+    const multiWord = result.find(p => p.text === "Director's Cut");
+    expect(multiWord?.state).toBe('keep');
+    const kept1080 = result.find(p => p.text === '1080p');
+    expect(kept1080?.state).toBe('keep');
+  });
+});
+
+describe('keep term matching is exact', () => {
+  it('does not rewrite words that merely start with a keep key', () => {
+    // Regression: "Separation" was rewritten to "Special Edition" via the
+    // 'se' keep key plus trailing-letter suffix tolerance (not Flex behavior).
+    const parts = parseFilename('A.Separation.2011.mkv', [], DEFAULT_KEEP_TERMS);
+    expect(parts[1].text).toBe('Separation');
+    expect(parts[1].state).toBe('search');
+  });
+
+  it('still maps an exact SE token to Special Edition', () => {
+    const parts = parseFilename('Movie.SE.2001.mkv', [], DEFAULT_KEEP_TERMS);
+    expect(parts[1].text).toBe('Special Edition');
+    expect(parts[1].state).toBe('keep');
+  });
+
+  it('matches keep keys case-insensitively but not as prefixes', () => {
+    const parts = parseFilename('Cutthroat.Island.1995.mkv', [], DEFAULT_KEEP_TERMS);
+    expect(parts[0].text).toBe('Cutthroat');
+    expect(parts[0].state).toBe('search');
   });
 });
 
