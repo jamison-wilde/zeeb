@@ -67,6 +67,40 @@ describe('OpenFolderModal', () => {
     expect((screen.getByTestId('list-movies-button') as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it('disables List Movies when the path is only whitespace', () => {
+    renderModal({ history: [] });
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: '   ' } });
+    expect((screen.getByTestId('list-movies-button') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('prefills once history loads after the modal is already visible', () => {
+    const { rerender } = renderModal({ history: [] });
+    expect((screen.getByTestId('folder-path-input') as HTMLInputElement).value).toBe('');
+
+    rerender(
+      <PlatformProvider value={createMockPlatformAdapter()}>
+        <OpenFolderModal visible history={history} onClose={vi.fn()} onSelect={vi.fn()} onRemove={vi.fn()} />
+      </PlatformProvider>,
+    );
+
+    expect((screen.getByTestId('folder-path-input') as HTMLInputElement).value).toBe('D:\\New Downloads');
+    const segments = screen.getByTestId('recursion-mode').querySelectorAll('button');
+    expect(segments[1].getAttribute('aria-pressed')).toBe('true'); // Sub
+  });
+
+  it('does not clobber a typed path when history changes while the modal stays open', () => {
+    const { rerender } = renderModal({ history: [] });
+    fireEvent.change(screen.getByTestId('folder-path-input'), { target: { value: 'D:\\Typed By User' } });
+
+    rerender(
+      <PlatformProvider value={createMockPlatformAdapter()}>
+        <OpenFolderModal visible history={history} onClose={vi.fn()} onSelect={vi.fn()} onRemove={vi.fn()} />
+      </PlatformProvider>,
+    );
+
+    expect((screen.getByTestId('folder-path-input') as HTMLInputElement).value).toBe('D:\\Typed By User');
+  });
+
   it('one-touch scans a row with its saved depth', () => {
     const onSelect = vi.fn();
     renderModal({ onSelect });

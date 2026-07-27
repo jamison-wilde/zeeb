@@ -22,12 +22,12 @@ describe('App', () => {
     useConfigStore.getState().setFs(mockFs);
   });
 
-  it('renders folder browser view by default', () => {
+  it('shows the open folder modal at startup', () => {
     renderApp();
     expect(screen.getByTestId('open-folder-modal')).toBeDefined();
   });
 
-  it('shows folder path input in folder browser', () => {
+  it('shows the folder path input in the modal', () => {
     renderApp();
     expect(screen.getByPlaceholderText('Enter folder path...')).toBeDefined();
   });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePlatform } from '../PlatformContext';
 import { formatRelativeTime } from '../../utils/relativeTime';
 import type { FolderHistoryEntry, RecursionMode } from '../../types';
@@ -33,14 +33,20 @@ export function OpenFolderModal({
   const platform = usePlatform();
   const [path, setPath] = useState('');
   const [depth, setDepth] = useState<RecursionMode>('none');
+  // Tracks whether the user has touched the staged path/depth since the modal opened.
+  // Prefill must never clobber an edit, but it must still run once history finishes
+  // loading after the modal has already mounted (e.g. at app startup).
+  const dirty = useRef(false);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      dirty.current = false;
+      return;
+    }
+    if (dirty.current) return;
     setPath(history[0]?.path ?? '');
     setDepth(history[0]?.depth ?? 'none');
-    // Only reset when the modal opens; history churn while open must not clobber edits.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible, history]);
 
   useEffect(() => {
     if (!visible) return;
@@ -53,12 +59,18 @@ export function OpenFolderModal({
 
   const stagePath = useCallback(
     (value: string) => {
+      dirty.current = true;
       setPath(value);
       const match = history.find((h) => h.path.toLowerCase() === value.toLowerCase());
       setDepth(match ? match.depth : 'none');
     },
     [history],
   );
+
+  const handleDepthClick = useCallback((value: RecursionMode) => {
+    dirty.current = true;
+    setDepth(value);
+  }, []);
 
   const submit = useCallback(() => {
     const trimmed = path.trim();
@@ -73,7 +85,7 @@ export function OpenFolderModal({
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/60 flex items-start justify-center pt-11">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center pt-11">
       <div
         data-testid="open-folder-modal"
         className="w-[680px] bg-modal border border-toggle-off rounded-lg shadow-2xl overflow-hidden"
@@ -111,7 +123,7 @@ export function OpenFolderModal({
                 className={`text-label font-semibold px-2 py-1 ${i > 0 ? 'border-l border-toggle-off' : ''} ${
                   depth === opt.value ? 'bg-accent text-on-accent' : 'text-ink-dim'
                 }`}
-                onClick={() => setDepth(opt.value)}
+                onClick={() => handleDepthClick(opt.value)}
               >
                 {opt.label}
               </button>

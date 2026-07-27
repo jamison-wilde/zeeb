@@ -6,5 +6,6 @@ legacy_adobe_flex_src/
 assets/
 test-data/
 scripts/
+tmp/
 *.config.ts
 *.config.js

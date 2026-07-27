@@ -127,8 +127,9 @@ function App({ fs }: AppProps): React.JSX.Element {
         useNotificationStore.getState().notify('error', 'Folder listing failed');
         return;
       }
+      const currentHistory = useConfigStore.getState().config.folderHistory;
       updateConfig({
-        folderHistory: upsertFolderHistory(config.folderHistory, {
+        folderHistory: upsertFolderHistory(currentHistory, {
           path,
           depth,
           fileCount: results.length,
@@ -140,7 +141,7 @@ function App({ fs }: AppProps): React.JSX.Element {
       cursor.setFromList(results);
       setShowOpenFolder(false);
     },
-    [fs, config.movieExtensions, config.detectDvd, config.folderHistory, setFiles, updateConfig, save, cursor],
+    [fs, config.movieExtensions, config.detectDvd, setFiles, updateConfig, save, cursor],
   );
 
   const handleFileRenamed = useCallback(
@@ -155,10 +156,11 @@ function App({ fs }: AppProps): React.JSX.Element {
 
   const handleRemoveHistory = useCallback(
     (path: string) => {
-      updateConfig({ folderHistory: removeFromFolderHistory(config.folderHistory, path) });
+      const currentHistory = useConfigStore.getState().config.folderHistory;
+      updateConfig({ folderHistory: removeFromFolderHistory(currentHistory, path) });
       void save();
     },
-    [config.folderHistory, updateConfig, save],
+    [updateConfig, save],
   );
 
   const handleOptionsClose = useCallback(() => {
@@ -219,14 +221,6 @@ function App({ fs }: AppProps): React.JSX.Element {
         </div>
       </div>
 
-      <OpenFolderModal
-        visible={showOpenFolder}
-        history={config.folderHistory}
-        onClose={() => setShowOpenFolder(false)}
-        onSelect={handleFolderSelected}
-        onRemove={handleRemoveHistory}
-      />
-
       <OptionsModal visible={showOptions} onClose={handleOptionsClose} />
       <UndoModal
         visible={showUndo}
@@ -249,6 +243,15 @@ function App({ fs }: AppProps): React.JSX.Element {
         onClose={() => setShowAbout(false)}
         version={appVersion}
       />
+
+      <OpenFolderModal
+        visible={showOpenFolder}
+        history={config.folderHistory}
+        onClose={() => setShowOpenFolder(false)}
+        onSelect={handleFolderSelected}
+        onRemove={handleRemoveHistory}
+      />
+
       <NotificationToast />
     </div>
   );
