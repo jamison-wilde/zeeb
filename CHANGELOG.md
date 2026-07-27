@@ -12,6 +12,7 @@
 ### Changed
 - Full visual redesign ("Console" theme): semantic color tokens, redesigned search-part chips with state underline and two-row buttons, restyled panels, modals, and options
 - Opening a movie folder is now a modal (startup and Ctrl+O) with one-touch history: each remembered folder keeps its own scan depth, file count, and last-scanned time
+- The Windows installer creates only a Start Menu shortcut (no more desktop shortcut)
 - Search-part chips are roughly twice as large for easier tapping and editing
 - TT and Sample toggles now read as filters: ON means matching files are hidden
 - Text sizes are defined by named typography tokens instead of scattered pixel values
